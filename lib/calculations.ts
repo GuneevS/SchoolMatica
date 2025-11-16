@@ -12,23 +12,49 @@ export type LevelBand = {
 
 export type TermWeights = Record<string, number>;
 
+/**
+ * Normalizes raw weights to percentages that sum to 100%
+ * Uses high-precision rounding with remainder distribution to ensure exact 100% total
+ */
 export function normaliseWeights<T extends { rawWeight: number }>(
   assessments: T[],
   options: { precision?: number } = {},
 ) {
-  const precision = options.precision ?? 1;
+  const precision = options.precision ?? 2; // Increased default precision to 2 decimal places
   const totalRaw = assessments.reduce((sum, item) => sum + (item.rawWeight || 0), 0);
-  if (totalRaw === 0) {
+  
+  // Handle edge case: no weights
+  if (totalRaw === 0 || assessments.length === 0) {
     return assessments.map((assessment) => ({ ...assessment, weightPercent: 0 }));
   }
-  return assessments.map((assessment) => {
+  
+  // Calculate initial weights with high precision
+  const withWeights = assessments.map((assessment) => {
     const weight = (assessment.rawWeight / totalRaw) * 100;
     const rounded = Number(weight.toFixed(precision));
     return {
       ...assessment,
       weightPercent: rounded,
+      _exactWeight: weight, // Store exact value for remainder calculation
     };
   });
+  
+  // Calculate rounding error and distribute it
+  const sum = withWeights.reduce((acc, item) => acc + item.weightPercent, 0);
+  const diff = Number((100 - sum).toFixed(precision));
+  
+  // If there's a rounding difference, add it to the largest weight
+  if (Math.abs(diff) > 0) {
+    const largest = withWeights.reduce((max, item, idx) => 
+      item.weightPercent > withWeights[max].weightPercent ? idx : max, 0
+    );
+    withWeights[largest].weightPercent = Number(
+      (withWeights[largest].weightPercent + diff).toFixed(precision)
+    );
+  }
+  
+  // Remove temporary exact weight property
+  return withWeights.map(({ _exactWeight, ...rest }) => rest);
 }
 
 export function getBandsForPhase(config: GradingConfig | null, phase: string) {
@@ -51,23 +77,50 @@ export function mapPercentToLevel(percent: number, bands: LevelBand[]) {
   return result;
 }
 
+/**
+ * Calculates a student's School-Based Assessment (SBA) percentage
+ * 
+ * Key features:
+ * - Handles absent marks (excluded from calculation)
+ * - Renormalizes weights when assessments are missing
+ * - Separates PAT (Practical Assessment Task) from school-based components
+ * - Uses high-precision arithmetic with proper rounding
+ * 
+ * @param args.assessments - All assessments with their marks
+ * @param args.studentId - The student to calculate for
+ * @param args.termWeights - Optional term-specific weight overrides
+ * @returns SBA percentage and component breakdown
+ */
 export function calculateStudentSba(args: {
   assessments: (Assessment & { marks: Mark[] })[];
   studentId: string;
   termWeights?: TermWeights | null;
 }) {
   const { assessments, studentId } = args;
+  
+  // Filter to only assessments where student has a valid mark
   const usable = assessments
     .map((assessment) => {
       const mark = assessment.marks.find((m) => m.studentId === studentId);
+      
+      // Skip if no mark, absent, or null raw mark
       if (!mark || mark.isAbsent || mark.rawMark == null) {
         return null;
       }
+      
+      // Validate mark is within bounds
+      if (mark.rawMark < 0 || mark.rawMark > assessment.totalMark) {
+        console.warn(`Invalid mark for student ${studentId}, assessment ${assessment.id}: ${mark.rawMark}/${assessment.totalMark}`);
+        return null;
+      }
+      
+      // Calculate percentage with high precision
       const percent = (mark.rawMark / assessment.totalMark) * 100;
       const weight = assessment.termWeightOverride ?? assessment.weightPercent;
+      
       return {
         assessment,
-        percent,
+        percent: Number(percent.toFixed(4)), // High precision for intermediate calculations
         weightPercent: weight,
       };
     })
@@ -77,16 +130,24 @@ export function calculateStudentSba(args: {
       weightPercent: number;
     }[];
 
+  // Handle edge case: no valid marks
   const totalWeight = usable.reduce((sum, item) => sum + item.weightPercent, 0);
-  if (totalWeight === 0) {
-    return { sbaPercent: 0, componentBreakdown: { patPercent: 0, schoolBasedPercent: 0 } };
+  if (totalWeight === 0 || usable.length === 0) {
+    return { 
+      sbaPercent: 0, 
+      componentBreakdown: { patPercent: 0, schoolBasedPercent: 0 },
+      assessmentCount: 0,
+      totalPossibleWeight: assessments.reduce((sum, a) => sum + a.weightPercent, 0),
+    };
   }
 
+  // Calculate overall SBA with weight renormalization
   const sbaPercent = usable.reduce((sum, item) => {
     const adjustedWeight = (item.weightPercent / totalWeight) * 100;
     return sum + (item.percent * adjustedWeight) / 100;
   }, 0);
 
+  // Calculate PAT component separately
   const patWeights = usable.filter((item) => item.assessment.isPatComponent);
   const patWeightTotal = patWeights.reduce((sum, item) => sum + item.weightPercent, 0);
   const patPercent =
@@ -97,23 +158,25 @@ export function calculateStudentSba(args: {
           return sum + (item.percent * adjustedWeight) / 100;
         }, 0);
 
-  const schoolBasedWeight = totalWeight - patWeightTotal;
+  // Calculate school-based component (non-PAT)
+  const schoolBasedWeights = usable.filter((item) => !item.assessment.isPatComponent);
+  const schoolBasedWeight = schoolBasedWeights.reduce((sum, item) => sum + item.weightPercent, 0);
   const schoolBasedPercent =
     schoolBasedWeight === 0
-      ? sbaPercent
-      : usable
-          .filter((item) => !item.assessment.isPatComponent)
-          .reduce((sum, item) => {
-            const adjustedWeight = (item.weightPercent / schoolBasedWeight) * 100;
-            return sum + (item.percent * adjustedWeight) / 100;
-          }, 0);
+      ? 0
+      : schoolBasedWeights.reduce((sum, item) => {
+          const adjustedWeight = (item.weightPercent / schoolBasedWeight) * 100;
+          return sum + (item.percent * adjustedWeight) / 100;
+        }, 0);
 
   return {
-    sbaPercent,
+    sbaPercent: Number(sbaPercent.toFixed(2)),
     componentBreakdown: {
-      patPercent,
-      schoolBasedPercent,
+      patPercent: Number(patPercent.toFixed(2)),
+      schoolBasedPercent: Number(schoolBasedPercent.toFixed(2)),
     },
+    assessmentCount: usable.length,
+    totalPossibleWeight: assessments.reduce((sum, a) => sum + a.weightPercent, 0),
   };
 }
 

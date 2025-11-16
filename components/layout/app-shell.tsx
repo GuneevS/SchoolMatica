@@ -6,6 +6,7 @@ import { MenuSquareIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RoleSwitcher } from "@/components/role-switcher";
 import { HelpButton } from "@/components/help/help-button";
+import { TourSpotlight } from "@/components/tour/tour-spotlight";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard" },
@@ -23,7 +24,9 @@ interface Props {
 export function AppShell({ children }: Props) {
   const pathname = usePathname();
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-muted/30 via-background to-muted/20">
+    <>
+      <TourSpotlight />
+      <div className="flex min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <aside className="hidden w-64 border-r bg-white/90 backdrop-blur-sm p-6 lg:block shadow-sm">
         <div className="mb-8 flex items-center gap-3 text-lg font-semibold">
           <MenuSquareIcon className="h-5 w-5 text-primary" />
@@ -59,7 +62,8 @@ export function AppShell({ children }: Props) {
         </header>
         <main className="flex-1 overflow-y-auto bg-muted/20 p-6">{children}</main>
       </div>
-      <HelpButton />
+      <HelpButton data-tour="help-button" />
     </div>
+    </>
   );
 }

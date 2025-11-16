@@ -8,11 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Info, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { formatDateTime } from "@/lib/date-utils";
 import { WelcomeBanner } from "@/components/welcome-banner";
-import { TourButton } from "@/components/tour/tour-button";
-import { TourSpotlight } from "@/components/tour/tour-spotlight";
-import { dashboardTour } from "@/lib/tour-content";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { ProgressRing } from "@/components/ui/progress-ring";
 
 export default async function DashboardPage() {
   const data = await getDashboardData();
@@ -27,7 +23,7 @@ export default async function DashboardPage() {
               <h1 className="text-5xl md:text-6xl font-black bg-gradient-to-r from-blue-600 via-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent animate-gradient drop-shadow-2xl mb-2" style={{backgroundSize: "300% 300%"}}>
                 Dashboard
               </h1>
-              <p className="text-lg text-muted-foreground font-medium">Welcome back! Here's your school's performance overview</p>
+              <p className="text-lg text-muted-foreground font-medium">Welcome back! Here&rsquo;s your school&rsquo;s performance overview</p>
             </div>
             {/* Tour button temporarily disabled - will implement proper tour later */}
             {/* <TourButton steps={dashboardTour} data-tour="tour-button" /> */}
@@ -281,14 +277,3 @@ function SummaryStat({
   );
 }
 
-function statusTone(status: string) {
-  switch (status) {
-    case "Approved":
-    case "Locked":
-      return "inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700";
-    case "PendingApproval":
-      return "inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700";
-    default:
-      return "inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700";
-  }
-}

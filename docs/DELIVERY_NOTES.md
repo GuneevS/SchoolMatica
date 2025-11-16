@@ -56,3 +56,9 @@ Use this log to capture milestones, architectural decisions, and follow-up items
 - Maintained professional appearance while adding visual excitement and delight.
 - Created comprehensive documentation in `/docs/COLOR_AND_ANIMATION_UPGRADE.md`.
 - Performance optimized: 60fps animations, GPU-accelerated transforms, minimal bundle impact (+15KB gzipped).
+
+## 2025-11-16 (Rebuild verification & lint cleanup)
+- Removed unused tour imports/components on `app/dashboard/page.tsx` and `components/layout/app-shell.tsx` so the interim disabled tour does not block linting.
+- Escaped apostrophes in the dashboard welcome copy to comply with `react/no-unescaped-entities`.
+- Trimmed unused UI imports and helper code (`CardDescription`, `statusTone`, `_exactWeight`) to keep the bundle lean and satisfy ESLint.
+- Re-ran `npm run lint` and `npm run build` (with the auto `prisma generate` step) to ensure the upgraded UI and calculation logic compile cleanly for deployment.

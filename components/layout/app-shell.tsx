@@ -6,7 +6,6 @@ import { MenuSquareIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RoleSwitcher } from "@/components/role-switcher";
 import { HelpButton } from "@/components/help/help-button";
-import { TourSpotlight } from "@/components/tour/tour-spotlight";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard" },

@@ -35,7 +35,6 @@ export function normaliseWeights<T extends { rawWeight: number }>(
     return {
       ...assessment,
       weightPercent: rounded,
-      _exactWeight: weight, // Store exact value for remainder calculation
     };
   });
   
@@ -53,8 +52,7 @@ export function normaliseWeights<T extends { rawWeight: number }>(
     );
   }
   
-  // Remove temporary exact weight property
-  return withWeights.map(({ _exactWeight, ...rest }) => rest);
+  return withWeights;
 }
 
 export function getBandsForPhase(config: GradingConfig | null, phase: string) {

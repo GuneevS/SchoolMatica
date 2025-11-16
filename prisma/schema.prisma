@@ -1,0 +1,281 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model School {
+  id              String          @id @default(cuid())
+  name            String
+  shortCode       String?
+  gradingConfig   GradingConfig?  @relation("SchoolGradingConfig", fields: [gradingConfigId], references: [id])
+  gradingConfigId String? @unique
+  classes         ClassGroup[]
+  subjects        Subject[]
+  curriculumTemplates CurriculumTemplate[]
+  auditLogs       AuditLog[]
+  learnerRegistrations LearnerRegistration[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model GradingConfig {
+  id        String    @id @default(cuid())
+  name      String
+  phasesJson Json
+  school     School?  @relation("SchoolGradingConfig")
+}
+
+model Subject {
+  id        String       @id @default(cuid())
+  name      String
+  code      String
+  phase     String
+  school    School       @relation(fields: [schoolId], references: [id])
+  schoolId  String
+  classes   ClassGroup[]
+}
+
+model ClassGroup {
+  id              String           @id @default(cuid())
+  name            String
+  grade           Int
+  year            Int
+  subject         Subject          @relation(fields: [subjectId], references: [id])
+  subjectId       String
+  school          School           @relation(fields: [schoolId], references: [id])
+  schoolId        String
+  curriculumTemplate CurriculumTemplate? @relation(fields: [curriculumTemplateId], references: [id])
+  curriculumTemplateId String?
+  students        Student[]
+  assessmentPlans AssessmentPlan[]
+  learnerRegistrations LearnerRegistration[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model Student {
+  id               String     @id @default(cuid())
+  admissionNumber  String
+  firstName        String
+  lastName         String
+  gender           String
+  classGroup       ClassGroup @relation(fields: [classGroupId], references: [id])
+  classGroupId     String
+  marks            Mark[]
+  registrations    LearnerRegistration[]
+  snapshots        MarkSnapshot[]
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+}
+
+model AssessmentPlan {
+  id                 String             @id @default(cuid())
+  name               String
+  year               Int
+  termCount          Int
+  status             String
+  submittedAt        DateTime?
+  approvedAt         DateTime?
+  lockedAt           DateTime?
+  submittedByRole    String?
+  approvedByRole     String?
+  termWeights        Json?
+  template           CurriculumTemplate? @relation(fields: [templateId], references: [id])
+  templateId         String?
+  classGroup         ClassGroup         @relation(fields: [classGroupId], references: [id])
+  classGroupId       String
+  assessments        Assessment[]
+  moderationThreads  ModerationThread[]
+  documents          AssessmentDocument[]
+  snapshots          MarkSnapshot[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+}
+
+model Assessment {
+  id               String          @id @default(cuid())
+  assessmentPlan   AssessmentPlan  @relation(fields: [assessmentPlanId], references: [id])
+  assessmentPlanId String
+  taskName         String
+  term             String
+  totalMark        Int
+  rawWeight        Float
+  weightPercent    Float
+  sequence         Int
+  type             String?
+  status           String
+  dueDate          DateTime?
+  isPatComponent   Boolean         @default(false)
+  termWeightOverride Float?
+  category         String?
+  marks            Mark[]
+  moderationThreads ModerationThread[]
+  documents        AssessmentDocument[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model Mark {
+  id           String     @id @default(cuid())
+  assessment   Assessment @relation(fields: [assessmentId], references: [id])
+  assessmentId String
+  student      Student    @relation(fields: [studentId], references: [id])
+  studentId    String
+  rawMark      Float?
+  isAbsent     Boolean    @default(false)
+  absenceCode  String?
+  status       String     @default("Draft")
+  comment      String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([assessmentId, studentId])
+}
+
+model ModerationThread {
+  id               String            @id @default(cuid())
+  title            String?
+  kind             String?           // plan | assessment | moderation
+  assessmentPlan   AssessmentPlan?   @relation(fields: [assessmentPlanId], references: [id])
+  assessmentPlanId String?
+  assessment       Assessment?       @relation(fields: [assessmentId], references: [id])
+  assessmentId     String?
+  status           String
+  createdByRole    String
+  comments         ModerationComment[]
+  documents        AssessmentDocument[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model ModerationComment {
+  id          String           @id @default(cuid())
+  thread      ModerationThread @relation(fields: [threadId], references: [id])
+  threadId    String
+  authorRole  String
+  message     String
+  attachmentUrl String?
+  createdAt   DateTime         @default(now())
+}
+
+model CurriculumTemplate {
+  id               String              @id @default(cuid())
+  name             String
+  subjectName      String
+  subjectCode      String
+  phase            String
+  grade            Int
+  defaultTermCount Int
+  school           School?             @relation(fields: [schoolId], references: [id])
+  schoolId         String?
+  createdByRole    String
+  assessmentTemplates AssessmentTemplate[]
+  assessmentPlans  AssessmentPlan[]
+  classGroups      ClassGroup[]
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+}
+
+model AssessmentTemplate {
+  id                   String             @id @default(cuid())
+  curriculumTemplate   CurriculumTemplate @relation(fields: [curriculumTemplateId], references: [id])
+  curriculumTemplateId String
+  taskName             String
+  term                 String
+  totalMark            Int
+  rawWeight            Float
+  sequence             Int
+  type                 String?
+  isPatComponent       Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+}
+
+model AssessmentDocument {
+  id               String             @id @default(cuid())
+  assessment       Assessment?        @relation(fields: [assessmentId], references: [id])
+  assessmentId     String?
+  assessmentPlan   AssessmentPlan?    @relation(fields: [assessmentPlanId], references: [id])
+  assessmentPlanId String?
+  thread           ModerationThread?  @relation(fields: [threadId], references: [id])
+  threadId         String?
+  label            String
+  fileName         String
+  mimeType         String
+  fileUrl          String
+  storageKey       String
+  version          Int                @default(1)
+  status           String             @default("Draft")
+  uploadedByRole   String
+  uploadedByName   String?
+  uploadedAt       DateTime           @default(now())
+  approvals        DocumentApproval[]
+}
+
+model DocumentApproval {
+  id            String            @id @default(cuid())
+  document      AssessmentDocument @relation(fields: [documentId], references: [id])
+  documentId    String
+  reviewerRole  String
+  reviewerName  String?
+  status        String            @default("Pending")
+  notes         String?
+  decidedAt     DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  school     School   @relation(fields: [schoolId], references: [id])
+  schoolId   String
+  entityType String
+  entityId   String
+  action     String
+  actorRole  String
+  actorName  String?
+  metadata   Json?
+  diff       Json?
+  createdAt  DateTime @default(now())
+
+  @@index([schoolId, createdAt])
+}
+
+model LearnerRegistration {
+  id            String      @id @default(cuid())
+  school        School      @relation(fields: [schoolId], references: [id])
+  schoolId      String
+  classGroup    ClassGroup? @relation(fields: [classGroupId], references: [id])
+  classGroupId  String?
+  status        String      @default("Draft")
+  learnerData   Json
+  guardianData  Json
+  supportingDocs Json?
+  student       Student?    @relation(fields: [studentId], references: [id])
+  studentId     String?     @unique
+  submittedAt   DateTime?
+  decidedAt     DateTime?
+  decisionNote  String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model MarkSnapshot {
+  id               String        @id @default(cuid())
+  assessmentPlan   AssessmentPlan @relation(fields: [assessmentPlanId], references: [id])
+  assessmentPlanId String
+  student          Student       @relation(fields: [studentId], references: [id])
+  studentId        String
+  term             String
+  sbaPercent       Float
+  termPercent      Float
+  level            Int
+  capturedAt       DateTime      @default(now())
+
+  @@index([assessmentPlanId, term])
+  @@unique([assessmentPlanId, studentId, term])
+}

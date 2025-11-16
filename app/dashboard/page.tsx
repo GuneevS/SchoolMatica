@@ -6,6 +6,7 @@ import { HelpPanel } from "@/components/help/help-panel";
 import { dashboardHelp } from "@/lib/help-content";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { formatDateTime } from "@/lib/date-utils";
 import { WelcomeBanner } from "@/components/welcome-banner";
 import { TourButton } from "@/components/tour/tour-button";
 import { TourSpotlight } from "@/components/tour/tour-spotlight";
@@ -23,10 +24,13 @@ export default async function DashboardPage() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold gradient-text animate-gradient">Dashboard</h1>
-              <p className="text-muted-foreground mt-1">Welcome back! Here's your school's performance overview</p>
+              <h1 className="text-5xl md:text-6xl font-black bg-gradient-to-r from-blue-600 via-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent animate-gradient drop-shadow-2xl mb-2" style={{backgroundSize: "300% 300%"}}>
+                Dashboard
+              </h1>
+              <p className="text-lg text-muted-foreground font-medium">Welcome back! Here's your school's performance overview</p>
             </div>
-            <TourButton steps={dashboardTour} data-tour="tour-button" />
+            {/* Tour button temporarily disabled - will implement proper tour later */}
+            {/* <TourButton steps={dashboardTour} data-tour="tour-button" /> */}
           </div>
 
           <WelcomeBanner
@@ -73,10 +77,10 @@ export default async function DashboardPage() {
             />
           </div>
 
-      <Card className="overflow-hidden border-2 border-primary/20 shadow-xl" data-tour="performance-chart">
-        <CardHeader className="bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 border-b-2 border-primary/10">
-          <CardTitle className="flex items-center gap-2 text-primary">
-            <TrendingUp className="h-6 w-6 text-primary animate-pulse" />
+      <Card className="overflow-hidden border-2 border-blue-600 shadow-2xl" data-tour="performance-chart">
+        <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white border-b-2 border-blue-700">
+          <CardTitle className="flex items-center gap-2 text-white font-bold">
+            <TrendingUp className="h-6 w-6 text-white animate-pulse drop-shadow" />
             Class Performance
           </CardTitle>
         </CardHeader>
@@ -85,9 +89,9 @@ export default async function DashboardPage() {
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden border-2 border-emerald-500/20 shadow-xl" data-tour="class-table">
-        <CardHeader className="bg-gradient-to-r from-emerald-500/20 via-cyan-500/20 to-blue-500/20 border-b-2 border-emerald-500/10">
-          <CardTitle className="text-emerald-700">Class Overview</CardTitle>
+      <Card className="overflow-hidden border-2 border-emerald-600 shadow-2xl" data-tour="class-table">
+        <CardHeader className="bg-gradient-to-r from-emerald-600 to-cyan-600 text-white border-b-2 border-emerald-700">
+          <CardTitle className="text-white font-bold">Class Overview</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -120,9 +124,9 @@ export default async function DashboardPage() {
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="overflow-hidden border-2 border-amber-500/20 shadow-xl" data-tour="recent-plans">
-          <CardHeader className="bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-red-500/20 border-b-2 border-amber-500/10">
-            <CardTitle className="text-amber-700">Recent Assessment Plans</CardTitle>
+        <Card className="overflow-hidden border-2 border-amber-600 shadow-2xl" data-tour="recent-plans">
+          <CardHeader className="bg-gradient-to-r from-amber-600 to-orange-600 text-white border-b-2 border-amber-700">
+            <CardTitle className="text-white font-bold">Recent Assessment Plans</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 pt-6">
             {data.recentPlans.map((plan, index) => (
@@ -145,9 +149,9 @@ export default async function DashboardPage() {
             )}
           </CardContent>
         </Card>
-        <Card className="overflow-hidden border-2 border-purple-500/20 shadow-xl">
-          <CardHeader className="bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-rose-500/20 border-b-2 border-purple-500/10">
-            <CardTitle className="text-purple-700">Open Moderation Threads</CardTitle>
+        <Card className="overflow-hidden border-2 border-purple-600 shadow-2xl">
+          <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-600 text-white border-b-2 border-purple-700">
+            <CardTitle className="text-white font-bold">Open Moderation Threads</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 pt-6">
             {data.openThreads.map((thread, index) => (
@@ -173,9 +177,9 @@ export default async function DashboardPage() {
             )}
           </CardContent>
         </Card>
-        <Card className="overflow-hidden border-2 border-cyan-500/20 shadow-xl">
-          <CardHeader className="bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-indigo-500/20 border-b-2 border-cyan-500/10">
-            <CardTitle className="text-cyan-700">Recent Activity</CardTitle>
+        <Card className="overflow-hidden border-2 border-cyan-600 shadow-2xl">
+          <CardHeader className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white border-b-2 border-cyan-700">
+            <CardTitle className="text-white font-bold">Recent Activity</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 pt-6">
             {data.auditLogs.map((log, index) => (
@@ -187,9 +191,9 @@ export default async function DashboardPage() {
                 <p className="font-medium group-hover:text-blue-600 transition-colors">
                   {log.action.replaceAll("_", " ")}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  {log.entityType} · {new Date(log.createdAt).toLocaleString()}
-                </p>
+                    <p className="text-xs text-muted-foreground">
+                      {log.entityType} · {formatDateTime(log.createdAt)}
+                    </p>
                 {log.actorRole && (
                   <p className="text-xs text-muted-foreground mt-1">
                     <span className="inline-flex items-center gap-1">
@@ -226,33 +230,32 @@ function SummaryStat({
   color?: "blue" | "emerald" | "amber" | "purple";
 }) {
   const colorClasses = {
-    blue: "from-blue-500/30 to-cyan-500/30 border-blue-500 shadow-blue-500/20",
-    emerald: "from-emerald-500/30 to-teal-500/30 border-emerald-500 shadow-emerald-500/20",
-    amber: "from-amber-500/30 to-orange-500/30 border-amber-500 shadow-amber-500/20",
-    purple: "from-purple-500/30 to-pink-500/30 border-purple-500 shadow-purple-500/20",
+    blue: "from-blue-600 to-cyan-600 border-blue-700 shadow-blue-500/50",
+    emerald: "from-emerald-600 to-teal-600 border-emerald-700 shadow-emerald-500/50",
+    amber: "from-amber-600 to-orange-600 border-amber-700 shadow-amber-500/50",
+    purple: "from-purple-600 to-pink-600 border-purple-700 shadow-purple-500/50",
   };
 
   const iconColors = {
-    blue: "text-blue-600",
-    emerald: "text-emerald-600",
-    amber: "text-amber-600",
-    purple: "text-purple-600",
+    blue: "text-white",
+    emerald: "text-white",
+    amber: "text-white",
+    purple: "text-white",
   };
 
   const TrendIcon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Minus;
 
   return (
     <Card
-      className={`relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:scale-[1.05] border-l-[6px] shadow-lg ${colorClasses[color]}`}
+      className={`relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:scale-[1.05] border-2 shadow-xl bg-gradient-to-br ${colorClasses[color]}`}
     >
-      <div className={`absolute inset-0 bg-gradient-to-br ${colorClasses[color]}`} />
       <CardHeader className="relative">
         <div className="flex items-center justify-between">
-          <p className="text-xs uppercase font-semibold text-muted-foreground tracking-wide">{label}</p>
+          <p className="text-xs uppercase font-bold text-white/90 tracking-wider">{label}</p>
           {tooltip && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <button className="text-muted-foreground hover:text-foreground transition-colors">
+                <button className="text-white/80 hover:text-white transition-colors">
                   <Info className="h-4 w-4" />
                 </button>
               </TooltipTrigger>
@@ -263,16 +266,16 @@ function SummaryStat({
           )}
         </div>
         <div className="flex items-baseline gap-3">
-          <CardTitle className={`text-4xl font-bold ${iconColors[color]}`}>{value}</CardTitle>
+          <CardTitle className={`text-4xl md:text-5xl font-black ${iconColors[color]} drop-shadow-lg`}>{value}</CardTitle>
           {trend && (
             <TrendIcon
-              className={`h-5 w-5 ${trend === "up" ? "text-emerald-500" : trend === "down" ? "text-rose-500" : "text-muted-foreground"}`}
+              className={`h-6 w-6 ${trend === "up" ? "text-white/90" : trend === "down" ? "text-white/70" : "text-white/80"} drop-shadow`}
             />
           )}
         </div>
       </CardHeader>
       <CardContent className="relative">
-        <p className="text-sm text-muted-foreground font-medium">{helper}</p>
+        <p className="text-sm text-white/90 font-semibold">{helper}</p>
       </CardContent>
     </Card>
   );

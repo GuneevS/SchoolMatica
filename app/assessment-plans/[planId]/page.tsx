@@ -6,6 +6,7 @@ import { PlanEditor } from "@/components/plans/plan-editor";
 import { ModerationPanel } from "@/components/plans/moderation-panel";
 import { WeightChart } from "@/components/plans/weight-chart";
 import { PlanDocuments } from "@/components/plans/plan-documents";
+import { formatDateReadable } from "@/lib/date-utils";
 
 interface Props {
   params: Promise<{ planId: string }>;
@@ -77,13 +78,13 @@ export default async function PlanDetailPage({ params }: Props) {
               </div>
             )}
             {plan.submittedAt && (
-              <p className="text-xs text-muted-foreground">Submitted {plan.submittedAt.toLocaleDateString()}</p>
+              <p className="text-xs text-muted-foreground">Submitted {formatDateReadable(plan.submittedAt)}</p>
             )}
             {plan.approvedAt && (
-              <p className="text-xs text-muted-foreground">Approved {plan.approvedAt.toLocaleDateString()}</p>
+              <p className="text-xs text-muted-foreground">Approved {formatDateReadable(plan.approvedAt)}</p>
             )}
             {plan.lockedAt && (
-              <p className="text-xs text-muted-foreground">Locked {plan.lockedAt.toLocaleDateString()}</p>
+              <p className="text-xs text-muted-foreground">Locked {formatDateReadable(plan.lockedAt)}</p>
             )}
           </CardContent>
         </Card>

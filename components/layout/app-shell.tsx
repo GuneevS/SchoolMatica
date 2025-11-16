@@ -25,7 +25,8 @@ export function AppShell({ children }: Props) {
   const pathname = usePathname();
   return (
     <>
-      <TourSpotlight />
+      {/* Temporarily disable buggy tour */}
+      {/* <TourSpotlight /> */}
       <div className="flex min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <aside className="hidden w-64 border-r bg-white/90 backdrop-blur-sm p-6 lg:block shadow-sm">
         <div className="mb-8 flex items-center gap-3 text-lg font-semibold">

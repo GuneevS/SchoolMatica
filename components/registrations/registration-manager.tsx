@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useRoleStore } from "@/lib/stores/role-store";
+import { formatDateReadable } from "@/lib/date-utils";
 
 const statusFilters = ["All", "Submitted", "InReview", "Approved", "Rejected"] as const;
 const statusTone: Record<string, string> = {
@@ -229,7 +230,7 @@ export function RegistrationManager({ schoolId, registrations, classes }: Props)
                   <Badge className={statusTone[registration.status] ?? "bg-slate-100 text-slate-600"}>{registration.status}</Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Submitted {new Date(registration.createdAt).toLocaleDateString()}
+                  Submitted {formatDateReadable(registration.createdAt)}
                 </p>
               </div>
             </AccordionTrigger>

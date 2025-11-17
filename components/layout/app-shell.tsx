@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { RoleSwitcher } from "@/components/role-switcher";
 import { HelpButton } from "@/components/help/help-button";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { SchoolSwitcher } from "@/components/school-switcher";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard" },
@@ -14,14 +15,21 @@ const navItems = [
   { label: "Assessment Plans", href: "/assessment-plans" },
   { label: "Registrations", href: "/registrations" },
   { label: "Students", href: "/students" },
+  { label: "Teachers", href: "/teachers" },
+  { label: "Schools", href: "/schools" },
   { label: "Settings", href: "/settings/grading" },
 ];
 
 interface Props {
   children: React.ReactNode;
+  initialSchool: {
+    id: string;
+    name: string;
+    shortCode?: string;
+  } | null;
 }
 
-export function AppShell({ children }: Props) {
+export function AppShell({ children, initialSchool }: Props) {
   const pathname = usePathname();
   return (
     <div className="relative flex min-h-screen bg-canvas text-foreground">
@@ -70,9 +78,12 @@ export function AppShell({ children }: Props) {
               <p className="text-[0.6rem] font-semibold uppercase tracking-[0.4em] text-muted-foreground/70">
                 Active school
               </p>
-              <p className="text-xl font-semibold text-foreground">SchoolMatica High</p>
+              <p className="text-xl font-semibold text-foreground">
+                {initialSchool?.name ?? "No school configured"}
+              </p>
             </div>
             <div className="flex items-center gap-3">
+              <SchoolSwitcher initialSchool={initialSchool} />
               <ThemeToggle />
               <RoleSwitcher />
             </div>

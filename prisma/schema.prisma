@@ -16,6 +16,8 @@ model School {
   classes         ClassGroup[]
   subjects        Subject[]
   curriculumTemplates CurriculumTemplate[]
+  teachers        Teacher[]
+  gradeLevels     GradeLevel[]
   auditLogs       AuditLog[]
   learnerRegistrations LearnerRegistration[]
   createdAt       DateTime        @default(now())
@@ -37,6 +39,8 @@ model Subject {
   school    School       @relation(fields: [schoolId], references: [id])
   schoolId  String
   classes   ClassGroup[]
+  teacherAssignments ClassTeacherAssignment[]
+  teacherSubjects    TeacherSubjectAssignment[]
 }
 
 model ClassGroup {
@@ -50,9 +54,14 @@ model ClassGroup {
   schoolId        String
   curriculumTemplate CurriculumTemplate? @relation(fields: [curriculumTemplateId], references: [id])
   curriculumTemplateId String?
+  gradeLevel      GradeLevel?      @relation(fields: [gradeLevelId], references: [id])
+  gradeLevelId    String?
+  primaryTeacher  Teacher?         @relation("PrimaryClassTeacher", fields: [primaryTeacherId], references: [id])
+  primaryTeacherId String?
   students        Student[]
   assessmentPlans AssessmentPlan[]
   learnerRegistrations LearnerRegistration[]
+  teacherAssignments ClassTeacherAssignment[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 }
@@ -65,11 +74,78 @@ model Student {
   gender           String
   classGroup       ClassGroup @relation(fields: [classGroupId], references: [id])
   classGroupId     String
+  advisor          Teacher?   @relation("AdvisorTeacher", fields: [advisorTeacherId], references: [id])
+  advisorTeacherId String?
   marks            Mark[]
   registrations    LearnerRegistration[]
   snapshots        MarkSnapshot[]
+  parents          ParentContact[]
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
+}
+
+model Teacher {
+  id          String                     @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String                     @unique
+  phone       String?
+  role        String                     @default("Teacher")
+  bio         String?
+  school      School                     @relation(fields: [schoolId], references: [id])
+  schoolId    String
+  primaryClasses ClassGroup[]            @relation("PrimaryClassTeacher")
+  classAssignments ClassTeacherAssignment[]
+  subjectAssignments TeacherSubjectAssignment[]
+  advisees    Student[]                  @relation("AdvisorTeacher")
+  createdAt   DateTime                   @default(now())
+  updatedAt   DateTime                   @updatedAt
+}
+
+model ClassTeacherAssignment {
+  id            String     @id @default(cuid())
+  classGroup    ClassGroup @relation(fields: [classGroupId], references: [id])
+  classGroupId  String
+  teacher       Teacher    @relation(fields: [teacherId], references: [id])
+  teacherId     String
+  role          String     @default("Support")
+  subject       Subject?   @relation(fields: [subjectId], references: [id])
+  subjectId     String?
+  createdAt     DateTime   @default(now())
+}
+
+model TeacherSubjectAssignment {
+  id        String   @id @default(cuid())
+  teacher   Teacher  @relation(fields: [teacherId], references: [id])
+  teacherId String
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  subjectId String
+  grade     Int?
+  createdAt DateTime @default(now())
+}
+
+model ParentContact {
+  id          String   @id @default(cuid())
+  student     Student  @relation(fields: [studentId], references: [id])
+  studentId   String
+  fullName    String
+  relationship String
+  email       String?
+  phone       String?
+  primary     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model GradeLevel {
+  id        String      @id @default(cuid())
+  name      String
+  order     Int
+  school    School      @relation(fields: [schoolId], references: [id])
+  schoolId  String
+  classes   ClassGroup[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 }
 
 model AssessmentPlan {

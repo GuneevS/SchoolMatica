@@ -36,11 +36,42 @@ export function PlanDocuments({ planId, documents }: Props) {
     status: "Pending" as (typeof STATUS_OPTIONS)[number],
     uploadedByName: "",
   });
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = event.target;
     setFormState((state) => ({ ...state, [name]: value }));
+  }
+
+  async function handleFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const data = new FormData();
+      data.append("file", file);
+      const response = await fetch("/api/uploads", {
+        method: "POST",
+        body: data,
+      });
+      if (!response.ok) {
+        throw new Error("Upload failed");
+      }
+      const json = await response.json();
+      setFormState((state) => ({
+        ...state,
+        fileName: json.fileName ?? file.name,
+        fileUrl: json.url,
+        mimeType: json.mimeType ?? file.type ?? state.mimeType,
+      }));
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
   }
 
   function createDocument() {
@@ -130,16 +161,24 @@ export function PlanDocuments({ planId, documents }: Props) {
                 <Input id="doc-label" name="label" value={formState.label} onChange={handleChange} placeholder="e.g. PAT rubric" />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="doc-fileName">File name</Label>
-                <Input id="doc-fileName" name="fileName" value={formState.fileName} onChange={handleChange} placeholder="rubric.pdf" />
+                <Label htmlFor="doc-file">Upload file</Label>
+                <Input id="doc-file" type="file" onChange={handleFileUpload} disabled={uploading} />
+                {uploadError && <p className="text-sm text-destructive">{uploadError}</p>}
+                {uploading && <p className="text-xs text-muted-foreground">Uploading...</p>}
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-1">
+                  <Label htmlFor="doc-fileName">File name</Label>
+                  <Input id="doc-fileName" name="fileName" value={formState.fileName} onChange={handleChange} placeholder="rubric.pdf" readOnly />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="doc-mime">MIME type</Label>
+                  <Input id="doc-mime" name="mimeType" value={formState.mimeType} onChange={handleChange} placeholder="application/pdf" readOnly />
+                </div>
               </div>
               <div className="space-y-1">
                 <Label htmlFor="doc-url">File URL</Label>
                 <Input id="doc-url" name="fileUrl" value={formState.fileUrl} onChange={handleChange} placeholder="https://..." />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="doc-mime">MIME type</Label>
-                <Input id="doc-mime" name="mimeType" value={formState.mimeType} onChange={handleChange} placeholder="application/pdf" />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="doc-uploadedByName">Uploaded by (name)</Label>

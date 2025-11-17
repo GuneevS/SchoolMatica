@@ -19,6 +19,13 @@
 - Introduced `HeroMetricPanel` for right-column stat cards, giving consistent treatment to realtime signals, roster stats, and plan health across pages.
 - Updated help + status cards to reference the same semantic tokens, guaranteeing light/dark parity without bespoke overrides.
 
+## 2025-11-17 · Multi-school & Faculty Infrastructure
+
+- App shell now supports a School switcher (persisted via `/api/schools/select`) so every page scopes data to the active organisation; created `/schools` workspace to add tenants and grade bands.
+- Introduced a dedicated Teachers workspace with the new `TeacherManager` surface plus dialogs for onboarding educators, assigning them to classes, and tagging subject focuses. Classes UI now displays teacher rosters and exposes an inline assignment dialog powered by `/api/teacher-class-assignments`.
+- Students gain advisor + guardian context: `AddStudentDialog` captures parent contact info and preferred teacher, `StudentDirectory` exposes advisors/guardian cards, and backend stores parent contacts via the new `ParentContact` model.
+- Moderation documents now accept real file uploads through `/api/uploads`, automatically populate metadata, and keep the approval controls in-place.
+
 ## 🎨 What You Should See NOW
 
 ### Dashboard Page

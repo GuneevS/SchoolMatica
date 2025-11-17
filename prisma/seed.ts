@@ -82,6 +82,26 @@ async function seed() {
     },
   });
 
+  const gradeLevel = await prisma.gradeLevel.create({
+    data: {
+      name: "Grade 10",
+      order: 10,
+      schoolId: school.id,
+    },
+  });
+
+  const leadTeacher = await prisma.teacher.create({
+    data: {
+      firstName: "Naledi",
+      lastName: "Dlamini",
+      email: "naledi.dlamini@schoolmatica.com",
+      phone: "+27 82 456 7890",
+      role: "Teacher",
+      schoolId: school.id,
+      bio: "Grade 10 English HL lead teacher",
+    },
+  });
+
   const subject = await prisma.subject.create({
     data: {
       name: "English HL",
@@ -125,6 +145,17 @@ async function seed() {
       subjectId: subject.id,
       schoolId: school.id,
       curriculumTemplateId: curriculumTemplate.id,
+      gradeLevelId: gradeLevel.id,
+      primaryTeacherId: leadTeacher.id,
+      teacherAssignments: {
+        create: [
+          {
+            teacherId: leadTeacher.id,
+            role: "Lead",
+            subjectId: subject.id,
+          },
+        ],
+      },
     },
   });
 
@@ -139,6 +170,18 @@ async function seed() {
           lastName: lastName ?? "Learner",
           gender: index % 2 === 0 ? "F" : "M",
           classGroupId: classGroup.id,
+          advisorTeacherId: leadTeacher.id,
+          parents: {
+            create: [
+              {
+                fullName: `${lastName ?? "Guardian"} ${index % 2 === 0 ? "Mkhize" : "Ngcobo"}`,
+                relationship: "Guardian",
+                phone: `+27 82 000 0${index}${index}`,
+                email: `guardian${index}@example.com`,
+                primary: true,
+              },
+            ],
+          },
         },
       });
     }),

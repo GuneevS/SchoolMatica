@@ -17,15 +17,26 @@ const schema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   gender: z.string().optional(),
+  advisorTeacherId: z.string().optional(),
+  guardianName: z.string().optional(),
+  guardianRelationship: z.string().optional(),
+  guardianEmail: z.string().email().optional().or(z.literal("")),
+  guardianPhone: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
 
-interface Props {
-  classId: string;
+interface TeacherOption {
+  id: string;
+  name: string;
 }
 
-export function AddStudentDialog({ classId }: Props) {
+interface Props {
+  classId: string;
+  teachers: TeacherOption[];
+}
+
+export function AddStudentDialog({ classId, teachers }: Props) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +49,11 @@ export function AddStudentDialog({ classId }: Props) {
       firstName: "",
       lastName: "",
       gender: "",
+      advisorTeacherId: teachers[0]?.id ?? "",
+      guardianName: "",
+      guardianRelationship: "Guardian",
+      guardianEmail: "",
+      guardianPhone: "",
     },
   });
 
@@ -49,7 +65,22 @@ export function AddStudentDialog({ classId }: Props) {
         const response = await fetch("/api/students", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...values, classGroupId: classId }),
+          body: JSON.stringify({
+            ...values,
+            classGroupId: classId,
+            advisorTeacherId: values.advisorTeacherId || undefined,
+            parents: values.guardianName
+              ? [
+                  {
+                    fullName: values.guardianName,
+                    relationship: values.guardianRelationship || "Guardian",
+                    email: values.guardianEmail || undefined,
+                    phone: values.guardianPhone || undefined,
+                    primary: true,
+                  },
+                ]
+              : undefined,
+          }),
         });
         
         if (!response.ok) {
@@ -159,6 +190,60 @@ export function AddStudentDialog({ classId }: Props) {
               placeholder="e.g., Male, Female, Other"
               disabled={isPending || success}
             />
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Advisor teacher</Label>
+              <select
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                {...form.register("advisorTeacherId")}
+                disabled={isPending || success}
+              >
+                <option value="">Unassigned</option>
+                {teachers.map((teacher) => (
+                  <option key={teacher.id} value={teacher.id}>
+                    {teacher.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Guardian relationship</Label>
+              <Input
+                {...form.register("guardianRelationship")}
+                placeholder="e.g. Parent, Guardian"
+                disabled={isPending || success}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold">Guardian name</Label>
+            <Input
+              {...form.register("guardianName")}
+              placeholder="Full name"
+              disabled={isPending || success}
+            />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Guardian email</Label>
+              <Input
+                type="email"
+                {...form.register("guardianEmail")}
+                placeholder="guardian@example.com"
+                disabled={isPending || success}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Guardian phone</Label>
+              <Input
+                {...form.register("guardianPhone")}
+                placeholder="+27 82 000 0000"
+                disabled={isPending || success}
+              />
+            </div>
           </div>
           
           <DialogFooter className="gap-2">

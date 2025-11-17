@@ -13,12 +13,22 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(students);
 }
 
+const parentSchema = z.object({
+  fullName: z.string().min(2),
+  relationship: z.string().min(2),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
+  primary: z.boolean().optional(),
+});
+
 const studentSchema = z.object({
   classGroupId: z.string(),
   admissionNumber: z.string().min(1),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   gender: z.string().optional(),
+  advisorTeacherId: z.string().optional(),
+  parents: z.array(parentSchema).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -40,6 +50,18 @@ export async function POST(request: NextRequest) {
       firstName: parsed.data.firstName,
       lastName: parsed.data.lastName,
       gender: parsed.data.gender ?? "",
+      advisorTeacherId: parsed.data.advisorTeacherId,
+      parents: parsed.data.parents?.length
+        ? {
+            create: parsed.data.parents.map((parent) => ({
+              fullName: parent.fullName,
+              relationship: parent.relationship,
+              email: parent.email,
+              phone: parent.phone,
+              primary: parent.primary ?? parent === parsed.data.parents?.[0],
+            })),
+          }
+        : undefined,
     },
   });
 

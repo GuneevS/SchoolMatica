@@ -54,6 +54,15 @@ export type StudentDirectoryEntry = {
   subjectName: string;
   subjectCode: string;
   subjectPhase: string;
+  advisorName?: string | null;
+  parents?: Array<{
+    id: string;
+    fullName: string;
+    relationship: string;
+    email?: string | null;
+    phone?: string | null;
+    primary: boolean;
+  }>;
   updatedAt: string;
 };
 
@@ -380,6 +389,9 @@ export function StudentDirectory({ students }: StudentDirectoryProps) {
                     <TableCell>
                       <div className="space-y-1">
                         <p>{student.className}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {student.advisorName ? `Advisor: ${student.advisorName}` : "Advisor not assigned"}
+                        </p>
                         <Link
                           href={`/classes/${student.classId}`}
                           className="text-xs text-primary underline-offset-4 hover:underline"
@@ -480,11 +492,28 @@ export function StudentDirectory({ students }: StudentDirectoryProps) {
                 <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.3em] text-white/60">Quick insights</p>
                   <div className="grid gap-3">
-                    <InfoRow label="Class teacher" value={selectedStudent.className} />
+                    <InfoRow label="Advisor" value={selectedStudent.advisorName ?? "Not assigned"} />
                     <InfoRow label="Subject focus" value={`${selectedStudent.subjectName} (${selectedStudent.subjectPhase})`} />
                     <InfoRow label="Last synced" value={new Date(selectedStudent.updatedAt).toLocaleString()} />
                   </div>
                 </div>
+                {selectedStudent.parents && selectedStudent.parents.length > 0 && (
+                  <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-4 text-foreground">
+                    <p className="text-xs uppercase tracking-[0.3em] text-white/60">Family contacts</p>
+                    <div className="space-y-2">
+                      {selectedStudent.parents.map((parent) => (
+                        <div key={parent.id} className="rounded-2xl border border-white/15 bg-black/20 p-3">
+                          <p className="text-sm font-semibold text-white">
+                            {parent.fullName} {parent.primary && <span className="ml-2 rounded-full bg-white/10 px-2 py-0.5 text-xs">Primary</span>}
+                          </p>
+                          <p className="text-xs text-white/70">{parent.relationship}</p>
+                          <p className="text-xs text-white/70">{parent.email ?? "Email unavailable"}</p>
+                          <p className="text-xs text-white/70">{parent.phone ?? "Phone unavailable"}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-3 rounded-3xl border border-white/10 bg-slate-950/60 p-4">
                   <p className="text-xs uppercase tracking-[0.3em] text-white/60">Next actions</p>
                   <div className="space-y-2">

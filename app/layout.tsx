@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AppShell } from "@/components/layout/app-shell";
 import { Providers } from "@/components/providers";
+import { getActiveSchool } from "@/lib/school";
 import "./globals.css";
 
 const themeInitScript = `
@@ -39,17 +40,30 @@ export const metadata: Metadata = {
   description: "Assessment & moderation platform prototype",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const activeSchool = await getActiveSchool();
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <Providers>
-          <AppShell>{children}</AppShell>
+          <AppShell
+            initialSchool={
+              activeSchool
+                ? {
+                  id: activeSchool.id,
+                  name: activeSchool.name,
+                  shortCode: activeSchool.shortCode ?? undefined,
+                }
+                : null
+            }
+          >
+            {children}
+          </AppShell>
         </Providers>
       </body>
     </html>

@@ -16,6 +16,8 @@ const schema = z.object({
   grade: z.number().int(),
   year: z.number().int(),
   subjectId: z.string(),
+  gradeLevelId: z.string().optional(),
+  primaryTeacherId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -25,11 +27,23 @@ interface SubjectOption {
   name: string;
 }
 
-interface Props {
-  subjects: SubjectOption[];
+interface TeacherOption {
+  id: string;
+  name: string;
 }
 
-export function CreateClassDialog({ subjects }: Props) {
+interface GradeOption {
+  id: string;
+  name: string;
+}
+
+interface Props {
+  subjects: SubjectOption[];
+  teachers: TeacherOption[];
+  grades: GradeOption[];
+}
+
+export function CreateClassDialog({ subjects, teachers, grades }: Props) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -40,6 +54,8 @@ export function CreateClassDialog({ subjects }: Props) {
       grade: 8,
       year: new Date().getFullYear(),
       subjectId: subjects[0]?.id ?? "",
+      gradeLevelId: grades[0]?.id,
+      primaryTeacherId: teachers[0]?.id,
     },
   });
   const [selectedSubject, setSelectedSubject] = useState(form.getValues("subjectId"));
@@ -96,6 +112,42 @@ export function CreateClassDialog({ subjects }: Props) {
                 {subjects.map((subject) => (
                   <SelectItem key={subject.id} value={subject.id}>
                     {subject.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label>Grade band</Label>
+            <Select
+              value={form.watch("gradeLevelId")}
+              onValueChange={(value) => form.setValue("gradeLevelId", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select grade level" />
+              </SelectTrigger>
+              <SelectContent>
+                {grades.map((gradeOption) => (
+                  <SelectItem key={gradeOption.id} value={gradeOption.id}>
+                    {gradeOption.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label>Primary teacher</Label>
+            <Select
+              value={form.watch("primaryTeacherId")}
+              onValueChange={(value) => form.setValue("primaryTeacherId", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Assign lead teacher" />
+              </SelectTrigger>
+              <SelectContent>
+                {teachers.map((teacher) => (
+                  <SelectItem key={teacher.id} value={teacher.id}>
+                    {teacher.name}
                   </SelectItem>
                 ))}
               </SelectContent>

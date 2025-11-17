@@ -11,6 +11,8 @@ import { HelpPanel } from "@/components/help/help-panel";
 import { markbookHelp } from "@/lib/help-content";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 import { BookOpenCheck } from "lucide-react";
+import { prisma } from "@/lib/prisma";
+import { getActiveSchool } from "@/lib/school";
 
 interface Props {
   params: Promise<{ classId: string }>;
@@ -40,6 +42,13 @@ export default async function ClassMarkbookPage({ params, searchParams }: Props)
   }
 
   const markbook = payload as MarkbookPayload;
+  const school = await getActiveSchool();
+  const teacherOptions = school
+    ? await prisma.teacher.findMany({
+        where: { schoolId: school.id },
+        orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      })
+    : [];
   const currentPlan = markbook.assessmentPlan!;
   const rosterSize = markbook.rows.length;
   const completion = markbook.stats.totalMarks === 0 ? 0 : Math.round((markbook.stats.capturedMarks / markbook.stats.totalMarks) * 100);
@@ -63,7 +72,13 @@ export default async function ClassMarkbookPage({ params, searchParams }: Props)
           actions={
             <div className="flex flex-wrap gap-2">
               <PlanSwitcher plans={markbook.availablePlans} currentPlanId={currentPlan.id} />
-              <AddStudentDialog classId={markbook.classGroup.id} />
+              <AddStudentDialog
+                classId={markbook.classGroup.id}
+                teachers={teacherOptions.map((teacher) => ({
+                  id: teacher.id,
+                  name: `${teacher.firstName} ${teacher.lastName}`,
+                }))}
+              />
               <Button asChild variant="outline">
                 <a href={`/api/classes/${markbook.classGroup.id}/export`} target="_blank">
                   Download CSV

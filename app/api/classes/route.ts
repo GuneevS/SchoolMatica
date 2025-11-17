@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const schoolId = searchParams.get("schoolId") ?? undefined;
   const classes = await prisma.classGroup.findMany({
+    where: schoolId ? { schoolId } : undefined,
     include: {
       subject: true,
       _count: {
@@ -12,6 +15,10 @@ export async function GET() {
       assessmentPlans: {
         take: 1,
         orderBy: { createdAt: "desc" },
+      },
+      primaryTeacher: true,
+      teacherAssignments: {
+        include: { teacher: true },
       },
     },
     orderBy: [{ grade: "asc" }, { name: "asc" }],
@@ -24,6 +31,7 @@ export async function GET() {
     year: classGroup.year,
     subject: classGroup.subject,
     stats: classGroup._count,
+    primaryTeacher: classGroup.primaryTeacher,
     latestPlanStatus: classGroup.assessmentPlans[0]?.status ?? "Draft",
   }));
 
@@ -35,6 +43,8 @@ const classSchema = z.object({
   grade: z.number().int(),
   year: z.number().int(),
   subjectId: z.string(),
+  gradeLevelId: z.string().optional(),
+  primaryTeacherId: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -49,6 +59,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Subject not found" }, { status: 404 });
   }
 
+  if (parsed.data.gradeLevelId) {
+    const gradeLevelExists = await prisma.gradeLevel.findFirst({
+      where: { id: parsed.data.gradeLevelId, schoolId: subject.schoolId },
+    });
+    if (!gradeLevelExists) {
+      return NextResponse.json({ error: "Grade level not found for this school" }, { status: 404 });
+    }
+  }
+
+  if (parsed.data.primaryTeacherId) {
+    const teacherExists = await prisma.teacher.findFirst({
+      where: { id: parsed.data.primaryTeacherId, schoolId: subject.schoolId },
+    });
+    if (!teacherExists) {
+      return NextResponse.json({ error: "Teacher not found for this school" }, { status: 404 });
+    }
+  }
+
   const classGroup = await prisma.classGroup.create({
     data: {
       name: parsed.data.name,
@@ -56,6 +84,17 @@ export async function POST(request: NextRequest) {
       year: parsed.data.year,
       subjectId: subject.id,
       schoolId: subject.schoolId,
+      gradeLevelId: parsed.data.gradeLevelId,
+      primaryTeacherId: parsed.data.primaryTeacherId,
+      teacherAssignments: parsed.data.primaryTeacherId
+        ? {
+            create: {
+              teacherId: parsed.data.primaryTeacherId,
+              role: "Lead",
+              subjectId: subject.id,
+            },
+          }
+        : undefined,
     },
     include: { subject: true },
   });

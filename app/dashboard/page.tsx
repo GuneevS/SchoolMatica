@@ -11,6 +11,7 @@ import { WelcomeBanner } from "@/components/welcome-banner";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
+import { getActiveSchool } from "@/lib/school";
 
 const heroHighlights = [
   { label: "Live SBA pulse", color: "hsl(var(--accent-iris))" },
@@ -19,7 +20,15 @@ const heroHighlights = [
 ];
 
 export default async function DashboardPage() {
-  const data = await getDashboardData();
+  const school = await getActiveSchool();
+  if (!school) {
+    return (
+      <div className="p-10 text-center text-muted-foreground">
+        <p>No schools found. Create one from the Schools workspace to get started.</p>
+      </div>
+    );
+  }
+  const data = await getDashboardData(school.id);
 
   return (
     <>
@@ -33,7 +42,7 @@ export default async function DashboardPage() {
                 <span className="gradient-text">Dashboard</span> overview
               </>
             }
-            description="Welcome back. We've tuned the visuals for clarity and confidence—track performance, moderation, and registrations in a workspace that feels deliberate, calm, and premium."
+            description={`Welcome back to ${school.name}. Track performance, moderation, and registrations in a workspace that feels deliberate, calm, and premium.`}
             badges={heroHighlights}
             aside={
               <HeroMetricPanel

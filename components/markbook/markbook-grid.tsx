@@ -161,7 +161,12 @@ export function MarkbookGrid({ payload }: Props) {
                 </th>
                 {assessments.map((assessment) => (
                   <th key={assessment.id} className="p-3 text-left text-xs font-semibold uppercase text-muted-foreground">
-                    {assessment.taskName}
+                    <div>
+                      <p>{assessment.taskName}</p>
+                      <p className="text-[0.6rem] font-normal uppercase tracking-[0.3em] text-muted-foreground/80">
+                        {assessment.weightPercent?.toFixed(1) ?? 0}%
+                      </p>
+                    </div>
                   </th>
                 ))}
                 <th className="p-3 text-left text-xs font-semibold uppercase text-muted-foreground">SBA %</th>
@@ -251,7 +256,7 @@ export function MarkbookGrid({ payload }: Props) {
                   <div key={mark.assessmentId} className="rounded-md border p-2">
                     <p className="text-sm font-medium">{assessment.taskName}</p>
                     <p className="text-xs text-muted-foreground">
-                      {mark.isAbsent ? "Absent" : `${mark.rawMark ?? "-"}/${assessment.totalMark}`} · {assessment.term}
+                      {mark.isAbsent ? "Absent" : `${mark.rawMark ?? "-"}/${assessment.totalMark}`} · {assessment.term} · Weight {assessment.weightPercent?.toFixed(1) ?? 0}%
                     </p>
                   </div>
                 );

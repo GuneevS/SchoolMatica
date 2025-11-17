@@ -40,9 +40,10 @@ export interface DashboardData {
   auditLogs: Awaited<ReturnType<typeof prisma.auditLog.findMany>>;
 }
 
-export async function getDashboardData(): Promise<DashboardData> {
+export async function getDashboardData(schoolId: string): Promise<DashboardData> {
   const [classes, openThreadsCount] = await Promise.all([
     prisma.classGroup.findMany({
+      where: { schoolId },
       include: {
         subject: true,
         students: true,
@@ -60,7 +61,15 @@ export async function getDashboardData(): Promise<DashboardData> {
       },
       orderBy: [{ grade: "asc" }, { name: "asc" }],
     }),
-    prisma.moderationThread.count({ where: { status: "Open" } }),
+    prisma.moderationThread.count({
+      where: {
+        status: "Open",
+        OR: [
+          { assessmentPlan: { classGroup: { schoolId } } },
+          { assessment: { assessmentPlan: { classGroup: { schoolId } } } },
+        ],
+      },
+    }),
   ]);
 
   const aggregatedSba: number[] = [];
@@ -101,12 +110,19 @@ export async function getDashboardData(): Promise<DashboardData> {
 
   const [recentPlansRaw, openThreadsRaw, auditLogs] = await Promise.all([
     prisma.assessmentPlan.findMany({
+      where: { classGroup: { schoolId } },
       include: { classGroup: { include: { subject: true } } },
       orderBy: { updatedAt: "desc" },
       take: 5,
     }),
     prisma.moderationThread.findMany({
-      where: { status: "Open" },
+      where: {
+        status: "Open",
+        OR: [
+          { assessmentPlan: { classGroup: { schoolId } } },
+          { assessment: { assessmentPlan: { classGroup: { schoolId } } } },
+        ],
+      },
       include: {
         assessment: true,
         assessmentPlan: { include: { classGroup: true } },
@@ -115,6 +131,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       take: 5,
     }),
     prisma.auditLog.findMany({
+      where: { schoolId },
       orderBy: { createdAt: "desc" },
       take: 6,
     }),

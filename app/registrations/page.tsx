@@ -4,10 +4,20 @@ import { HelpPanel } from "@/components/help/help-panel";
 import { registrationsHelp } from "@/lib/help-content";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 import { ShieldCheck } from "lucide-react";
+import { getActiveSchool } from "@/lib/school";
 
 export default async function RegistrationsPage() {
-  const [registrations, classes, school] = await Promise.all([
+  const school = await getActiveSchool();
+  if (!school) {
+    return (
+      <div className="p-10 text-center text-muted-foreground">
+        <p>No schools found. Create one from the Schools workspace to get started.</p>
+      </div>
+    );
+  }
+  const [registrations, classes] = await Promise.all([
     prisma.learnerRegistration.findMany({
+      where: { schoolId: school.id },
       include: {
         classGroup: { include: { subject: true } },
         student: true,
@@ -15,13 +25,13 @@ export default async function RegistrationsPage() {
       orderBy: { createdAt: "desc" },
     }),
     prisma.classGroup.findMany({
+      where: { schoolId: school.id },
       include: { subject: true },
       orderBy: [{ grade: "asc" }, { name: "asc" }],
     }),
-    prisma.school.findFirst({ select: { id: true } }),
   ]);
 
-  const schoolId = school?.id ?? classes[0]?.schoolId ?? registrations[0]?.schoolId ?? "";
+  const schoolId = school.id;
   const classOptions = classes.map((classGroup) => ({
     id: classGroup.id,
     name: `${classGroup.name} · ${classGroup.subject.name}`,
@@ -76,7 +86,7 @@ export default async function RegistrationsPage() {
               <span className="gradient-text">Registrations</span> workspace
             </>
           }
-          description="Capture new learners, track supporting documents, and approve placement into classes with a full audit trail."
+          description={`Capture new learners, track supporting documents, and approve placement into classes at ${school.name} with a full audit trail.`}
           badges={[
             { label: `${awaitingAction} awaiting action`, color: "hsl(var(--accent-iris))" },
             { label: `${docsMissing} missing docs`, color: "hsl(var(--accent-gold))" },

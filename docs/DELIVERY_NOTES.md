@@ -62,3 +62,9 @@ Use this log to capture milestones, architectural decisions, and follow-up items
 - Escaped apostrophes in the dashboard welcome copy to comply with `react/no-unescaped-entities`.
 - Trimmed unused UI imports and helper code (`CardDescription`, `statusTone`, `_exactWeight`) to keep the bundle lean and satisfy ESLint.
 - Re-ran `npm run lint` and `npm run build` (with the auto `prisma generate` step) to ensure the upgraded UI and calculation logic compile cleanly for deployment.
+
+## 2025-11-16 (Aurora design system refresh)
+- Established a calmer Aurora palette (porcelain neutrals + iris, mint, coral, and gold accents) and codified it in `app/globals.css` with bespoke shadow utilities.
+- Rebuilt the application shell with a glass sidebar, sticky top chrome, gradient bloom background, and floating help FAB that now matches the premium look.
+- Redesigned the dashboard hero, metrics, charts, moderation, and activity cards for a world-class SaaS feel—white surfaces, accent stripes, intentional typography, and soft micro-shadows.
+- Upgraded primary controls via `components/ui/button.tsx` and refreshed page headers for Classes and Registrations to keep the rest of the product in lockstep with the new visual language.

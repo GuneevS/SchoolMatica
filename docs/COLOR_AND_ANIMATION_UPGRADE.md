@@ -332,8 +332,17 @@ Each card section has a unique gradient:
 
 ## 🔮 Future Enhancements
 
+### 11. Aurora Dark Mode (NEW!)
+
+- **Semantic Tokens**: Mirrored light/dark palettes via CSS variables (`--surface-soft`, `--surface-strong`, `--border-strong`, etc.).
+- **Canvas Gradients**: Light mode keeps porcelain aurora; dark mode introduces deep indigo + midnight gradients inspired by screenshot #2.
+- **Themed Utilities**: `glass-panel`, `shadow-ambient`, and `aurora-panel` automatically read from the active token set.
+- **Global Toggle**: New header toggle (sun/moon pill) persists preference in `localStorage` and respects `prefers-color-scheme`.
+- **Component Audit**: App shell, dashboard hero + stats, help system, registration + class workspaces, and markbook grid now consume the tokenized surfaces instead of hard-coded whites.
+- **Accessibility**: Foreground tokens shift to luminous neutrals in dark mode ensuring WCAG AA contrast throughout.
+
 ### Planned Additions
-1. **Dark Mode**: Complete dark theme with adjusted colors
+1. ~~**Dark Mode**: Complete dark theme with adjusted colors~~ ✅ (shipped via Aurora Dark Mode)
 2. **Theme Customization**: User-selectable color schemes
 3. **Advanced Animations**: Page transitions, skeleton loaders
 4. **Interactive Charts**: Animated data visualizations

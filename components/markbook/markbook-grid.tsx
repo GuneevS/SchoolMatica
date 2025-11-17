@@ -124,8 +124,8 @@ export function MarkbookGrid({ payload }: Props) {
 
   return (
     <div className="flex flex-col gap-4 lg:flex-row">
-      <div className="flex-1 overflow-auto rounded-lg border bg-white">
-        <div className="flex items-center justify-between border-b p-4">
+      <div className="flex-1 overflow-auto rounded-lg border border-[hsl(var(--border))/0.6] bg-[hsl(var(--surface-strong))] shadow-ambient-sm">
+        <div className="flex items-center justify-between border-b border-[hsl(var(--border))/0.5] p-4">
           <div className="flex items-center gap-2 text-sm">
             <Select value={termFilter} onValueChange={setTermFilter}>
               <SelectTrigger className="w-[140px]">
@@ -174,12 +174,12 @@ export function MarkbookGrid({ payload }: Props) {
                   key={row.student.id}
                   className={cn(
                     "border-b transition",
-                    highlightLow && row.sbaPercent < 40 ? "bg-red-50" : "",
+                    highlightLow && row.sbaPercent < 40 ? "bg-[hsl(var(--destructive))/0.08]" : "",
                     row.student.id === activeStudentId && "bg-primary/5",
                   )}
                   onClick={() => setSelectedStudentId(row.student.id)}
                 >
-                  <td className="sticky left-0 bg-white p-3 text-sm font-medium">
+                  <td className="sticky left-0 bg-[hsl(var(--surface-strong))] p-3 text-sm font-medium">
                     {row.student.firstName} {row.student.lastName}
                   </td>
                   {assessments.map((assessment) => {

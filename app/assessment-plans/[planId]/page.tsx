@@ -7,6 +7,8 @@ import { ModerationPanel } from "@/components/plans/moderation-panel";
 import { WeightChart } from "@/components/plans/weight-chart";
 import { PlanDocuments } from "@/components/plans/plan-documents";
 import { formatDateReadable } from "@/lib/date-utils";
+import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
+import { ClipboardList } from "lucide-react";
 
 interface Props {
   params: Promise<{ planId: string }>;
@@ -34,15 +36,36 @@ export default async function PlanDetailPage({ params }: Props) {
     notFound();
   }
 
+  const termWeights = plan.termWeights as Record<string, number> | null;
+
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="lg:col-span-2 space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold">{plan.name}</h1>
-          <p className="text-muted-foreground">
-            {plan.classGroup.name} · {plan.classGroup.subject.name}
-          </p>
-        </div>
+        <AuroraHero
+          eyebrow="Assessment plan"
+          title={
+            <>
+              <span className="gradient-text">{plan.name}</span>
+            </>
+          }
+          description={`${plan.classGroup.name} · ${plan.classGroup.subject.name}`}
+          badges={[
+            { label: plan.status, color: "hsl(var(--accent-mint))" },
+            ...(plan.template ? [{ label: plan.template.name, color: "hsl(var(--accent-gold))" }] : []),
+          ]}
+          aside={
+            <HeroMetricPanel
+              title="Plan makeup"
+              icon={<ClipboardList className="h-4 w-4" />}
+              metrics={[
+                { label: "Assessments", value: plan.assessments.length.toString(), helper: `${plan.termCount} terms`, accent: "highlight" },
+                { label: "Moderation threads", value: plan.moderationThreads.length.toString() },
+                { label: "Documents", value: plan.documents.length.toString() },
+                { label: "Term weights", value: termWeights ? Object.keys(termWeights).length.toString() : "0" },
+              ]}
+            />
+          }
+        />
         <PlanEditor key={plan.updatedAt.toISOString()} plan={plan} threads={plan.moderationThreads} />
       </div>
       <div className="space-y-4">

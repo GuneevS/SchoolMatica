@@ -2,68 +2,117 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 228 59% 97%;
+    --foreground: 226 47% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 226 47% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
-    
-    /* Enhanced color palette */
-    --success: 142.1 76.2% 36.3%;
-    --success-foreground: 355.7 100% 97.3%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 48 96% 89%;
-    --info: 199 89% 48%;
-    --info-foreground: 210 40% 98%;
-    
-    /* Gradient colors */
-    --gradient-from: 221.2 83.2% 53.3%;
-    --gradient-via: 262.1 83.3% 57.8%;
-    --gradient-to: 291.6 95.8% 65.9%;
-    
+    --popover-foreground: 226 47% 10%;
+    --primary: 248 74% 62%;
+    --primary-foreground: 225 60% 98%;
+    --secondary: 234 44% 95%;
+    --secondary-foreground: 226 40% 20%;
+    --muted: 232 44% 94%;
+    --muted-foreground: 227 15% 40%;
+    --accent: 233 70% 90%;
+    --accent-foreground: 232 46% 22%;
+    --destructive: 0 84% 63%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 230 34% 88%;
+    --border-strong: 228 30% 78%;
+    --input: 230 34% 88%;
+    --ring: 248 74% 62%;
+    --radius: 0.75rem;
+
+    /* Semantic palette */
+    --success: 160 69% 40%;
+    --success-foreground: 148 44% 94%;
+    --warning: 40 90% 55%;
+    --warning-foreground: 44 93% 92%;
+    --info: 198 90% 48%;
+    --info-foreground: 199 100% 97%;
+
+    /* Design system tokens */
+    --canvas: 228 59% 97%;
+    --canvas-gradient: radial-gradient(circle at 20% 20%, rgba(93, 95, 239, 0.11), transparent 55%),
+      radial-gradient(circle at 80% 0%, rgba(255, 139, 125, 0.12), transparent 55%),
+      linear-gradient(180deg, #f8f9ff 0%, #f4f5fb 40%, #eef2ff 100%);
+    --surface-soft: 232 44% 94%;
+    --surface-strong: 0 0% 100%;
+    --text-muted-strong: 227 15% 42%;
+    --shadow-rgb: 15 23 42;
+
+    /* Accent hues for gradients */
+    --accent-cobalt: 233 88% 67%;
+    --accent-violet: 266 81% 68%;
+    --accent-iris: 250 74% 60%;
+    --accent-flamingo: 17 87% 66%;
+    --accent-mint: 160 66% 54%;
+    --accent-gold: 41 92% 55%;
+
     /* Status colors */
-    --status-draft: 210 40% 96.1%;
-    --status-pending: 38 92% 50%;
-    --status-approved: 142.1 76.2% 36.3%;
-    --status-locked: 221.2 83.2% 53.3%;
-    --status-rejected: 0 84.2% 60.2%;
+    --status-draft: 230 34% 88%;
+    --status-pending: 40 90% 55%;
+    --status-approved: 160 69% 40%;
+    --status-locked: 248 74% 62%;
+    --status-rejected: 0 84% 63%;
+
+    /* Shell glow accents */
+    --shell-glow-a: rgba(96, 165, 250, 0.25);
+    --shell-glow-b: rgba(244, 147, 215, 0.2);
+    --shell-glow-c: rgba(16, 185, 129, 0.18);
+
+    --aurora-panel-bg:
+      radial-gradient(120% 120% at 0% 0%, rgba(93, 95, 239, 0.22), transparent 60%),
+      radial-gradient(120% 120% at 100% 0%, rgba(255, 149, 153, 0.18), transparent 65%),
+      radial-gradient(140% 140% at 20% 100%, rgba(16, 185, 129, 0.16), transparent 65%),
+      linear-gradient(135deg, #fcfcff 0%, #f6f1ff 55%, #fdf4ef 100%);
+    --chart-surface-bg: linear-gradient(145deg, #f8f9ff 0%, #f3f4ff 55%, #fef5f1 100%);
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
+    --background: 223 60% 5%;
+    --foreground: 215 35% 96%;
+    --card: 228 26% 14%;
+    --card-foreground: 0 0% 100%;
+    --popover: 228 26% 14%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 245 86% 67%;
+    --primary-foreground: 223 60% 6%;
+    --secondary: 225 32% 16%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
+    --muted: 227 20% 20%;
+    --muted-foreground: 215 15% 72%;
+    --accent: 230 28% 22%;
     --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 62% 42%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --border: 225 30% 20%;
+    --border-strong: 230 24% 32%;
+    --input: 226 28% 20%;
+    --ring: 247 82% 70%;
+
+    --canvas: 223 48% 6%;
+    --canvas-gradient: radial-gradient(circle at 5% 15%, rgba(96, 165, 250, 0.15), transparent 45%),
+      radial-gradient(circle at 80% 0%, rgba(147, 51, 234, 0.18), transparent 55%),
+      radial-gradient(circle at 70% 80%, rgba(16, 185, 129, 0.12), transparent 60%),
+      linear-gradient(180deg, #040612 0%, #090f1f 55%, #040612 100%);
+    --surface-soft: 228 22% 16%;
+    --surface-strong: 230 20% 12%;
+    --text-muted-strong: 220 18% 70%;
+    --shadow-rgb: 4 7 20;
+
+    /* Shell glow accents */
+    --shell-glow-a: rgba(59, 130, 246, 0.35);
+    --shell-glow-b: rgba(147, 51, 234, 0.35);
+    --shell-glow-c: rgba(16, 185, 129, 0.22);
+
+    --aurora-panel-bg:
+      radial-gradient(120% 120% at 0% 0%, rgba(102, 126, 234, 0.4), transparent 60%),
+      radial-gradient(120% 120% at 100% 0%, rgba(232, 121, 249, 0.35), transparent 65%),
+      radial-gradient(120% 120% at 20% 100%, rgba(16, 185, 129, 0.25), transparent 60%),
+      linear-gradient(135deg, #070b18 0%, #0d1429 60%, #090f1f 100%);
+    --chart-surface-bg: linear-gradient(145deg, rgba(7, 11, 24, 0.95) 0%, rgba(11, 13, 27, 0.9) 45%, rgba(9, 15, 31, 0.9) 100%);
   }
 }
 
@@ -72,8 +121,63 @@
     border-color: hsl(var(--border));
   }
   body {
-    background-color: hsl(var(--background));
+    background-color: hsl(var(--canvas));
+    background-image: var(--canvas-gradient);
+    background-attachment: fixed;
     color: hsl(var(--foreground));
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+@layer utilities {
+  .bg-canvas {
+    background: var(--canvas-gradient);
+  }
+
+  .shadow-ambient {
+    box-shadow:
+      0 25px 50px rgb(var(--shadow-rgb) / 0.18),
+      0 10px 25px rgb(var(--shadow-rgb) / 0.12);
+  }
+
+  .shadow-ambient-sm {
+    box-shadow:
+      0 12px 25px rgb(var(--shadow-rgb) / 0.18),
+      0 4px 12px rgb(var(--shadow-rgb) / 0.12);
+  }
+
+  .aurora-panel {
+    background-image: var(--aurora-panel-bg);
+    border: 1px solid hsl(var(--border-strong) / 0.6);
+    box-shadow:
+      0 25px 60px rgb(var(--shadow-rgb) / 0.25),
+      0 5px 15px rgb(var(--shadow-rgb) / 0.12);
+  }
+
+  .stripe-accent {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .stripe-accent::after {
+    content: "";
+    position: absolute;
+    inset-inline: 1.5rem;
+    bottom: 0.9rem;
+    height: 3px;
+    border-radius: 999px;
+    background-image: linear-gradient(90deg, hsl(var(--accent-cobalt)), hsl(var(--accent-violet)));
+    opacity: 0.8;
+  }
+
+  .glass-panel {
+    background: color-mix(in srgb, hsl(var(--surface-strong)) 75%, transparent);
+    border: 1px solid hsl(var(--border-strong) / 0.45);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    box-shadow:
+      0 25px 60px rgb(var(--shadow-rgb) / 0.22),
+      0 8px 20px rgb(var(--shadow-rgb) / 0.14);
   }
 }
 
@@ -142,30 +246,23 @@
 }
 
 /* Gradient text - VERY VIBRANT */
-.gradient-text {
-  background: linear-gradient(
-    135deg,
-    #3b82f6 0%,
-    #8b5cf6 25%,
-    #ec4899 50%,
-    #f59e0b 75%,
-    #10b981 100%
-  );
-  background-size: 300% 300%;
+ .gradient-text {
+  background: linear-gradient(120deg, hsl(var(--accent-iris)) 0%, hsl(var(--accent-violet)) 50%, hsl(var(--accent-flamingo)) 100%);
+  background-size: 250% 250%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: gradient-shift 4s ease infinite;
+  animation: gradient-shift 6s ease infinite;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
 }
 
 /* Glass morphism */
 .glass {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: color-mix(in srgb, hsl(var(--surface-strong)) 65%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid hsl(var(--border-strong) / 0.4);
 }
 
 /* Smooth scroll */

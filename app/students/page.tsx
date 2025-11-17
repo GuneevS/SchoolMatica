@@ -1,45 +1,30 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { StudentDirectory } from "@/components/students/student-directory";
 
 export default async function StudentsPage() {
   const students = await prisma.student.findMany({
-    include: { classGroup: true },
+    include: { classGroup: { include: { subject: true } } },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
   });
 
+  const directoryData = students.map((student) => ({
+    id: student.id,
+    firstName: student.firstName,
+    lastName: student.lastName,
+    admissionNumber: student.admissionNumber,
+    gender: student.gender,
+    grade: student.classGroup.grade,
+    className: student.classGroup.name,
+    classId: student.classGroup.id,
+    subjectName: student.classGroup.subject.name,
+    subjectCode: student.classGroup.subject.code,
+    subjectPhase: student.classGroup.subject.phase,
+    updatedAt: student.updatedAt.toISOString(),
+  }));
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Learners</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Admission</TableHead>
-                <TableHead>Class</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {students.map((student) => (
-                <TableRow key={student.id}>
-                  <TableCell className="font-medium">
-                    <Link href={`/students/${student.id}`} className="hover:underline">
-                      {student.firstName} {student.lastName}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{student.admissionNumber}</TableCell>
-                  <TableCell>{student.classGroup.name}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <StudentDirectory students={directoryData} />
     </div>
   );
 }

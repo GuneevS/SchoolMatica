@@ -220,7 +220,11 @@ export function RegistrationManager({ schoolId, registrations, classes }: Props)
       </div>
       <Accordion type="multiple" className="space-y-3">
         {filteredRegistrations.map((registration) => (
-          <AccordionItem key={registration.id} value={registration.id} className="rounded-md border bg-white">
+          <AccordionItem
+            key={registration.id}
+            value={registration.id}
+            className="rounded-md border border-[hsl(var(--border))/0.5] bg-[hsl(var(--surface-strong))] shadow-ambient-sm"
+          >
             <AccordionTrigger className="px-4">
               <div className="flex flex-col gap-1 text-left">
                 <div className="flex items-center gap-2">
@@ -329,7 +333,7 @@ export function RegistrationManager({ schoolId, registrations, classes }: Props)
                   </Button>
                 )}
                 {registration.status === "Approved" && registration.student && (
-                  <Badge className="bg-emerald-100 text-emerald-700">
+                  <Badge className="bg-[hsl(var(--success))/0.15] text-[hsl(var(--success))]">
                     Linked to student {registration.student.admissionNumber}
                   </Badge>
                 )}

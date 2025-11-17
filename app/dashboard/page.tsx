@@ -5,10 +5,18 @@ import { ClassPerformanceChart } from "@/components/dashboard/class-performance-
 import { HelpPanel } from "@/components/help/help-panel";
 import { dashboardHelp } from "@/lib/help-content";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Info, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Info, TrendingUp, TrendingDown, Minus, Activity, ShieldCheck, Users } from "lucide-react";
 import { formatDateTime } from "@/lib/date-utils";
 import { WelcomeBanner } from "@/components/welcome-banner";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { cn } from "@/lib/utils";
+import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
+
+const heroHighlights = [
+  { label: "Live SBA pulse", color: "hsl(var(--accent-iris))" },
+  { label: "Moderation guardrails", color: "hsl(var(--accent-mint))" },
+  { label: "Audit trail ready", color: "hsl(var(--accent-gold))" },
+];
 
 export default async function DashboardPage() {
   const data = await getDashboardData();
@@ -17,41 +25,59 @@ export default async function DashboardPage() {
     <>
       <HelpPanel page="dashboard" content={dashboardHelp} />
       <TooltipProvider>
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-5xl md:text-6xl font-black bg-gradient-to-r from-blue-600 via-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent animate-gradient drop-shadow-2xl mb-2" style={{backgroundSize: "300% 300%"}}>
-                Dashboard
-              </h1>
-              <p className="text-lg text-muted-foreground font-medium">Welcome back! Here&rsquo;s your school&rsquo;s performance overview</p>
-            </div>
-            {/* Tour button temporarily disabled - will implement proper tour later */}
-            {/* <TourButton steps={dashboardTour} data-tour="tour-button" /> */}
-          </div>
+        <div className="space-y-8 md:space-y-10">
+          <AuroraHero
+            eyebrow="Pulse"
+            title={
+              <>
+                <span className="gradient-text">Dashboard</span> overview
+              </>
+            }
+            description="Welcome back. We've tuned the visuals for clarity and confidence—track performance, moderation, and registrations in a workspace that feels deliberate, calm, and premium."
+            badges={heroHighlights}
+            aside={
+              <HeroMetricPanel
+                title="Realtime signals"
+                icon={<Activity className="h-4 w-4" />}
+                metrics={[
+                  {
+                    label: "Average SBA",
+                    value: `${data.totals.averageSba.toFixed(1)}%`,
+                    helper: "Across all learners",
+                    accent: "highlight",
+                  },
+                  { label: "Classes tracked", value: data.totals.classes.toString() },
+                  { label: "Active learners", value: data.totals.students.toString() },
+                  { label: "Pending plans", value: data.totals.pendingPlans.toString() },
+                ]}
+              />
+            }
+          />
 
           <WelcomeBanner
             title="Welcome to SchoolMatica"
-            description="Your comprehensive assessment management system. Track student performance, manage assessment plans, and ensure quality through moderation."
+            description="Track student performance, manage assessment plans, and guide moderation work from a calmer, more intentional interface."
             tips={[
-              "Click the help button (bottom right) for detailed guidance on any page",
-              "Switch roles using the dropdown in the header to see different permissions",
-              "Hover over info icons for quick tips and explanations",
+              "Use the highlights above as quick filters for where to focus next.",
+              "Switch roles via the header to confirm approvals from the right context.",
+              "Hover the info icons on cards to see calculation detail.",
             ]}
           />
+
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" data-tour="summary-stats">
             <SummaryStat
               label="Classes"
               value={data.totals.classes.toString()}
               helper={`${data.totals.students} learners tracked`}
               tooltip="Total number of active class groups with assessment plans"
-              color="blue"
+              color="cobalt"
               trend="neutral"
             />
             <SummaryStat
               label="Average SBA"
               value={`${data.totals.averageSba.toFixed(1)}%`}
               helper="Across all learners captured"
-              tooltip="School-wide average of all student SBA percentages. Calculated from weighted assessments."
+              tooltip="School-wide average of all SBA percentages. Weighted automatically using the latest plan configuration."
               color="emerald"
               trend={data.totals.averageSba >= 60 ? "up" : data.totals.averageSba >= 50 ? "neutral" : "down"}
             />
@@ -59,156 +85,158 @@ export default async function DashboardPage() {
               label="Open Moderation"
               value={data.totals.openThreads.toString()}
               helper="Threads awaiting action"
-              tooltip="Moderation discussions that need resolution. Click to view and respond."
-              color="purple"
+              tooltip="Moderation discussions that still require input or sign-off."
+              color="violet"
               trend={data.totals.openThreads === 0 ? "up" : "neutral"}
             />
             <SummaryStat
               label="Plans Pending"
               value={data.totals.pendingPlans.toString()}
               helper="Need SMT approval"
-              tooltip="Assessment plans waiting for HOD or SMT approval before being locked for marking"
+              tooltip="Assessment plans waiting for HOD or SMT approval before being locked."
               color="amber"
               trend={data.totals.pendingPlans === 0 ? "up" : "neutral"}
             />
           </div>
 
-      <Card className="overflow-hidden border-2 border-blue-600 shadow-2xl" data-tour="performance-chart">
-        <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white border-b-2 border-blue-700">
-          <CardTitle className="flex items-center gap-2 text-white font-bold">
-            <TrendingUp className="h-6 w-6 text-white animate-pulse drop-shadow" />
-            Class Performance
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <ClassPerformanceChart data={data.classSummaries} />
-        </CardContent>
-      </Card>
+          <Card className="rounded-[28px] border border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))] shadow-ambient" data-tour="performance-chart">
+            <CardHeader className="border-b border-[hsl(var(--border))/0.6] pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                Class performance
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <ClassPerformanceChart data={data.classSummaries} />
+            </CardContent>
+          </Card>
 
-      <Card className="overflow-hidden border-2 border-emerald-600 shadow-2xl" data-tour="class-table">
-        <CardHeader className="bg-gradient-to-r from-emerald-600 to-cyan-600 text-white border-b-2 border-emerald-700">
-          <CardTitle className="text-white font-bold">Class Overview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Class</TableHead>
-                <TableHead>Subject</TableHead>
-                <TableHead>Students</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Avg SBA</TableHead>
-                <TableHead>At-risk</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.classSummaries.map((summary) => (
-                <TableRow key={summary.id}>
-                  <TableCell className="font-medium">{summary.name}</TableCell>
-                  <TableCell>{summary.subject}</TableCell>
-                  <TableCell>{summary.totalStudents}</TableCell>
-                  <TableCell>{summary.planStatus}</TableCell>
-                  <TableCell>
-                    {summary.averageSba === null ? "—" : `${summary.averageSba.toFixed(1)}%`}
-                  </TableCell>
-                  <TableCell>{summary.atRiskCount}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+          <Card className="rounded-[28px] border border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))] shadow-ambient" data-tour="class-table">
+            <CardHeader className="border-b border-[hsl(var(--border))/0.6] pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                <Users className="h-5 w-5 text-primary" />
+                Class overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="text-muted-foreground">
+                    <TableHead>Class</TableHead>
+                    <TableHead>Subject</TableHead>
+                    <TableHead>Learners</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Avg SBA</TableHead>
+                    <TableHead>At-risk</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.classSummaries.map((summary) => (
+                    <TableRow key={summary.id} className="last:border-b-0">
+                      <TableCell className="font-semibold">{summary.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{summary.subject}</TableCell>
+                      <TableCell>{summary.totalStudents}</TableCell>
+                      <TableCell>
+                        <span className="rounded-full border border-[hsl(var(--border))/0.65] px-3 py-1 text-xs font-semibold text-muted-foreground">
+                          {summary.planStatus}
+                        </span>
+                      </TableCell>
+                      <TableCell>{summary.averageSba === null ? "—" : `${summary.averageSba.toFixed(1)}%`}</TableCell>
+                      <TableCell>{summary.atRiskCount}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="overflow-hidden border-2 border-amber-600 shadow-2xl" data-tour="recent-plans">
-          <CardHeader className="bg-gradient-to-r from-amber-600 to-orange-600 text-white border-b-2 border-amber-700">
-            <CardTitle className="text-white font-bold">Recent Assessment Plans</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 pt-6">
-            {data.recentPlans.map((plan, index) => (
-              <div
-                key={plan.id}
-                className="group flex items-center justify-between rounded-lg border p-4 transition-all duration-200 hover:border-primary/40 hover:shadow-md hover:scale-[1.02]"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <div className="flex-1">
-                  <p className="font-medium group-hover:text-primary transition-colors">{plan.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {plan.className} · {plan.subjectName}
-                  </p>
-                </div>
-                <StatusBadge status={plan.status} />
-              </div>
-            ))}
-            {data.recentPlans.length === 0 && (
-              <p className="text-sm text-muted-foreground">No plans have been created yet.</p>
-            )}
-          </CardContent>
-        </Card>
-        <Card className="overflow-hidden border-2 border-purple-600 shadow-2xl">
-          <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-600 text-white border-b-2 border-purple-700">
-            <CardTitle className="text-white font-bold">Open Moderation Threads</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 pt-6">
-            {data.openThreads.map((thread, index) => (
-              <div
-                key={thread.id}
-                className="group rounded-lg border border-l-4 border-l-purple-500 p-4 text-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02]"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <p className="font-medium group-hover:text-purple-600 transition-colors">{thread.createdByRole}</p>
-                <p className="text-muted-foreground">{thread.label}</p>
-              </div>
-            ))}
-            {data.openThreads.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <div className="rounded-full bg-emerald-100 p-3 mb-3">
-                  <svg className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-sm font-medium">All threads resolved!</p>
-                <p className="text-xs text-muted-foreground">Great work keeping up with moderation</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        <Card className="overflow-hidden border-2 border-cyan-600 shadow-2xl">
-          <CardHeader className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white border-b-2 border-cyan-700">
-            <CardTitle className="text-white font-bold">Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 pt-6">
-            {data.auditLogs.map((log, index) => (
-              <div
-                key={log.id}
-                className="group rounded-lg border p-3 text-sm transition-all duration-200 hover:border-blue-500/40 hover:shadow-md"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <p className="font-medium group-hover:text-blue-600 transition-colors">
-                  {log.action.replaceAll("_", " ")}
-                </p>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card className="rounded-[28px] border border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))] shadow-ambient" data-tour="recent-plans">
+              <CardHeader className="border-b border-[hsl(var(--border))/0.6] pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <ShieldCheck className="h-5 w-5 text-primary" />
+                  Recent assessment plans
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-6">
+                {data.recentPlans.map((plan) => (
+                  <div
+                    key={plan.id}
+                    className="group flex items-center justify-between rounded-2xl border border-[hsl(var(--border))/0.7] bg-[hsl(var(--surface-strong))/0.85] px-4 py-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-ambient-sm"
+                  >
+                    <div>
+                      <p className="font-medium text-foreground group-hover:text-primary transition-colors">{plan.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {plan.className} · {plan.subjectName}
+                      </p>
+                    </div>
+                    <StatusBadge status={plan.status} />
+                  </div>
+                ))}
+                {data.recentPlans.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No plans have been created yet.</p>
+                )}
+              </CardContent>
+            </Card>
+            <Card className="rounded-[28px] border border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))] shadow-ambient">
+              <CardHeader className="border-b border-[hsl(var(--border))/0.6] pb-4">
+                <CardTitle className="text-lg font-semibold text-foreground">Open moderation threads</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-6">
+                {data.openThreads.map((thread) => (
+                  <div
+                    key={thread.id}
+                    className="rounded-2xl border border-[hsl(var(--border))/0.65] bg-[hsl(var(--surface-soft))] px-4 py-3 text-sm shadow-ambient-sm"
+                  >
+                    <p className="font-medium text-foreground">{thread.createdByRole}</p>
+                    <p className="text-muted-foreground">{thread.label}</p>
+                  </div>
+                ))}
+                {data.openThreads.length === 0 && (
+                  <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[hsl(var(--success))/0.45] bg-[hsl(var(--success))/0.12] py-8 text-center shadow-ambient-sm">
+                    <p className="text-sm font-medium text-[hsl(var(--success))]">All threads resolved</p>
+                    <p className="text-xs text-[hsl(var(--success))/0.8]">Moderation is in a healthy state</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            <Card className="rounded-[28px] border border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))] shadow-ambient">
+              <CardHeader className="border-b border-[hsl(var(--border))/0.6] pb-4">
+                <CardTitle className="text-lg font-semibold text-foreground">Recent activity</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-6">
+                {data.auditLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="rounded-2xl border border-[hsl(var(--border))/0.7] bg-[hsl(var(--surface-strong))/0.85] px-4 py-3 text-sm shadow-ambient-sm"
+                  >
+                    <p className="font-medium text-foreground">{log.action.replaceAll("_", " ")}</p>
                     <p className="text-xs text-muted-foreground">
                       {log.entityType} · {formatDateTime(log.createdAt)}
                     </p>
-                {log.actorRole && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    <span className="inline-flex items-center gap-1">
-                      <span className="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
-                      {log.actorRole}
-                    </span>
-                  </p>
+                    {log.actorRole && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        <span className="inline-flex items-center gap-1">
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                          {log.actorRole}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                ))}
+                {data.auditLogs.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No recent changes.</p>
                 )}
-              </div>
-            ))}
-            {data.auditLogs.length === 0 && <p className="text-sm text-muted-foreground">No recent changes.</p>}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </TooltipProvider>
     </>
   );
 }
+
+type SummaryAccent = "cobalt" | "emerald" | "violet" | "amber";
 
 function SummaryStat({
   label,
@@ -216,64 +244,79 @@ function SummaryStat({
   helper,
   tooltip,
   trend,
-  color = "blue",
+  color = "cobalt",
 }: {
   label: string;
   value: string;
   helper: string;
   tooltip?: string;
   trend?: "up" | "down" | "neutral";
-  color?: "blue" | "emerald" | "amber" | "purple";
+  color?: SummaryAccent;
 }) {
-  const colorClasses = {
-    blue: "from-blue-600 to-cyan-600 border-blue-700 shadow-blue-500/50",
-    emerald: "from-emerald-600 to-teal-600 border-emerald-700 shadow-emerald-500/50",
-    amber: "from-amber-600 to-orange-600 border-amber-700 shadow-amber-500/50",
-    purple: "from-purple-600 to-pink-600 border-purple-700 shadow-purple-500/50",
-  };
-
-  const iconColors = {
-    blue: "text-white",
-    emerald: "text-white",
-    amber: "text-white",
-    purple: "text-white",
+  const accentMap: Record<
+    SummaryAccent,
+    { stripe: string; iconBg: string; iconColor: string }
+  > = {
+    cobalt: {
+      stripe: "linear-gradient(90deg, hsl(var(--accent-cobalt)), hsl(var(--accent-iris)))",
+      iconBg: "bg-[hsl(var(--accent-cobalt))/0.12]",
+      iconColor: "text-[hsl(var(--accent-cobalt))]",
+    },
+    emerald: {
+      stripe: "linear-gradient(90deg, hsl(var(--accent-mint)), hsl(var(--accent-iris)))",
+      iconBg: "bg-[hsl(var(--accent-mint))/0.12]",
+      iconColor: "text-[hsl(var(--accent-mint))]",
+    },
+    violet: {
+      stripe: "linear-gradient(90deg, hsl(var(--accent-violet)), hsl(var(--accent-flamingo)))",
+      iconBg: "bg-[hsl(var(--accent-violet))/0.12]",
+      iconColor: "text-[hsl(var(--accent-violet))]",
+    },
+    amber: {
+      stripe: "linear-gradient(90deg, hsl(var(--accent-gold)), hsl(var(--accent-flamingo)))",
+      iconBg: "bg-[hsl(var(--accent-gold))/0.15]",
+      iconColor: "text-[hsl(var(--accent-gold))]",
+    },
   };
 
   const TrendIcon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Minus;
+  const accent = accentMap[color];
 
   return (
-    <Card
-      className={`relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:scale-[1.05] border-2 shadow-xl bg-gradient-to-br ${colorClasses[color]}`}
-    >
-      <CardHeader className="relative">
-        <div className="flex items-center justify-between">
-          <p className="text-xs uppercase font-bold text-white/90 tracking-wider">{label}</p>
-          {tooltip && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button className="text-white/80 hover:text-white transition-colors">
-                  <Info className="h-4 w-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="max-w-xs">{tooltip}</p>
-              </TooltipContent>
-            </Tooltip>
-          )}
+    <div className="relative rounded-[28px] border border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))/0.95] p-5 shadow-ambient-sm transition-transform duration-200 hover:-translate-y-0.5">
+      <div className="flex items-center justify-between text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-muted-foreground/70">
+        {label}
+        {tooltip && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button className="text-muted-foreground transition-colors hover:text-foreground">
+                <Info className="h-4 w-4" />
+                <span className="sr-only">{`More info on ${label}`}</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="max-w-xs text-sm">{tooltip}</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+      </div>
+      <div className="mt-6 flex items-end justify-between gap-4">
+        <div>
+          <p className="text-4xl font-semibold text-foreground">{value}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{helper}</p>
         </div>
-        <div className="flex items-baseline gap-3">
-          <CardTitle className={`text-4xl md:text-5xl font-black ${iconColors[color]} drop-shadow-lg`}>{value}</CardTitle>
-          {trend && (
-            <TrendIcon
-              className={`h-6 w-6 ${trend === "up" ? "text-white/90" : trend === "down" ? "text-white/70" : "text-white/80"} drop-shadow`}
-            />
+        <span
+          className={cn(
+            "flex h-10 w-10 items-center justify-center rounded-2xl text-foreground",
+            accent.iconBg,
+            accent.iconColor,
           )}
-        </div>
-      </CardHeader>
-      <CardContent className="relative">
-        <p className="text-sm text-white/90 font-semibold">{helper}</p>
-      </CardContent>
-    </Card>
+        >
+          {trend && <TrendIcon className="h-5 w-5" />}
+        </span>
+      </div>
+      <div className="mt-6 h-[3px] w-full rounded-full" style={{ backgroundImage: accent.stripe }} />
+    </div>
   );
 }
 

@@ -1,5 +1,24 @@
 # Visual Changes - Before & After
 
+## 2025-11-16 · Aurora Interface Refresh
+
+- Introduced a refined **Aurora palette** (periwinkle → iris → punchy coral with mint + gold accents) anchored by calm porcelain surfaces.
+- Rebuilt the global shell: new glass sidebar, floating gradient bloom, and a sticky top chrome that keeps role controls and status context in view.
+- Hero sections now use **aurora panels** with layered radial gradients, premium typography, and contextual highlight chips for instant orientation.
+- Summary metrics became precision cards: white surfaces, accent stripes, micro rings, and pill trend indicators instead of full-bleed gradients.
+- All feature cards (`Class Performance`, `Class Overview`, plans, moderation, audit logs) sit on rounded 28px panels with bespoke shadows for a softer, editorial look.
+- CTA buttons adopt gradient skins with rounded geometry and subtle focus glows; outline buttons leverage the new porcelain tokens.
+- Tables received breathable spacing, zebra contrast via typography, and status chips that align with the updated semantic palette.
+- Classes and Registrations pages gained their own hero surfaces, mirroring the dashboard’s calm hierarchy for consistency across the suite.
+- Documentation now maps these tokens so future components inherit the same polished language without ad hoc color guesses.
+
+## 2025-11-17 · Aurora Hero System
+
+- Added a reusable `AuroraHero` component so every top-level page opens with the same glassy aurora surface, gradient title, and highlight badges.
+- Converted Dashboard, Classes, Registrations, Assessment Plans, Markbook, and Grading Settings to the shared hero, keeping typography/spacing identical.
+- Introduced `HeroMetricPanel` for right-column stat cards, giving consistent treatment to realtime signals, roster stats, and plan health across pages.
+- Updated help + status cards to reference the same semantic tokens, guaranteeing light/dark parity without bespoke overrides.
+
 ## 🎨 What You Should See NOW
 
 ### Dashboard Page

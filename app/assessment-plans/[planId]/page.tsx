@@ -6,9 +6,12 @@ import { PlanEditor } from "@/components/plans/plan-editor";
 import { ModerationPanel } from "@/components/plans/moderation-panel";
 import { WeightChart } from "@/components/plans/weight-chart";
 import { PlanDocuments } from "@/components/plans/plan-documents";
+import { TermWeightConfig } from "@/components/plans/term-weight-config";
+import { WeightAdjusterPanel } from "@/components/plans/weight-adjuster-panel";
 import { formatDateReadable } from "@/lib/date-utils";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 import { ClipboardList } from "lucide-react";
+import { calculateAssessmentWeightInsights, type TermWeights } from "@/lib/calculations";
 
 interface Props {
   params: Promise<{ planId: string }>;
@@ -36,7 +39,10 @@ export default async function PlanDetailPage({ params }: Props) {
     notFound();
   }
 
-  const termWeights = plan.termWeights as Record<string, number> | null;
+  const termWeights = plan.termWeights as TermWeights | null;
+  const weightInsights = plan.assessments.length
+    ? calculateAssessmentWeightInsights({ assessments: plan.assessments, termWeights })
+    : null;
 
   return (
     <div className="grid gap-6 lg:grid-cols-3">
@@ -48,7 +54,7 @@ export default async function PlanDetailPage({ params }: Props) {
               <span className="gradient-text">{plan.name}</span>
             </>
           }
-          description={`${plan.classGroup.name} · ${plan.classGroup.subject.name}`}
+          description={`${plan.classGroup.name}${plan.classGroup.subject ? ` · ${plan.classGroup.subject.name}` : ""}`}
           badges={[
             { label: plan.status, color: "hsl(var(--accent-mint))" },
             ...(plan.template ? [{ label: plan.template.name, color: "hsl(var(--accent-gold))" }] : []),
@@ -66,7 +72,24 @@ export default async function PlanDetailPage({ params }: Props) {
             />
           }
         />
-        <PlanEditor key={plan.updatedAt.toISOString()} plan={plan} threads={plan.moderationThreads} />
+        <PlanEditor
+          key={plan.updatedAt.toISOString()}
+          plan={plan}
+          threads={plan.moderationThreads}
+          weightInsights={weightInsights ?? undefined}
+        />
+        <TermWeightConfig
+          termCount={plan.termCount}
+          initialWeights={termWeights || undefined}
+          onSave={async (weights) => {
+            "use server";
+            await prisma.assessmentPlan.update({
+              where: { id: plan.id },
+              data: { termWeights: weights },
+            });
+          }}
+        />
+        <WeightAdjusterPanel planId={plan.id} assessments={plan.assessments} />
       </div>
       <div className="space-y-4">
         <Card>

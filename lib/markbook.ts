@@ -1,9 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import {
+  calculateAssessmentWeightInsights,
+  calculateFinalYearMark,
   calculateStudentSba,
   calculateTermPercentages,
   getBandsForPhase,
   mapPercentToLevel,
+  type TermWeights,
 } from "@/lib/calculations";
 
 export type MarkbookStats = {
@@ -12,6 +15,8 @@ export type MarkbookStats = {
   atRiskLearners: number;
   averageSba: number;
   averagePat: number;
+  averageFinal: number;
+  hasTermWeights: boolean;
 };
 
 export async function getClassMarkbookPayload(classId: string, assessmentPlanId?: string) {
@@ -72,12 +77,20 @@ export async function getClassMarkbookPayload(classId: string, assessmentPlanId?
       });
 
   const assessments = selectedPlan?.assessments ?? [];
+  const termWeights = (selectedPlan?.termWeights as TermWeights | null) ?? null;
+  const weightInsights = assessments.length
+    ? calculateAssessmentWeightInsights({ assessments, termWeights })
+    : null;
   const gradingConfig = classGroup.school?.gradingConfig ?? null;
-  const bands = getBandsForPhase(gradingConfig, classGroup.subject.phase);
+  const subjectPhase = classGroup.subject?.phase ?? "default";
+  const bands = getBandsForPhase(gradingConfig, subjectPhase);
 
   const rows = classGroup.students.map((student) => {
     const sba = calculateStudentSba({ assessments, studentId: student.id });
     const terms = calculateTermPercentages({ assessments, studentId: student.id });
+    const finalYear = assessments.length
+      ? calculateFinalYearMark({ assessments, studentId: student.id, termWeights })
+      : null;
     const band = mapPercentToLevel(sba.sbaPercent, bands);
     const assessmentMarks = assessments.map((assessment) => {
       const mark = assessment.marks.find((m) => m.studentId === student.id);
@@ -103,6 +116,9 @@ export async function getClassMarkbookPayload(classId: string, assessmentPlanId?
         T3: Number((terms.T3 ?? 0).toFixed(2)),
         T4: Number((terms.T4 ?? 0).toFixed(2)),
       },
+      finalYearPercent: Number(finalYear?.finalMark?.toFixed(2) ?? 0),
+      termResults: finalYear?.termResults ?? {},
+      appliedTermWeights: finalYear?.appliedWeights ?? termWeights ?? {},
     };
   });
 
@@ -118,6 +134,10 @@ export async function getClassMarkbookPayload(classId: string, assessmentPlanId?
   const averagePat = rows.length
     ? rows.reduce((sum, row) => sum + row.componentBreakdown.patPercent, 0) / rows.length
     : 0;
+  const averageFinal = rows.length
+    ? rows.reduce((sum, row) => sum + row.finalYearPercent, 0) / rows.length
+    : 0;
+  const hasTermWeights = Boolean(termWeights && Object.values(termWeights).some((value) => value > 0));
 
   return {
     classGroup,
@@ -131,9 +151,13 @@ export async function getClassMarkbookPayload(classId: string, assessmentPlanId?
       atRiskLearners,
       averageSba,
       averagePat,
+      averageFinal,
+      hasTermWeights,
     },
     documents: selectedPlan?.documents ?? [],
     snapshots: selectedPlan?.snapshots ?? [],
+    weightInsights,
+    termWeights,
   };
 }
 

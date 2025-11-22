@@ -2,6 +2,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
 model AppUser {
   id            String               @id @default(cuid())
   email         String               @unique
@@ -64,10 +69,6 @@ model UserRoleAssignment {
   @@index([userId, roleId])
 }
 
-datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
-}
 
 model School {
   id              String          @id @default(cuid())
@@ -83,6 +84,7 @@ model School {
   auditLogs       AuditLog[]
   learnerRegistrations LearnerRegistration[]
   users           AppUser[]
+  timetables      Timetable[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 }
@@ -111,8 +113,9 @@ model ClassGroup {
   name            String
   grade           Int
   year            Int
-  subject         Subject          @relation(fields: [subjectId], references: [id])
-  subjectId       String
+  classType       ClassType        @default(Subject)
+  subject         Subject?         @relation(fields: [subjectId], references: [id])
+  subjectId       String?
   school          School           @relation(fields: [schoolId], references: [id])
   schoolId        String
   curriculumTemplate CurriculumTemplate? @relation(fields: [curriculumTemplateId], references: [id])
@@ -125,6 +128,7 @@ model ClassGroup {
   assessmentPlans AssessmentPlan[]
   learnerRegistrations LearnerRegistration[]
   teacherAssignments ClassTeacherAssignment[]
+  timetableSlots  TimetableSlot[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 }
@@ -162,6 +166,7 @@ model Teacher {
   subjectAssignments TeacherSubjectAssignment[]
   advisees    Student[]                  @relation("AdvisorTeacher")
   account     AppUser?                   @relation("TeacherAccount")
+  timetableSlots TimetableSlot[]
   createdAt   DateTime                   @default(now())
   updatedAt   DateTime                   @updatedAt
 }
@@ -176,6 +181,11 @@ model ClassTeacherAssignment {
   subject       Subject?   @relation(fields: [subjectId], references: [id])
   subjectId     String?
   createdAt     DateTime   @default(now())
+}
+
+enum ClassType {
+  Subject
+  Homeroom
 }
 
 model TeacherSubjectAssignment {
@@ -232,6 +242,7 @@ model AssessmentPlan {
   moderationThreads  ModerationThread[]
   documents          AssessmentDocument[]
   snapshots          MarkSnapshot[]
+  timetableSlots     TimetableSlot[]
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 }
@@ -418,4 +429,60 @@ model MarkSnapshot {
 
   @@index([assessmentPlanId, term])
   @@unique([assessmentPlanId, studentId, term])
+}
+
+model Timetable {
+  id          String           @id @default(cuid())
+  name        String
+  school      School           @relation(fields: [schoolId], references: [id])
+  schoolId    String
+  year        Int
+  term        String
+  startDate   DateTime
+  endDate     DateTime
+  status      String           @default("Draft")
+  cycleType   String           @default("Weekly")
+  periods     TimetablePeriod[]
+  slots       TimetableSlot[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([schoolId, year, term])
+}
+
+model TimetablePeriod {
+  id           String        @id @default(cuid())
+  timetable    Timetable     @relation(fields: [timetableId], references: [id], onDelete: Cascade)
+  timetableId  String
+  name         String
+  periodNumber Int
+  startTime    String
+  endTime      String
+  dayOfWeek    Int
+  slots        TimetableSlot[]
+  createdAt    DateTime      @default(now())
+
+  @@index([timetableId, dayOfWeek, periodNumber])
+}
+
+model TimetableSlot {
+  id              String           @id @default(cuid())
+  timetable       Timetable        @relation(fields: [timetableId], references: [id], onDelete: Cascade)
+  timetableId     String
+  period          TimetablePeriod  @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  periodId        String
+  classGroup      ClassGroup       @relation(fields: [classGroupId], references: [id])
+  classGroupId    String
+  teacher         Teacher?         @relation(fields: [teacherId], references: [id])
+  teacherId       String?
+  room            String?
+  notes           String?
+  assessmentPlan  AssessmentPlan?  @relation(fields: [assessmentPlanId], references: [id])
+  assessmentPlanId String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([timetableId, periodId])
+  @@index([classGroupId])
+  @@index([teacherId])
 }

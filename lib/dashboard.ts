@@ -26,6 +26,14 @@ type OpenThreadSummary = {
   label: string;
 };
 
+type RegistrationSummary = {
+  Draft: number;
+  Submitted: number;
+  InReview: number;
+  Approved: number;
+  Rejected: number;
+};
+
 export interface DashboardData {
   totals: {
     classes: number;
@@ -38,10 +46,11 @@ export interface DashboardData {
   recentPlans: RecentPlanSummary[];
   openThreads: OpenThreadSummary[];
   auditLogs: Awaited<ReturnType<typeof prisma.auditLog.findMany>>;
+  registrations: RegistrationSummary;
 }
 
 export async function getDashboardData(schoolId: string): Promise<DashboardData> {
-  const [classes, openThreadsCount] = await Promise.all([
+  const [classes, openThreadsCount, registrationCounts] = await Promise.all([
     prisma.classGroup.findMany({
       where: { schoolId },
       include: {
@@ -70,7 +79,26 @@ export async function getDashboardData(schoolId: string): Promise<DashboardData>
         ],
       },
     }),
+    prisma.learnerRegistration.groupBy({
+      by: ["status"],
+      where: { schoolId },
+      _count: { status: true },
+    }),
   ]);
+
+  const registrationSummary: RegistrationSummary = {
+    Draft: 0,
+    Submitted: 0,
+    InReview: 0,
+    Approved: 0,
+    Rejected: 0,
+  };
+  for (const group of registrationCounts) {
+    const status = group.status as keyof RegistrationSummary;
+    if (registrationSummary[status] !== undefined) {
+      registrationSummary[status] = group._count.status;
+    }
+  }
 
   const aggregatedSba: number[] = [];
   const classSummaries: ClassSummary[] = classes.map((classGroup) => {
@@ -173,5 +201,6 @@ export async function getDashboardData(schoolId: string): Promise<DashboardData>
     recentPlans,
     openThreads,
     auditLogs,
+    registrations: registrationSummary,
   };
 }

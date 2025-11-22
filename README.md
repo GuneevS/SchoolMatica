@@ -70,7 +70,7 @@ npx prisma db seed
 npm run dev
 ```
 
-Visit `http://localhost:43123` to see the application.
+Visit `http://localhost:44777` to see the application.
 
 ### Environment Variables
 

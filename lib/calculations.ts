@@ -12,6 +12,108 @@ export type LevelBand = {
 
 export type TermWeights = Record<string, number>;
 
+export type AssessmentWeightInsight = {
+  assessmentId: string;
+  term: string;
+  baseWeightPercent: number;
+  termPlanTotalPercent: number;
+  configuredTermWeightPercent: number;
+  inTermSharePercent: number;
+  effectiveFinalPercent: number;
+};
+
+export type AssessmentWeightInsightMap = {
+  assessments: Record<string, AssessmentWeightInsight>;
+  termSummaries: Record<
+    string,
+    {
+      configuredWeightPercent: number;
+      planSharePercent: number;
+      deltaPercent: number;
+    }
+  >;
+  hasConfiguredTermWeights: boolean;
+};
+
+export function calculateAssessmentWeightInsights(args: {
+  assessments: (Assessment & { termWeightOverride?: number | null })[];
+  termWeights?: TermWeights | null;
+}): AssessmentWeightInsightMap {
+  const { assessments, termWeights } = args;
+  const terms = [...new Set(assessments.map((assessment) => assessment.term))];
+  const baseWeights = assessments.map((assessment) => ({
+    id: assessment.id,
+    term: assessment.term,
+    weight: Number(assessment.termWeightOverride ?? assessment.weightPercent ?? 0),
+  }));
+
+  const termPlanTotals = baseWeights.reduce<Record<string, number>>((acc, current) => {
+    acc[current.term] = (acc[current.term] ?? 0) + current.weight;
+    return acc;
+  }, {});
+
+  const normalizedTermWeights = normaliseTermWeightsMap(termWeights, terms);
+  const hasConfiguredTermWeights = Boolean(normalizedTermWeights);
+
+  const assessmentEntries: Record<string, AssessmentWeightInsight> = {};
+  const termSummaries: AssessmentWeightInsightMap["termSummaries"] = {};
+
+  terms.forEach((term) => {
+    const configuredWeightPercent = normalizedTermWeights?.[term] ?? termPlanTotals[term] ?? 0;
+    const planSharePercent = termPlanTotals[term] ?? 0;
+    termSummaries[term] = {
+      configuredWeightPercent,
+      planSharePercent,
+      deltaPercent: Number((configuredWeightPercent - planSharePercent).toFixed(2)),
+    };
+  });
+
+  baseWeights.forEach((item) => {
+    const planTotal = termPlanTotals[item.term] ?? 0;
+    const configuredTermWeight = normalizedTermWeights?.[item.term] ?? planTotal;
+    const shareWithinTerm = planTotal === 0 ? 0 : (item.weight / planTotal) * 100;
+    const effectiveFinalPercent = hasConfiguredTermWeights
+      ? configuredTermWeight === 0 || planTotal === 0
+        ? 0
+        : (configuredTermWeight * item.weight) / planTotal
+      : item.weight;
+
+    assessmentEntries[item.id] = {
+      assessmentId: item.id,
+      term: item.term,
+      baseWeightPercent: Number(item.weight.toFixed(2)),
+      termPlanTotalPercent: Number(planTotal.toFixed(2)),
+      configuredTermWeightPercent: Number(configuredTermWeight.toFixed(2)),
+      inTermSharePercent: Number(shareWithinTerm.toFixed(2)),
+      effectiveFinalPercent: Number(effectiveFinalPercent.toFixed(2)),
+    };
+  });
+
+  return {
+    assessments: assessmentEntries,
+    termSummaries,
+    hasConfiguredTermWeights,
+  };
+}
+
+export function normaliseTermWeightsMap(termWeights: TermWeights | null | undefined, terms: string[]): TermWeights | null {
+  if (!termWeights) return null;
+  const weights: TermWeights = {};
+  terms.forEach((term) => {
+    weights[term] = Number((termWeights?.[term] ?? 0).toFixed(2));
+  });
+  const total = Object.values(weights).reduce((sum, value) => sum + value, 0);
+  if (total <= 0) {
+    return null;
+  }
+  if (Math.abs(total - 100) > 0.01 && terms.length > 0) {
+    const diff = 100 - total;
+    const firstTerm = terms[0];
+    weights[firstTerm] = Number((weights[firstTerm] + diff).toFixed(2));
+  }
+  return weights;
+}
+
 /**
  * Normalizes raw weights to percentages that sum to 100%
  * Uses high-precision rounding with remainder distribution to ensure exact 100% total
@@ -93,8 +195,12 @@ export function calculateStudentSba(args: {
   assessments: (Assessment & { marks: Mark[] })[];
   studentId: string;
   termWeights?: TermWeights | null;
+  applyTermWeights?: boolean;
 }) {
-  const { assessments, studentId } = args;
+  const { assessments, studentId, termWeights, applyTermWeights = false } = args;
+  const weightInsights = applyTermWeights
+    ? calculateAssessmentWeightInsights({ assessments, termWeights })
+    : null;
   
   // Filter to only assessments where student has a valid mark
   const usable = assessments
@@ -114,7 +220,9 @@ export function calculateStudentSba(args: {
       
       // Calculate percentage with high precision
       const percent = (mark.rawMark / assessment.totalMark) * 100;
-      const weight = assessment.termWeightOverride ?? assessment.weightPercent;
+      const weight = weightInsights?.assessments?.[assessment.id]?.effectiveFinalPercent ??
+        assessment.termWeightOverride ??
+        assessment.weightPercent;
       
       return {
         assessment,
@@ -225,5 +333,80 @@ export function buildMarkSnapshot(args: {
     sbaPercent: Number(sba.sbaPercent.toFixed(2)),
     termPercent: Number((terms[term] ?? 0).toFixed(2)),
     level: level.level,
+  };
+}
+
+/**
+ * Calculates a student's final year mark using term weights
+ * 
+ * This function:
+ * - Calculates SBA percentage for each term
+ * - Applies configured term weights to determine final mark
+ * - Handles missing term weights (equal distribution)
+ * - Validates that term weights sum to 100%
+ * 
+ * @param args.assessments - All assessments with their marks
+ * @param args.studentId - The student to calculate for
+ * @param args.termWeights - Optional term weight configuration (e.g., {"T1": 20, "T2": 30, "T3": 25, "T4": 25})
+ * @returns Final year mark and term breakdown
+ */
+export function calculateFinalYearMark(args: {
+  assessments: (Assessment & { marks: Mark[] })[];
+  studentId: string;
+  termWeights?: TermWeights | null;
+}) {
+  const { assessments, studentId, termWeights } = args;
+  
+  const terms = [...new Set(assessments.map((a) => a.term))].sort();
+  
+  const termResults: Record<string, { sbaPercent: number; weight: number; contribution: number }> = {};
+  
+  let weights: TermWeights;
+  if (termWeights && Object.keys(termWeights).length > 0) {
+    const totalWeight = Object.values(termWeights).reduce((sum, w) => sum + w, 0);
+    if (Math.abs(totalWeight - 100) > 0.01) {
+      console.warn(`Term weights do not sum to 100%: ${totalWeight}`);
+    }
+    weights = termWeights;
+  } else {
+    const equalWeight = 100 / terms.length;
+    weights = {};
+    terms.forEach((term) => {
+      weights[term] = Number(equalWeight.toFixed(2));
+    });
+    const diff = 100 - Object.values(weights).reduce((sum, w) => sum + w, 0);
+    if (Math.abs(diff) > 0) {
+      weights[terms[0]] = Number((weights[terms[0]] + diff).toFixed(2));
+    }
+  }
+  
+  let finalMark = 0;
+  let totalAppliedWeight = 0;
+  
+  for (const term of terms) {
+    const termAssessments = assessments.filter((a) => a.term === term);
+    const sba = calculateStudentSba({ assessments: termAssessments, studentId });
+    const weight = weights[term] ?? 0;
+    const contribution = (sba.sbaPercent * weight) / 100;
+    
+    termResults[term] = {
+      sbaPercent: sba.sbaPercent,
+      weight,
+      contribution,
+    };
+    
+    finalMark += contribution;
+    totalAppliedWeight += weight;
+  }
+  
+  if (totalAppliedWeight > 0 && Math.abs(totalAppliedWeight - 100) > 0.01) {
+    finalMark = (finalMark / totalAppliedWeight) * 100;
+  }
+  
+  return {
+    finalMark: Number(finalMark.toFixed(2)),
+    termResults,
+    appliedWeights: weights,
+    totalAppliedWeight,
   };
 }

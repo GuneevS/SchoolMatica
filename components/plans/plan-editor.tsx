@@ -22,13 +22,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRoleStore } from "@/lib/stores/role-store";
 import { AssessmentModerationDialog } from "@/components/plans/assessment-moderation-dialog";
+import type { AssessmentWeightInsightMap } from "@/lib/calculations";
 
 interface Props {
   plan: AssessmentPlan & { assessments: Assessment[] };
   threads: (ModerationThread & { comments: ModerationComment[] })[];
+  weightInsights?: AssessmentWeightInsightMap;
 }
 
-export function PlanEditor({ plan, threads }: Props) {
+export function PlanEditor({ plan, threads, weightInsights }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const role = useRoleStore((state) => state.role);
@@ -36,6 +38,7 @@ export function PlanEditor({ plan, threads }: Props) {
   const [orderedAssessments, setOrderedAssessments] = useState(plan.assessments);
   const totalWeight = orderedAssessments.reduce((sum, item) => sum + item.weightPercent, 0);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const showEffectiveColumn = Boolean(weightInsights?.hasConfiguredTermWeights);
 
   function handleReorder(event: DragEndEvent) {
     if (!canEdit) return;
@@ -122,6 +125,35 @@ export function PlanEditor({ plan, threads }: Props) {
         </div>
       </div>
       {!canEdit && <p className="text-xs text-muted-foreground">Switch to HOD or SMT role to edit weightings.</p>}
+      {weightInsights && (
+        <div className="rounded-lg border border-dashed border-[hsl(var(--border))/0.6] bg-[hsl(var(--surface-soft))] p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground">Term weighting overview</span>
+            {weightInsights.hasConfiguredTermWeights ? (
+              <span className="text-emerald-500">Configured term weights active</span>
+            ) : (
+              <span>Using assessment-level weights only</span>
+            )}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {Object.entries(weightInsights.termSummaries).map(([term, summary]) => (
+              <div
+                key={term}
+                className="rounded-full border border-[hsl(var(--border))/0.5] bg-background px-3 py-1 text-xs"
+              >
+                <span className="font-semibold mr-2">{term}</span>
+                <span>{summary.configuredWeightPercent.toFixed(1)}% target</span>
+                {Math.abs(summary.deltaPercent) > 0.1 && (
+                  <span className={summary.deltaPercent > 0 ? "text-emerald-500" : "text-amber-500"}>
+                    {summary.deltaPercent > 0 ? "+" : ""}
+                    {summary.deltaPercent.toFixed(1)}% delta
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleReorder}>
         <SortableContext items={orderedAssessments.map((assessment) => assessment.id)} strategy={verticalListSortingStrategy}>
           <Table>
@@ -133,6 +165,7 @@ export function PlanEditor({ plan, threads }: Props) {
                 <TableHead>Total</TableHead>
                 <TableHead>Raw weight</TableHead>
                 <TableHead>Weight %</TableHead>
+                {showEffectiveColumn && <TableHead>Effective %</TableHead>}
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>
@@ -203,6 +236,13 @@ export function PlanEditor({ plan, threads }: Props) {
                         />
                       </TableCell>
                       <TableCell>{assessment.weightPercent.toFixed(1)}%</TableCell>
+                      {showEffectiveColumn && (
+                        <TableCell>
+                          {(
+                            weightInsights?.assessments?.[assessment.id]?.effectiveFinalPercent ?? assessment.weightPercent
+                          ).toFixed(1)}%
+                        </TableCell>
+                      )}
                       <TableCell className="text-right flex items-center gap-2 justify-end">
                         <AssessmentModerationDialog
                           assessment={assessment}

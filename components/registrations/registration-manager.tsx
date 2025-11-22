@@ -27,6 +27,26 @@ const statusTone: Record<string, string> = {
   Rejected: "bg-rose-100 text-rose-700",
 };
 
+const UNASSIGNED_VALUE = "__UNASSIGNED__";
+
+const GENDER_UNSPECIFIED = "__GENDER_UNSPECIFIED__";
+const GENDER_CUSTOM = "__GENDER_CUSTOM__";
+const genderOptions = [
+  { value: "Female", label: "Female" },
+  { value: "Male", label: "Male" },
+  { value: "Non-binary", label: "Non-binary" },
+  { value: "Prefer not to say", label: "Prefer not to say" },
+];
+
+function toSelectValue(value?: string | null) {
+  if (!value) return UNASSIGNED_VALUE;
+  return value;
+}
+
+function fromSelectValue(value: string) {
+  return value === UNASSIGNED_VALUE ? undefined : value;
+}
+
 const registrationSchema = z.object({
   firstName: z.string().min(2),
   lastName: z.string().min(2),
@@ -85,7 +105,17 @@ export function RegistrationManager({ schoolId, registrations, classes }: Props)
       classGroupId: classes[0]?.id ?? "",
     },
   });
-  const [preferredClassValue, setPreferredClassValue] = useState(form.getValues("classGroupId") ?? "");
+  const [preferredClassValue, setPreferredClassValue] = useState(() => toSelectValue(form.getValues("classGroupId")));
+  const initialGender = form.getValues("gender") ?? "";
+  const initialGenderOption = initialGender
+    ? genderOptions.some((option) => option.value === initialGender)
+      ? initialGender
+      : GENDER_CUSTOM
+    : GENDER_UNSPECIFIED;
+  const [genderOption, setGenderOption] = useState(initialGenderOption);
+  const [customGenderValue, setCustomGenderValue] = useState(
+    initialGenderOption === GENDER_CUSTOM ? initialGender : "",
+  );
 
   const filteredRegistrations = useMemo(() => {
     if (filter === "All") return registrations;
@@ -127,6 +157,8 @@ export function RegistrationManager({ schoolId, registrations, classes }: Props)
       setCreateDialogOpen(false);
       form.reset();
       setPreferredClassValue(classes[0]?.id ?? "");
+      setGenderOption(GENDER_UNSPECIFIED);
+      setCustomGenderValue("");
       router.refresh();
     });
   }
@@ -170,7 +202,46 @@ export function RegistrationManager({ schoolId, registrations, classes }: Props)
                 </div>
                 <div className="space-y-1">
                   <Label>Gender</Label>
-                  <Input {...form.register("gender")} />
+                  <Select
+                    value={genderOption}
+                    onValueChange={(value) => {
+                      setGenderOption(value);
+                      if (value === GENDER_UNSPECIFIED) {
+                        form.setValue("gender", "");
+                        return;
+                      }
+                      if (value === GENDER_CUSTOM) {
+                        form.setValue("gender", customGenderValue);
+                        return;
+                      }
+                      form.setValue("gender", value);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={GENDER_UNSPECIFIED}>Select gender</SelectItem>
+                      {genderOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value={GENDER_CUSTOM}>Custom value</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {genderOption === GENDER_CUSTOM && (
+                    <Input
+                      className="mt-2"
+                      placeholder="Describe gender"
+                      value={customGenderValue}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setCustomGenderValue(value);
+                        form.setValue("gender", value);
+                      }}
+                    />
+                  )}
                 </div>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
@@ -192,14 +263,14 @@ export function RegistrationManager({ schoolId, registrations, classes }: Props)
                     value={preferredClassValue}
                     onValueChange={(value) => {
                       setPreferredClassValue(value);
-                      form.setValue("classGroupId", value);
+                      form.setValue("classGroupId", fromSelectValue(value));
                     }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Assign later" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Decide later</SelectItem>
+                      <SelectItem value={UNASSIGNED_VALUE}>Decide later</SelectItem>
                       {classes.map((classOption) => (
                         <SelectItem key={classOption.id} value={classOption.id}>
                           {classOption.name}
@@ -246,11 +317,11 @@ export function RegistrationManager({ schoolId, registrations, classes }: Props)
               {registration.supportingDocs && <InfoBlock title="Supporting documents" entries={registration.supportingDocs} />}
               <div className="flex flex-wrap items-center gap-3">
                 <Select
-                  value={selectedClasses[registration.id] ?? registration.classGroup?.id ?? ""}
+                  value={toSelectValue(selectedClasses[registration.id] ?? registration.classGroup?.id)}
                   onValueChange={(value) =>
                     setSelectedClasses((state) => ({
                       ...state,
-                      [registration.id]: value,
+                      [registration.id]: fromSelectValue(value) ?? "",
                     }))
                   }
                 >
@@ -258,7 +329,7 @@ export function RegistrationManager({ schoolId, registrations, classes }: Props)
                     <SelectValue placeholder="Assign class" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Unassigned</SelectItem>
+                    <SelectItem value={UNASSIGNED_VALUE}>Unassigned</SelectItem>
                     {classes.map((classOption) => (
                       <SelectItem key={classOption.id} value={classOption.id}>
                         {classOption.name}
@@ -269,11 +340,12 @@ export function RegistrationManager({ schoolId, registrations, classes }: Props)
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() =>
+                  onClick={() => {
+                    const pendingClass = selectedClasses[registration.id] ?? registration.classGroup?.id ?? "";
                     mutateRegistration(registration.id, {
-                      classGroupId: selectedClasses[registration.id] ?? registration.classGroup?.id ?? undefined,
-                    })
-                  }
+                      classGroupId: pendingClass || undefined,
+                    });
+                  }}
                 >
                   Save placement
                 </Button>
@@ -302,13 +374,14 @@ export function RegistrationManager({ schoolId, registrations, classes }: Props)
                     <Button
                       size="sm"
                       variant="default"
-                      onClick={() =>
+                      onClick={() => {
+                        const pendingClass = selectedClasses[registration.id] ?? registration.classGroup?.id ?? "";
                         mutateRegistration(registration.id, {
                           status: "Approved",
-                          classGroupId: selectedClasses[registration.id] ?? registration.classGroup?.id,
+                          classGroupId: pendingClass || undefined,
                           decisionNote: decisionNotes[registration.id] ?? undefined,
-                        })
-                      }
+                        });
+                      }}
                       disabled={!(selectedClasses[registration.id] ?? registration.classGroup?.id)}
                     >
                       Approve

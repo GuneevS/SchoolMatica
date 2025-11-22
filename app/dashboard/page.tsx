@@ -12,6 +12,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 import { getActiveSchool } from "@/lib/school";
+import { RolePersonalizedHighlights } from "@/components/dashboard/role-personalized-highlights";
 
 const heroHighlights = [
   { label: "Live SBA pulse", color: "hsl(var(--accent-iris))" },
@@ -28,6 +29,7 @@ export default async function DashboardPage() {
       </div>
     );
   }
+
   const data = await getDashboardData(school.id);
 
   return (
@@ -72,6 +74,8 @@ export default async function DashboardPage() {
               "Hover the info icons on cards to see calculation detail.",
             ]}
           />
+
+          <RolePersonalizedHighlights data={data} />
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" data-tour="summary-stats">
             <SummaryStat

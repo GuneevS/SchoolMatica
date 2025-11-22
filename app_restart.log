@@ -1,0 +1,46 @@
+   ▲ Next.js 16.0.3 (Turbopack)
+   - Local:         http://localhost:44777
+   - Network:       http://0.0.0.0:44777
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 808ms
+ ⚠ Cross origin request detected from pilot-geo-newport-connections.trycloudflare.com to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ ○ Compiling /dashboard ...
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+ GET /dashboard 200 in 5.9s (compile: 5.1s, render: 778ms)
+ GET /api/schools 200 in 581ms (compile: 563ms, render: 18ms)
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+ GET /dashboard 200 in 278ms (compile: 11ms, render: 267ms)
+ GET /api/schools 200 in 22ms (compile: 6ms, render: 16ms)
+ GET /classes 200 in 1241ms (compile: 1190ms, render: 51ms)
+ GET /assessment-plans 200 in 1162ms (compile: 1093ms, render: 69ms)
+ GET /registrations 200 in 1127ms (compile: 1067ms, render: 60ms)
+ GET /students 200 in 854ms (compile: 806ms, render: 48ms)
+ GET /teachers 200 in 879ms (compile: 827ms, render: 53ms)
+ GET /schools 200 in 575ms (compile: 551ms, render: 24ms)
+ GET /settings/grading 200 in 823ms (compile: 773ms, render: 49ms)
+ GET /dashboard 200 in 100ms (compile: 7ms, render: 94ms)
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+ GET /dashboard 200 in 255ms (compile: 5ms, render: 250ms)
+ GET /api/schools 200 in 18ms (compile: 4ms, render: 13ms)
+ GET /classes 200 in 98ms (compile: 5ms, render: 93ms)
+ POST /api/teacher-class-assignments 201 in 320ms (compile: 260ms, render: 61ms)
+ GET /classes 200 in 72ms (compile: 3ms, render: 69ms)
+ GET /classes/cmi8680lv000b4zdqp08xsxzn 200 in 1710ms (compile: 1585ms, render: 125ms)
+ GET /registrations 200 in 69ms (compile: 5ms, render: 64ms)
+ GET /assessment-plans 200 in 94ms (compile: 5ms, render: 89ms)
+ GET /classes 200 in 96ms (compile: 5ms, render: 91ms)
+ GET /dashboard 200 in 152ms (compile: 4ms, render: 147ms)
+ GET /classes 200 in 96ms (compile: 4ms, render: 91ms)
+ GET /classes/cmi2iouvw000hzrsg0l192aca 200 in 197ms (compile: 90ms, render: 107ms)

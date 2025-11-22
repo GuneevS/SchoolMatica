@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { createStudentRecord, generateAdmissionNumber } from "@/lib/domain/student-onboarding";
 
 interface Params {
   params: Promise<{ registrationId: string }>;
@@ -59,18 +60,29 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     if (!effectiveClassGroupId) {
       return NextResponse.json({ error: "Class group required to approve registration" }, { status: 400 });
     }
-    const classGroupId = effectiveClassGroupId!;
+    const classGroupId = effectiveClassGroupId;
     const learnerData = registration.learnerData as Record<string, string>;
-    const admissionNumber = `ADM-${Date.now().toString().slice(-6)}`;
-    const student = await prisma.student.create({
-      data: {
+    const guardianData = registration.guardianData as Record<string, string> | null;
+    const student = await createStudentRecord(
+      {
         classGroupId,
-        admissionNumber,
-        firstName: learnerData.firstName ?? "Learner",
-        lastName: learnerData.lastName ?? "Pending",
-        gender: learnerData.gender ?? "",
+        admissionNumber: generateAdmissionNumber(learnerData.admissionNumber as string | undefined),
+        firstName: (learnerData.firstName as string) ?? "Learner",
+        lastName: (learnerData.lastName as string) ?? "Pending",
+        gender: (learnerData.gender as string) ?? "",
+        advisorTeacherId: learnerData.advisorTeacherId as string | undefined,
+        guardian: guardianData
+          ? {
+              fullName: (guardianData.guardianName as string) ?? "Guardian",
+              relationship: (guardianData.relationship as string) ?? "Guardian",
+              email: guardianData.email as string | undefined,
+              phone: guardianData.phone as string | undefined,
+              primary: true,
+            }
+          : null,
       },
-    });
+      prisma,
+    );
     studentId = student.id;
     updates.student = { connect: { id: student.id } };
   }

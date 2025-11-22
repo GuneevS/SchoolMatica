@@ -2,6 +2,68 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model AppUser {
+  id            String               @id @default(cuid())
+  email         String               @unique
+  displayName   String
+  school        School               @relation(fields: [schoolId], references: [id])
+  schoolId      String
+  teacher       Teacher?             @relation("TeacherAccount", fields: [teacherId], references: [id])
+  teacherId     String?              @unique
+  roleAssignments UserRoleAssignment[]
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+}
+
+model RoleDefinition {
+  id          String             @id @default(cuid())
+  key         String             @unique
+  name        String
+  description String?
+  priority    Int                @default(0)
+  assignments UserRoleAssignment[]
+  permissions RolePermission[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+model PermissionDefinition {
+  id          String           @id @default(cuid())
+  key         String           @unique
+  resource    String
+  action      String
+  description String?
+  grants      RolePermission[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([resource, action])
+}
+
+model RolePermission {
+  id            String               @id @default(cuid())
+  role          RoleDefinition       @relation(fields: [roleId], references: [id])
+  roleId        String
+  permission    PermissionDefinition @relation(fields: [permissionId], references: [id])
+  permissionId  String
+  createdAt     DateTime             @default(now())
+
+  @@unique([roleId, permissionId])
+}
+
+model UserRoleAssignment {
+  id            String         @id @default(cuid())
+  user          AppUser        @relation(fields: [userId], references: [id])
+  userId        String
+  role          RoleDefinition @relation(fields: [roleId], references: [id])
+  roleId        String
+  scopeSchoolId String?
+  scopeClassId  String?
+  createdAt     DateTime       @default(now())
+
+  @@index([userId, roleId])
+}
+
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
@@ -20,6 +82,7 @@ model School {
   gradeLevels     GradeLevel[]
   auditLogs       AuditLog[]
   learnerRegistrations LearnerRegistration[]
+  users           AppUser[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 }
@@ -98,6 +161,7 @@ model Teacher {
   classAssignments ClassTeacherAssignment[]
   subjectAssignments TeacherSubjectAssignment[]
   advisees    Student[]                  @relation("AdvisorTeacher")
+  account     AppUser?                   @relation("TeacherAccount")
   createdAt   DateTime                   @default(now())
   updatedAt   DateTime                   @updatedAt
 }

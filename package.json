@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "prisma generate && cross-env PORT=43123 next dev",
+    "dev": "prisma generate && cross-env HOST=0.0.0.0 next dev --hostname 0.0.0.0",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint"

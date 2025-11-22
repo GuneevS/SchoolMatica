@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { createStudentRecord } from "@/lib/domain/student-onboarding";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -13,14 +15,6 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(students);
 }
 
-const parentSchema = z.object({
-  fullName: z.string().min(2),
-  relationship: z.string().min(2),
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-  primary: z.boolean().optional(),
-});
-
 const studentSchema = z.object({
   classGroupId: z.string(),
   admissionNumber: z.string().min(1),
@@ -28,7 +22,10 @@ const studentSchema = z.object({
   lastName: z.string().min(1),
   gender: z.string().optional(),
   advisorTeacherId: z.string().optional(),
-  parents: z.array(parentSchema).optional(),
+  guardianName: z.string().optional(),
+  guardianRelationship: z.string().optional(),
+  guardianEmail: z.string().email().optional().or(z.literal("")),
+  guardianPhone: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -43,25 +40,53 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Class not found" }, { status: 404 });
   }
 
-  const student = await prisma.student.create({
-    data: {
+  const guardian = parsed.data.guardianName
+    ? {
+        fullName: parsed.data.guardianName,
+        relationship: parsed.data.guardianRelationship,
+        email: parsed.data.guardianEmail || undefined,
+        phone: parsed.data.guardianPhone || undefined,
+        primary: true,
+      }
+    : null;
+
+  const student = await createStudentRecord(
+    {
       classGroupId: parsed.data.classGroupId,
       admissionNumber: parsed.data.admissionNumber,
       firstName: parsed.data.firstName,
       lastName: parsed.data.lastName,
-      gender: parsed.data.gender ?? "",
+      gender: parsed.data.gender,
       advisorTeacherId: parsed.data.advisorTeacherId,
-      parents: parsed.data.parents?.length
-        ? {
-            create: parsed.data.parents.map((parent) => ({
-              fullName: parent.fullName,
-              relationship: parent.relationship,
-              email: parent.email,
-              phone: parent.phone,
-              primary: parent.primary ?? parent === parsed.data.parents?.[0],
-            })),
-          }
-        : undefined,
+      guardian,
+    },
+    prisma,
+  );
+
+  await prisma.learnerRegistration.create({
+    data: {
+      schoolId: classGroup.schoolId,
+      classGroupId: classGroup.id,
+      status: "Approved",
+      learnerData: {
+        firstName: parsed.data.firstName,
+        lastName: parsed.data.lastName,
+        gender: parsed.data.gender,
+        admissionNumber: parsed.data.admissionNumber,
+      } as Prisma.JsonObject,
+      guardianData: guardian
+        ? ({
+            guardianName: guardian.fullName,
+            relationship: guardian.relationship ?? "Guardian",
+            email: guardian.email,
+            phone: guardian.phone,
+          } as Prisma.JsonObject)
+        : Prisma.JsonNull,
+      supportingDocs: Prisma.JsonNull,
+      studentId: student.id,
+      submittedAt: new Date(),
+      decidedAt: new Date(),
+      decisionNote: "Auto-approved via markbook quick add",
     },
   });
 

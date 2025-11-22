@@ -1,0 +1,147 @@
+nohup: ignoring input
+
+> schoolmatica@0.1.0 dev
+> prisma generate && cross-env HOST=0.0.0.0 next dev --hostname 0.0.0.0
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma config detected, skipping environment variable loading.
+Prisma schema loaded from prisma/schema.prisma
+┌─────────────────────────────────────────────────────────┐
+│  Update available 6.19.0 -> 7.0.0                       │
+│                                                         │
+│  This is a major update - please follow the guide at    │
+│  https://pris.ly/d/major-version-upgrade                │
+│                                                         │
+│  Run the following to update                            │
+│    npm i --save-dev prisma@latest                       │
+│    npm i @prisma/client@latest                          │
+└─────────────────────────────────────────────────────────┘
+
+✔ Generated Prisma Client (v6.19.0) to ./node_modules/@prisma/client in 252ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+
+ ⚠ Port 3000 is in use by an unknown process, using available port 3001 instead.
+   ▲ Next.js 16.0.3 (Turbopack)
+   - Local:         http://localhost:3001
+   - Network:       http://0.0.0.0:3001
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 826ms
+ ○ Compiling / ...
+ GET / 307 in 4.3s (compile: 4.1s, render: 261ms)
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+ GET /dashboard 200 in 2.4s (compile: 1861ms, render: 508ms)
+ ⚠ Cross origin request detected from cream-voters-championships-argument.trycloudflare.com to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ GET /api/schools 200 in 595ms (compile: 569ms, render: 27ms)
+ GET / 307 in 97ms (compile: 6ms, render: 91ms)
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+ GET /dashboard 200 in 165ms (compile: 3ms, render: 162ms)
+ GET /api/schools 200 in 19ms (compile: 5ms, render: 14ms)
+ GET / 307 in 136ms (compile: 7ms, render: 129ms)
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+ GET /dashboard 200 in 228ms (compile: 5ms, render: 223ms)
+ GET /api/schools 200 in 20ms (compile: 6ms, render: 14ms)
+ GET /classes 200 in 1265ms (compile: 1209ms, render: 56ms)
+ GET /assessment-plans 200 in 1059ms (compile: 1009ms, render: 50ms)
+ GET /registrations 200 in 932ms (compile: 880ms, render: 51ms)
+ GET /students 200 in 853ms (compile: 809ms, render: 44ms)
+ GET /classes/cmi2iouvw000hzrsg0l192aca 200 in 1884ms (compile: 1777ms, render: 107ms)
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+ GET /classes/cmi2iouvw000hzrsg0l192aca 200 in 509ms (compile: 79ms, render: 430ms)
+ GET /api/schools 200 in 18ms (compile: 5ms, render: 13ms)
+ GET /assessment-plans 200 in 102ms (compile: 7ms, render: 94ms)
+ GET /registrations 200 in 74ms (compile: 5ms, render: 68ms)
+ GET /students 200 in 63ms (compile: 5ms, render: 58ms)
+ GET /teachers 200 in 886ms (compile: 849ms, render: 37ms)
+ GET /schools 200 in 784ms (compile: 733ms, render: 52ms)
+ POST /api/grade-levels 201 in 338ms (compile: 302ms, render: 36ms)
+ GET /schools 200 in 77ms (compile: 4ms, render: 72ms)
+ POST /api/grade-levels 201 in 36ms (compile: 4ms, render: 33ms)
+ GET /schools 200 in 66ms (compile: 4ms, render: 62ms)
+ POST /api/grade-levels 201 in 33ms (compile: 1963µs, render: 31ms)
+ GET /schools 200 in 73ms (compile: 5ms, render: 68ms)
+ POST /api/grade-levels 201 in 33ms (compile: 3ms, render: 30ms)
+ GET /schools 200 in 63ms (compile: 5ms, render: 58ms)
+ POST /api/grade-levels 201 in 44ms (compile: 4ms, render: 41ms)
+ GET /schools 200 in 234ms (compile: 179ms, render: 55ms)
+ GET /registrations 200 in 70ms (compile: 5ms, render: 65ms)
+ GET /students 200 in 62ms (compile: 6ms, render: 56ms)
+ GET /teachers 200 in 67ms (compile: 4ms, render: 63ms)
+ GET /schools 200 in 55ms (compile: 5ms, render: 50ms)
+ GET /teachers 200 in 67ms (compile: 5ms, render: 62ms)
+ GET /assessment-plans 200 in 78ms (compile: 5ms, render: 74ms)
+ GET / 307 in 139ms (compile: 6ms, render: 133ms)
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+ GET /dashboard 200 in 194ms (compile: 4ms, render: 191ms)
+ GET /api/schools 200 in 18ms (compile: 4ms, render: 14ms)
+ ✓ Compiled in 329ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /assessment-plans 200 in 430ms (compile: 116ms, render: 314ms)
+ GET /api/schools 200 in 15ms (compile: 4ms, render: 11ms)
+ ✓ Compiled in 300ms
+ GET /students 200 in 147ms (compile: 99ms, render: 48ms)
+ GET /registrations 200 in 173ms (compile: 111ms, render: 62ms)
+ GET /classes 200 in 196ms (compile: 129ms, render: 67ms)
+ GET /teachers 200 in 227ms (compile: 171ms, render: 57ms)
+ GET /students 200 in 54ms (compile: 4ms, render: 49ms)
+ GET /schools 200 in 155ms (compile: 110ms, render: 45ms)
+ GET /settings/grading 200 in 693ms (compile: 641ms, render: 52ms)
+ GET /teachers 200 in 87ms (compile: 7ms, render: 80ms)
+ GET /registrations 200 in 74ms (compile: 5ms, render: 69ms)
+ GET /settings/grading 200 in 247ms (compile: 5ms, render: 242ms)
+ GET /api/schools 200 in 21ms (compile: 4ms, render: 16ms)
+ GET /students 200 in 54ms (compile: 5ms, render: 49ms)
+ GET /assessment-plans 200 in 210ms (compile: 140ms, render: 70ms)
+ GET /classes 200 in 89ms (compile: 5ms, render: 84ms)
+ GET /dashboard 200 in 151ms (compile: 5ms, render: 146ms)
+ GET /students 200 in 58ms (compile: 4ms, render: 53ms)
+ GET /registrations 200 in 68ms (compile: 5ms, render: 64ms)
+ GET /assessment-plans 200 in 89ms (compile: 5ms, render: 84ms)
+ GET /classes 200 in 90ms (compile: 5ms, render: 85ms)
+ GET /dashboard 200 in 141ms (compile: 5ms, render: 136ms)
+ GET /students 200 in 54ms (compile: 5ms, render: 49ms)
+ GET /students/cmi2iouvx000ozrsgzqqnbw3f 200 in 1088ms (compile: 1022ms, render: 65ms)
+ GET /teachers 200 in 77ms (compile: 5ms, render: 72ms)
+ GET /settings/grading 200 in 77ms (compile: 4ms, render: 73ms)
+ GET /teachers 200 in 58ms (compile: 4ms, render: 53ms)
+ GET /students 200 in 31ms (compile: 3ms, render: 29ms)
+ GET /assessment-plans 200 in 53ms (compile: 5ms, render: 48ms)
+ GET /classes 200 in 58ms (compile: 5ms, render: 53ms)
+ GET /dashboard 200 in 119ms (compile: 5ms, render: 114ms)
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+ GET /dashboard 200 in 184ms (compile: 4ms, render: 180ms)
+ GET /api/schools 200 in 15ms (compile: 4ms, render: 11ms)
+ GET /classes 200 in 105ms (compile: 7ms, render: 98ms)
+ GET /assessment-plans 200 in 81ms (compile: 5ms, render: 76ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 1507ms (compile: 1455ms, render: 52ms)
+ POST /api/uploads 200 in 281ms (compile: 196ms, render: 85ms)
+ POST /api/assessment-documents 400 in 197ms (compile: 189ms, render: 8ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 144ms (compile: 83ms, render: 61ms)
+ GET /registrations 200 in 70ms (compile: 5ms, render: 65ms)
+ GET /classes 200 in 76ms (compile: 5ms, render: 70ms)
+ GET /dashboard 200 in 106ms (compile: 4ms, render: 102ms)

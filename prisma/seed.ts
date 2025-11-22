@@ -25,6 +25,44 @@ const gradingBands = [
   { minPercent: 90, level: 7, descriptor: "Outstanding" },
 ];
 
+const permissionSeeds = [
+  { key: "assessmentPlan:read", resource: "assessmentPlan", action: "read", description: "View assessment plans" },
+  { key: "assessmentPlan:create", resource: "assessmentPlan", action: "create", description: "Create assessment plans" },
+  { key: "assessmentPlan:update", resource: "assessmentPlan", action: "update", description: "Edit assessment plans" },
+  { key: "assessmentPlan:advance", resource: "assessmentPlan", action: "advance", description: "Submit plans for approval" },
+  { key: "assessmentPlan:approve", resource: "assessmentPlan", action: "approve", description: "Approve or lock assessment plans" },
+  { key: "assessmentDocument:upload", resource: "assessmentDocument", action: "upload", description: "Upload assessment documents" },
+  { key: "assessmentDocument:decide", resource: "assessmentDocument", action: "decide", description: "Approve or request changes on documents" },
+];
+
+const roleSeeds = [
+  { key: "teacher", name: "Teacher", priority: 10, description: "Class educator" },
+  { key: "hod", name: "Head of Department", priority: 20, description: "Department approver" },
+  { key: "smt", name: "SMT", priority: 30, description: "School management team" },
+];
+
+const rolePermissionMatrix: Record<string, string[]> = {
+  teacher: ["assessmentPlan:read", "assessmentPlan:create", "assessmentPlan:update", "assessmentPlan:advance", "assessmentDocument:upload"],
+  hod: [
+    "assessmentPlan:read",
+    "assessmentPlan:create",
+    "assessmentPlan:update",
+    "assessmentPlan:advance",
+    "assessmentPlan:approve",
+    "assessmentDocument:upload",
+    "assessmentDocument:decide",
+  ],
+  smt: [
+    "assessmentPlan:read",
+    "assessmentPlan:create",
+    "assessmentPlan:update",
+    "assessmentPlan:advance",
+    "assessmentPlan:approve",
+    "assessmentDocument:upload",
+    "assessmentDocument:decide",
+  ],
+};
+
 const assessmentSeed = [
   { taskName: "Listening & Speaking", term: "T1", totalMark: 10, rawWeight: 10, type: "Task", isPatComponent: false },
   { taskName: "Reading & Viewing", term: "T1", totalMark: 30, rawWeight: 15, type: "Assignment", isPatComponent: false },
@@ -57,6 +95,11 @@ async function seed() {
   await prisma.curriculumTemplate.deleteMany();
   await prisma.auditLog.deleteMany();
   await prisma.learnerRegistration.deleteMany();
+  await prisma.userRoleAssignment.deleteMany();
+  await prisma.rolePermission.deleteMany();
+  await prisma.permissionDefinition.deleteMany();
+  await prisma.roleDefinition.deleteMany();
+  await prisma.appUser.deleteMany();
   await prisma.student.deleteMany();
   await prisma.classGroup.deleteMany();
   await prisma.subject.deleteMany();
@@ -101,6 +144,61 @@ async function seed() {
       bio: "Grade 10 English HL lead teacher",
     },
   });
+
+  const hodTeacher = await prisma.teacher.create({
+    data: {
+      firstName: "Bongani",
+      lastName: "Khuzwayo",
+      email: "bongani.khuzwayo@schoolmatica.com",
+      phone: "+27 82 555 1111",
+      role: "HOD",
+      schoolId: school.id,
+      bio: "English department head",
+    },
+  });
+
+  const smtTeacher = await prisma.teacher.create({
+    data: {
+      firstName: "Thuli",
+      lastName: "Nkadimeng",
+      email: "thuli.nkadimeng@schoolmatica.com",
+      phone: "+27 82 999 2222",
+      role: "SMT",
+      schoolId: school.id,
+      bio: "Deputy Principal",
+    },
+  });
+
+  await prisma.permissionDefinition.createMany({ data: permissionSeeds });
+  const permissions = await prisma.permissionDefinition.findMany();
+  const permissionByKey = new Map<string, (typeof permissions)[number]>(
+    permissions.map((permission: (typeof permissions)[number]) => [permission.key, permission]),
+  );
+
+  const roles = await Promise.all(
+    roleSeeds.map((roleSeed) =>
+      prisma.roleDefinition.create({
+        data: roleSeed,
+      }),
+    ),
+  );
+  const roleByKey = new Map<string, (typeof roles)[number]>(
+    roles.map((role: (typeof roles)[number]) => [role.key, role]),
+  );
+
+  for (const [roleKey, permissionKeys] of Object.entries(rolePermissionMatrix)) {
+    const role = roleByKey.get(roleKey);
+    if (!role) continue;
+    const rolePermissionData: { roleId: string; permissionId: string }[] = [];
+    for (const permissionKey of permissionKeys) {
+      const permission = permissionByKey.get(permissionKey);
+      if (!permission) continue;
+      rolePermissionData.push({ roleId: role.id, permissionId: permission.id });
+    }
+    if (rolePermissionData.length) {
+      await prisma.rolePermission.createMany({ data: rolePermissionData });
+    }
+  }
 
   const subject = await prisma.subject.create({
     data: {
@@ -157,6 +255,53 @@ async function seed() {
         ],
       },
     },
+  });
+
+  const nalediUser = await prisma.appUser.create({
+    data: {
+      email: leadTeacher.email,
+      displayName: `${leadTeacher.firstName} ${leadTeacher.lastName}`,
+      schoolId: school.id,
+      teacherId: leadTeacher.id,
+    },
+  });
+
+  const hodUser = await prisma.appUser.create({
+    data: {
+      email: hodTeacher.email,
+      displayName: `${hodTeacher.firstName} ${hodTeacher.lastName}`,
+      schoolId: school.id,
+      teacherId: hodTeacher.id,
+    },
+  });
+
+  const smtUser = await prisma.appUser.create({
+    data: {
+      email: smtTeacher.email,
+      displayName: `${smtTeacher.firstName} ${smtTeacher.lastName}`,
+      schoolId: school.id,
+      teacherId: smtTeacher.id,
+    },
+  });
+
+  await prisma.userRoleAssignment.createMany({
+    data: [
+      {
+        userId: nalediUser.id,
+        roleId: roleByKey.get("teacher")!.id,
+        scopeSchoolId: school.id,
+      },
+      {
+        userId: hodUser.id,
+        roleId: roleByKey.get("hod")!.id,
+        scopeSchoolId: school.id,
+      },
+      {
+        userId: smtUser.id,
+        roleId: roleByKey.get("smt")!.id,
+        scopeSchoolId: school.id,
+      },
+    ],
   });
 
   const students = await Promise.all(

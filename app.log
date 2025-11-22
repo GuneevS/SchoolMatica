@@ -1,0 +1,40 @@
+
+> schoolmatica@0.1.0 dev
+> prisma generate && cross-env HOST=0.0.0.0 next dev --hostname 0.0.0.0
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma config detected, skipping environment variable loading.
+Prisma schema loaded from prisma/schema.prisma
+
+✔ Generated Prisma Client (v6.19.0) to ./node_modules/@prisma/client in 269ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+
+   ▲ Next.js 16.0.3 (Turbopack)
+   - Local:         http://localhost:44777
+   - Network:       http://0.0.0.0:44777
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 805ms
+ ○ Compiling / ...
+ GET / 307 in 4.2s (compile: 3.9s, render: 264ms)
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+ GET /dashboard 200 in 2.2s (compile: 1637ms, render: 562ms)
+ ⚠ Cross origin request detected from eligibility-ventures-kentucky-greene.trycloudflare.com to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ GET /api/schools 200 in 515ms (compile: 488ms, render: 27ms)
+ HEAD / 307 in 86ms (compile: 5ms, render: 82ms)
+ GET / 307 in 87ms (compile: 7ms, render: 80ms)
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+ GET /dashboard 200 in 165ms (compile: 2ms, render: 163ms)
+ GET /api/schools 200 in 14ms (compile: 4ms, render: 10ms)

@@ -24,7 +24,13 @@ import {
   Calendar,
   CheckCircle2,
   Save,
-  PieChart as PieChartIcon
+  PieChart as PieChartIcon,
+  Send,
+  ThumbsUp,
+  Lock,
+  Unlock,
+  AlertCircle,
+  Clock
 } from "lucide-react";
 import { useRoleStore } from "@/lib/stores/role-store";
 import type { AssessmentWeightInsightMap, TermWeights } from "@/lib/calculations";
@@ -38,8 +44,17 @@ interface Props {
 export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeights, weightInsights }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [mounted, setMounted] = useState(false);
   const role = useRoleStore((state) => state.role);
-  const canEdit = role !== "Teacher";
+  
+  // Editing permissions based on status and role
+  const canEdit = (() => {
+    if (plan.status === "Locked") return false; // No one can edit locked plans
+    if (plan.status === "PendingApproval") return false; // No edits while pending
+    if (plan.status === "Draft") return role !== "Teacher"; // HOD/SMT can edit drafts
+    if (plan.status === "Approved") return role === "HOD" || role === "SMT"; // Only HOD/SMT can edit approved
+    return false;
+  })();
   
   // Local state for real-time updates
   const [assessments, setAssessments] = useState(plan.assessments);
@@ -149,13 +164,29 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
     });
   };
 
+  const updatePlanStatus = async (targetStatus: "Draft" | "PendingApproval" | "Approved" | "Locked") => {
+    startTransition(async () => {
+      await fetch(`/api/assessment-plans/${plan.id}/workflow`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          targetStatus, 
+          actorRole: role,
+          actorName: "Current User" // TODO: Get from auth
+        }),
+      });
+      await fetch("/api/revalidate?path=/dashboard", { method: "POST" });
+      router.refresh();
+    });
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header with Status */}
+      {/* Header with Status and Approval Actions */}
       <Card className="border-2 border-primary/20">
         <CardHeader>
           <div className="flex items-start justify-between">
-            <div className="space-y-1">
+            <div className="space-y-2">
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-primary" />
                 Assessment Workspace
@@ -168,24 +199,154 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
                 <span>
                   Total: <strong className="text-foreground">{totalWeight.toFixed(1)}%</strong>
                 </span>
-                <span>•</span>
-                <span>
-                  Status: <Badge variant={plan.status === "Locked" ? "default" : "secondary"}>{plan.status}</Badge>
-                </span>
               </div>
             </div>
-            <div className="flex gap-2">
-              {hasChanges && (
-                <Button size="sm" onClick={updateTermWeights} disabled={isPending || !isTermWeightsValid}>
-                  <Save className="h-4 w-4 mr-1" />
-                  Save Changes
-                </Button>
+            
+            {/* Approval Status Badge */}
+            <div className="flex flex-col items-end gap-2">
+              {plan.status === "Draft" && (
+                <Badge variant="outline" className="bg-yellow-50 dark:bg-yellow-950/20 border-yellow-500 text-yellow-700 dark:text-yellow-400 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  Draft
+                </Badge>
               )}
-              <Button variant="outline" size="sm" disabled={!canEdit || isPending}>
-                Submit for Approval
-              </Button>
+              {plan.status === "PendingApproval" && (
+                <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950/20 border-blue-500 text-blue-700 dark:text-blue-400 flex items-center gap-1 animate-pulse">
+                  <Clock className="h-3 w-3" />
+                  Pending Approval
+                </Badge>
+              )}
+              {plan.status === "Approved" && (
+                <Badge variant="outline" className="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-500 text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Approved
+                </Badge>
+              )}
+              {plan.status === "Locked" && (
+                <Badge className="bg-gray-100 dark:bg-gray-800 border-gray-400 text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                  <Lock className="h-3 w-3" />
+                  Locked
+                </Badge>
+              )}
+              
+              <div className="flex gap-2">
+                {hasChanges && (
+                  <Button size="sm" onClick={updateTermWeights} disabled={isPending || !isTermWeightsValid}>
+                    <Save className="h-4 w-4 mr-1" />
+                    Save Weights
+                  </Button>
+                )}
+                
+                {/* Approval Action Buttons - Contextual based on status and role */}
+                {plan.status === "Draft" && canEdit && (
+                  <Button 
+                    size="sm" 
+                    onClick={() => updatePlanStatus("PendingApproval")}
+                    disabled={isPending || assessments.length === 0}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Send className="h-4 w-4 mr-1" />
+                    Submit for Approval
+                  </Button>
+                )}
+                
+                {plan.status === "PendingApproval" && role === "Teacher" && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => updatePlanStatus("Draft")}
+                    disabled={isPending}
+                  >
+                    Withdraw
+                  </Button>
+                )}
+                
+                {plan.status === "PendingApproval" && (role === "HOD" || role === "SMT") && (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => updatePlanStatus("Draft")}
+                      disabled={isPending}
+                      className="border-red-500 text-red-600 hover:bg-red-50"
+                    >
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      Reject
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      onClick={() => updatePlanStatus("Approved")}
+                      disabled={isPending}
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                    >
+                      <ThumbsUp className="h-4 w-4 mr-1" />
+                      Approve Plan
+                    </Button>
+                  </>
+                )}
+                
+                {plan.status === "Approved" && role === "SMT" && (
+                  <Button 
+                    size="sm" 
+                    onClick={() => updatePlanStatus("Locked")}
+                    disabled={isPending}
+                    className="bg-gray-600 hover:bg-gray-700"
+                  >
+                    <Lock className="h-4 w-4 mr-1" />
+                    Lock Plan
+                  </Button>
+                )}
+                
+                {plan.status === "Approved" && (role === "HOD" || role === "SMT") && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => updatePlanStatus("Draft")}
+                    disabled={isPending}
+                  >
+                    Return to Draft
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
+          
+          {/* Status Help Text */}
+          {plan.status === "Draft" && (
+            <Alert className="mt-4">
+              <Info className="h-4 w-4" />
+              <AlertDescription className="text-sm">
+                This plan is in <strong>Draft</strong> mode. Complete your assessments and term weights, then submit for approval.
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {plan.status === "PendingApproval" && role === "Teacher" && (
+            <Alert className="mt-4 bg-blue-50 dark:bg-blue-950/20 border-blue-200">
+              <Clock className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-sm text-blue-800 dark:text-blue-200">
+                This plan is awaiting approval from HOD or SMT. You can withdraw it to make changes.
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {plan.status === "PendingApproval" && (role === "HOD" || role === "SMT") && (
+            <Alert className="mt-4 bg-blue-50 dark:bg-blue-950/20 border-blue-200">
+              <AlertCircle className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-sm text-blue-800 dark:text-blue-200">
+                This plan requires your approval. Review the assessments and weights before approving.
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {plan.status === "Locked" && (
+            <Alert className="mt-4 bg-gray-50 dark:bg-gray-900/20 border-gray-200">
+              <Lock className="h-4 w-4 text-gray-600" />
+              <AlertDescription className="text-sm text-gray-800 dark:text-gray-200">
+                This plan is <strong>locked</strong> and cannot be modified. All assessments and weights are finalized.
+              </AlertDescription>
+            </Alert>
+          )}
         </CardHeader>
       </Card>
 

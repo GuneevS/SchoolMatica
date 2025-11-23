@@ -23,6 +23,7 @@ export function MarkbookGrid({ payload }: Props) {
   const [termFilter, setTermFilter] = useState<string>("ALL");
   const [highlightLow, setHighlightLow] = useState(false);
   const [heatMapMode, setHeatMapMode] = useState(false);
+  const [showTermTotals, setShowTermTotals] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState(payload.rows[0]?.student.id ?? "");
   const [isPending, startTransition] = useTransition();
   const role = useRoleStore((state) => state.role);
@@ -178,6 +179,14 @@ export function MarkbookGrid({ payload }: Props) {
               >
                 <TrendingUp className="h-4 w-4 mr-1" />
                 Heat Map
+              </Button>
+              <Button
+                variant={showTermTotals ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setShowTermTotals((prev) => !prev)}
+              >
+                <Info className="h-4 w-4 mr-1" />
+                Term Totals
               </Button>
             </div>
             <div className="text-right">
@@ -409,18 +418,66 @@ export function MarkbookGrid({ payload }: Props) {
                 <span>SBA (classroom)</span>
                 <span>{selectedRow.componentBreakdown.schoolBasedPercent.toFixed(1)}%</span>
               </div>
+              {showTermTotals && (
+                <div className="space-y-2 border-t pt-4">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    Term Mark Totals
+                  </h4>
+                  {Object.entries(selectedRow.termResults ?? {}).map(([term, value]) => {
+                    const termAssessments = selectedRow.marks.filter(m => {
+                      const assessment = payload.assessments.find(a => a.id === m.assessmentId);
+                      return assessment?.term === term;
+                    });
+                    const termTotal = termAssessments.reduce((sum, mark) => {
+                      if (mark.isAbsent || mark.rawMark === null) return sum;
+                      return sum + mark.rawMark;
+                    }, 0);
+                    const termPossible = termAssessments.reduce((sum, mark) => {
+                      const assessment = payload.assessments.find(a => a.id === mark.assessmentId);
+                      return sum + (assessment?.totalMark ?? 0);
+                    }, 0);
+                    
+                    return (
+                      <div key={term} className="rounded-lg border bg-muted/30 p-3 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">{term}</span>
+                          <Badge variant="outline">{termTotal}/{termPossible} marks</Badge>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>Percentage</span>
+                          <span className="font-semibold text-foreground">{value.sbaPercent.toFixed(1)}%</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>Contribution to Year</span>
+                          <span className="font-semibold text-primary">{value.contribution.toFixed(1)}%</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              
               <div className="space-y-2">
+                <h4 className="text-sm font-semibold">Assessment Details</h4>
                 {selectedRow.marks.map((mark) => {
                   const assessment = payload.assessments.find((item) => item.id === mark.assessmentId);
                   if (!assessment) return null;
                   const insight = weightInsights?.assessments?.[assessment.id];
+                  const percentage = mark.rawMark && assessment.totalMark 
+                    ? ((mark.rawMark / assessment.totalMark) * 100).toFixed(1)
+                    : "-";
                   return (
                     <div key={mark.assessmentId} className="rounded-md border p-2">
                       <p className="text-sm font-medium">{assessment.taskName}</p>
                       <p className="text-xs text-muted-foreground">
-                        {mark.isAbsent ? "Absent" : `${mark.rawMark ?? "-"}/${assessment.totalMark}`} · {assessment.term} · Eff.
-                        {(insight?.effectiveFinalPercent ?? assessment.weightPercent ?? 0).toFixed(1)}%
+                        {mark.isAbsent ? "Absent" : `${mark.rawMark ?? "-"}/${assessment.totalMark} (${percentage}%)`} · {assessment.term}
                       </p>
+                      {showTermTotals && (
+                        <p className="text-xs text-primary">
+                          Weight: {(insight?.effectiveFinalPercent ?? assessment.weightPercent ?? 0).toFixed(1)}%
+                        </p>
+                      )}
                     </div>
                   );
                 })}

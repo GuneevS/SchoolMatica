@@ -13,6 +13,10 @@ import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 import { BookOpenCheck } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getActiveSchool } from "@/lib/school";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ManageTeachers } from "@/components/classes/manage-teachers";
+import { ManageStudents } from "@/components/classes/manage-students";
+import { TimetableGrid } from "@/components/timetable/timetable-grid";
 
 interface Props {
   params: Promise<{ classId: string }>;
@@ -22,34 +26,63 @@ interface Props {
 export default async function ClassMarkbookPage({ params, searchParams }: Props) {
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
-  const payload = await getClassMarkbookPayload(resolvedParams.classId, resolvedSearchParams?.planId);
+  
+  const schoolData = await getActiveSchool();
+  
+  // Parallel data fetching
+  const [payload, assignments, timetable] = await Promise.all([
+      getClassMarkbookPayload(resolvedParams.classId, resolvedSearchParams?.planId),
+      prisma.classTeacherAssignment.findMany({
+        where: { classGroupId: resolvedParams.classId },
+        include: { teacher: true },
+      }),
+      schoolData ? prisma.timetable.findFirst({
+        where: { 
+            schoolId: schoolData.id,
+            // status: "Active" // removed status filter for now to ensure we see something
+        },
+        orderBy: { createdAt: "desc" },
+        include: {
+            periods: {
+                include: {
+                    slots: {
+                        where: { classGroupId: resolvedParams.classId },
+                        include: {
+                            classGroup: { include: { subject: true } },
+                            teacher: true,
+                            period: true,
+                            assessmentPlan: true
+                        }
+                    }
+                }
+            },
+            slots: {
+                where: { classGroupId: resolvedParams.classId },
+                 include: {
+                    classGroup: { include: { subject: true } },
+                    teacher: true,
+                    period: true,
+                    assessmentPlan: true
+                }
+            }
+        }
+      }) : null
+  ]);
+
   if (!payload) {
     notFound();
   }
-  if (!payload.assessmentPlan) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>No assessment plan</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Create an assessment plan for this class before capturing marks.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   const markbook = payload as MarkbookPayload;
-  const school = await getActiveSchool();
-  const teacherOptions = school
+  const students = payload.rows.map(row => row.student);
+  const teacherOptions = schoolData
     ? await prisma.teacher.findMany({
-        where: { schoolId: school.id },
+        where: { schoolId: schoolData.id },
         orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
       })
     : [];
-  const currentPlan = markbook.assessmentPlan!;
+  
+  const currentPlan = markbook.assessmentPlan;
   const rosterSize = markbook.rows.length;
   const completion = markbook.stats.totalMarks === 0 ? 0 : Math.round((markbook.stats.capturedMarks / markbook.stats.totalMarks) * 100);
 
@@ -61,17 +94,19 @@ export default async function ClassMarkbookPage({ params, searchParams }: Props)
           eyebrow={`Grade ${markbook.classGroup.grade}`}
           title={
             <>
-              <span className="gradient-text">{markbook.classGroup.name}</span> markbook
+              <span className="gradient-text">{markbook.classGroup.name}</span>
             </>
           }
-          description={`${markbook.classGroup.subject.name} · ${rosterSize} learners tracked`}
-          badges={[
+          description={`${markbook.classGroup.subject?.name} · ${rosterSize} learners tracked`}
+          badges={currentPlan ? [
             { label: currentPlan.status, color: "hsl(var(--accent-mint))" },
             { label: `${markbook.availablePlans.length} plans available`, color: "hsl(var(--accent-cobalt))" },
-          ]}
+          ] : []}
           actions={
             <div className="flex flex-wrap gap-2">
-              <PlanSwitcher plans={markbook.availablePlans} currentPlanId={currentPlan.id} />
+              {currentPlan && (
+                  <PlanSwitcher plans={markbook.availablePlans} currentPlanId={currentPlan.id} />
+              )}
               <AddStudentDialog
                 classId={markbook.classGroup.id}
                 teachers={teacherOptions.map((teacher) => ({
@@ -98,17 +133,72 @@ export default async function ClassMarkbookPage({ params, searchParams }: Props)
             />
           }
         />
-        <MarkbookSummary stats={markbook.stats} plan={currentPlan} />
-      <Card>
-        <CardHeader>
-          <CardTitle>SBA distribution</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <DistributionChart payload={markbook} />
-        </CardContent>
-      </Card>
-      <MarkbookGrid key={currentPlan.id} payload={markbook} />
-    </div>
+
+        <Tabs defaultValue="markbook" className="w-full">
+            <TabsList>
+                <TabsTrigger value="markbook">Markbook</TabsTrigger>
+                <TabsTrigger value="students">Students</TabsTrigger>
+                <TabsTrigger value="teachers">Teachers</TabsTrigger>
+                <TabsTrigger value="timetable">Timetable</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="markbook" className="space-y-6">
+                {!currentPlan ? (
+                    <Card>
+                        <CardHeader>
+                        <CardTitle>No assessment plan</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                        <p className="text-muted-foreground">
+                            Create an assessment plan for this class before capturing marks.
+                        </p>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <>
+                        <MarkbookSummary stats={markbook.stats} plan={currentPlan} />
+                        <Card>
+                            <CardHeader>
+                            <CardTitle>SBA distribution</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                            <DistributionChart payload={markbook} />
+                            </CardContent>
+                        </Card>
+                        <MarkbookGrid key={currentPlan.id} payload={markbook} />
+                    </>
+                )}
+            </TabsContent>
+
+            <TabsContent value="students">
+                <ManageStudents 
+                    classId={markbook.classGroup.id}
+                    students={students}
+                />
+            </TabsContent>
+
+            <TabsContent value="teachers">
+                <ManageTeachers 
+                    classId={markbook.classGroup.id}
+                    assignments={assignments}
+                    allTeachers={teacherOptions}
+                />
+            </TabsContent>
+
+            <TabsContent value="timetable">
+                 {timetable ? (
+                     <TimetableGrid timetable={timetable} teachers={teacherOptions} />
+                 ) : (
+                     <Card>
+                         <CardHeader><CardTitle>No Timetable</CardTitle></CardHeader>
+                         <CardContent>
+                             <p className="text-muted-foreground">No active timetable found for this school year.</p>
+                         </CardContent>
+                     </Card>
+                 )}
+            </TabsContent>
+        </Tabs>
+      </div>
     </>
   );
 }

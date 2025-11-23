@@ -283,66 +283,69 @@ export function MarkbookGrid({ payload }: Props) {
         </div>
       </div>
       {selectedRow && (
-        <Card className="w-full max-w-sm">
-          <CardHeader>
-            <CardTitle>
-              {selectedRow.student.firstName} {selectedRow.student.lastName}
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              SBA {selectedRow.sbaPercent.toFixed(1)}% · Level {selectedRow.level}
-              {showFinalColumn && ` · Final ${selectedRow.finalYearPercent.toFixed(1)}%`}
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              {Object.entries(selectedRow.appliedTermWeights).map(([term, weight]) => (
-                <div key={term} className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>{term}</span>
-                  <span>{weight.toFixed(1)}%</span>
+        <div className="shrink-0 w-full lg:w-80">
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                {selectedRow.student.firstName} {selectedRow.student.lastName}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                SBA {selectedRow.sbaPercent.toFixed(1)}% · Level {selectedRow.level}
+                {showFinalColumn && ` · Final ${selectedRow.finalYearPercent.toFixed(1)}%`}
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                {Object.entries(selectedRow.appliedTermWeights).map(([term, weight]) => (
+                  <div key={term} className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span>{term}</span>
+                    <span>{weight.toFixed(1)}%</span>
+                  </div>
+                ))}
+              </div>
+              {Object.entries(selectedRow.termResults ?? {}).map(([term, value]) => (
+                <div key={term} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>{term}</span>
+                    <span>{value.sbaPercent.toFixed(1)}% · w {value.weight.toFixed(1)}%</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{ width: `${Math.min(100, value.contribution)}%` }}
+                    />
+                  </div>
                 </div>
               ))}
-            </div>
-            {Object.entries(selectedRow.termResults ?? {}).map(([term, value]) => (
-              <div key={term} className="space-y-1">
-                <div className="flex items-center justify-between text-sm">
-                  <span>{term}</span>
-                  <span>{value.sbaPercent.toFixed(1)}% · w {value.weight.toFixed(1)}%</span>
-                </div>
-                <div className="h-1.5 rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-primary"
-                    style={{ width: `${Math.min(100, value.contribution)}%` }}
-                  />
-                </div>
+              <div className="flex items-center justify-between text-sm">
+                <span>PAT</span>
+                <span>{selectedRow.componentBreakdown.patPercent.toFixed(1)}%</span>
               </div>
-            ))}
-            <div className="flex items-center justify-between text-sm">
-              <span>PAT</span>
-              <span>{selectedRow.componentBreakdown.patPercent.toFixed(1)}%</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span>SBA (classroom)</span>
-              <span>{selectedRow.componentBreakdown.schoolBasedPercent.toFixed(1)}%</span>
-            </div>
-            <div className="space-y-2">
-              {selectedRow.marks.map((mark) => {
-                const assessment = payload.assessments.find((item) => item.id === mark.assessmentId);
-                if (!assessment) return null;
-                const insight = weightInsights?.assessments?.[assessment.id];
-                return (
-                  <div key={mark.assessmentId} className="rounded-md border p-2">
-                    <p className="text-sm font-medium">{assessment.taskName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {mark.isAbsent ? "Absent" : `${mark.rawMark ?? "-"}/${assessment.totalMark}`} · {assessment.term} · Eff.
-                      {(insight?.effectiveFinalPercent ?? assessment.weightPercent ?? 0).toFixed(1)}%
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+              <div className="flex items-center justify-between text-sm">
+                <span>SBA (classroom)</span>
+                <span>{selectedRow.componentBreakdown.schoolBasedPercent.toFixed(1)}%</span>
+              </div>
+              <div className="space-y-2">
+                {selectedRow.marks.map((mark) => {
+                  const assessment = payload.assessments.find((item) => item.id === mark.assessmentId);
+                  if (!assessment) return null;
+                  const insight = weightInsights?.assessments?.[assessment.id];
+                  return (
+                    <div key={mark.assessmentId} className="rounded-md border p-2">
+                      <p className="text-sm font-medium">{assessment.taskName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {mark.isAbsent ? "Absent" : `${mark.rawMark ?? "-"}/${assessment.totalMark}`} · {assessment.term} · Eff.
+                        {(insight?.effectiveFinalPercent ?? assessment.weightPercent ?? 0).toFixed(1)}%
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
+      </div>
     </TooltipProvider>
   );
 }

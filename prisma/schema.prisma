@@ -181,6 +181,8 @@ model ClassTeacherAssignment {
   subject       Subject?   @relation(fields: [subjectId], references: [id])
   subjectId     String?
   createdAt     DateTime   @default(now())
+
+  @@unique([classGroupId, teacherId])
 }
 
 enum ClassType {

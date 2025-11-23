@@ -55,7 +55,7 @@ export function CreateClassDialog({ subjects, teachers, grades }: Props) {
       year: new Date().getFullYear(),
       subjectId: subjects[0]?.id ?? "",
       gradeLevelId: grades[0]?.id,
-      primaryTeacherId: teachers[0]?.id,
+      primaryTeacherId: "",
     },
   });
   const [selectedSubject, setSelectedSubject] = useState(form.getValues("subjectId"));

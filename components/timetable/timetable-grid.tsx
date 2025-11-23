@@ -1,11 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, MapPin, User, BookOpen } from "lucide-react";
+import { Calendar, Clock, MapPin, User, BookOpen, LayoutGrid, List, Loader2 } from "lucide-react";
 import type { Timetable, TimetablePeriod, TimetableSlot, ClassGroup, Teacher, Subject, AssessmentPlan } from "@prisma/client";
+import { cn } from "@/lib/utils";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type TimetableSlotWithRelations = TimetableSlot & {
   classGroup: ClassGroup & { subject: Subject | null };
@@ -24,12 +39,17 @@ interface TimetableGridProps {
     slots: TimetableSlotWithRelations[];
   };
   onSlotClick?: (slot: TimetableSlotWithRelations) => void;
+  teachers?: Teacher[];
 }
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
-export function TimetableGrid({ timetable, onSlotClick }: TimetableGridProps) {
+export function TimetableGrid({ timetable, teachers = [] }: TimetableGridProps) {
+  const [viewMode, setViewMode] = useState<"day" | "week">("week");
   const [selectedDay, setSelectedDay] = useState(0);
+  const [editingSlot, setEditingSlot] = useState<TimetableSlotWithRelations | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const periodsByDay = timetable.periods.reduce((acc, period) => {
     if (!acc[period.dayOfWeek]) {
@@ -39,135 +59,283 @@ export function TimetableGrid({ timetable, onSlotClick }: TimetableGridProps) {
     return acc;
   }, {} as Record<number, TimetablePeriodWithSlots[]>);
 
-  Object.keys(periodsByDay).forEach((day) => {
-    periodsByDay[Number(day)].sort((a, b) => a.periodNumber - b.periodNumber);
-  });
+  // Normalize periods for the week view (assuming standard structure)
+  const periodNumbers = Array.from(new Set(timetable.periods.map(p => p.periodNumber))).sort((a, b) => a - b);
+
+  const getPeriod = (dayIndex: number, pNum: number) => {
+    return periodsByDay[dayIndex]?.find(p => p.periodNumber === pNum);
+  };
 
   const getSlotForPeriod = (periodId: string) => {
     return timetable.slots.find((slot) => slot.periodId === periodId);
   };
 
+  // Sort periods for day view
+  Object.keys(periodsByDay).forEach((day) => {
+    periodsByDay[Number(day)].sort((a, b) => a.periodNumber - b.periodNumber);
+  });
+
+  const handleSlotClick = (slot: TimetableSlotWithRelations) => {
+    setEditingSlot(slot);
+  };
+
+  const handleSaveSlot = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editingSlot) return;
+
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      classGroupId: editingSlot.classGroupId,
+      teacherId: formData.get("teacherId") === "unassigned" ? null : formData.get("teacherId"),
+      room: formData.get("room"),
+      notes: formData.get("notes"),
+    };
+
+    startTransition(async () => {
+      try {
+        const res = await fetch(`/api/timetable/slots/${editingSlot.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+
+        if (!res.ok) throw new Error("Failed to update slot");
+
+        setEditingSlot(null);
+        router.refresh();
+      } catch (error) {
+        console.error(error);
+        alert("Failed to update timetable slot");
+      }
+    });
+  };
+
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              {timetable.name}
-            </CardTitle>
-            <div className="flex gap-2">
-              <Badge variant="outline">{timetable.term}</Badge>
-              <Badge variant="outline">{timetable.year}</Badge>
-              <Badge>{timetable.status}</Badge>
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card p-4 rounded-lg border shadow-sm">
+        <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+                <h2 className="text-lg font-semibold tracking-tight">{timetable.name}</h2>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Badge variant="outline" className="font-normal">{timetable.term}</Badge>
+                    <span>{timetable.year}</span>
+                    <span className="text-xs">•</span>
+                    <Badge variant={timetable.status === "Active" ? "default" : "secondary"} className="text-[10px] h-5 px-1.5">
+                        {timetable.status}
+                    </Badge>
+                </div>
+            </div>
+        </div>
+        
+        <div className="flex items-center bg-muted/50 p-1 rounded-lg border">
+            <Button 
+                variant={viewMode === "day" ? "default" : "ghost"} 
+                size="sm"
+                onClick={() => setViewMode("day")}
+                className="gap-2 h-8"
+            >
+                <List className="h-3.5 w-3.5" />
+                Day
+            </Button>
+            <Button 
+                variant={viewMode === "week" ? "default" : "ghost"} 
+                size="sm"
+                onClick={() => setViewMode("week")}
+                className="gap-2 h-8"
+            >
+                <LayoutGrid className="h-3.5 w-3.5" />
+                Week
+            </Button>
+        </div>
+      </div>
+
+      {viewMode === "week" ? (
+         <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+             <div className="overflow-x-auto">
+                 <div className="min-w-[800px]">
+                     {/* Header Row */}
+                     <div className="grid grid-cols-6 border-b bg-muted/30">
+                         <div className="p-4 font-medium text-muted-foreground text-center text-sm border-r">Time</div>
+                         {DAYS.map((day, i) => (
+                             <div key={day} className={cn("p-4 font-medium text-center text-sm border-r last:border-0", selectedDay === i && "bg-primary/5 text-primary")}>
+                                 {day}
+                             </div>
+                         ))}
+                     </div>
+                     
+                     {/* Grid Body */}
+                     <div className="divide-y">
+                         {periodNumbers.map((pNum) => {
+                             // Get time from first available period of this number
+                             const referencePeriod = timetable.periods.find(p => p.periodNumber === pNum);
+                             
+                             return (
+                                 <div key={pNum} className="grid grid-cols-6 hover:bg-muted/5 transition-colors group/row">
+                                     {/* Time Column */}
+                                     <div className="p-3 border-r text-xs text-muted-foreground flex flex-col justify-center items-center bg-muted/10">
+                                         <span className="font-mono">{referencePeriod?.startTime}</span>
+                                         <div className="h-8 w-px bg-border/50 my-1"></div>
+                                         <span className="font-mono text-muted-foreground/70">{referencePeriod?.endTime}</span>
+                                     </div>
+                                     
+                                     {/* Days Columns */}
+                                     {DAYS.map((_, dayIndex) => {
+                                         const period = getPeriod(dayIndex, pNum);
+                                         const slot = period ? getSlotForPeriod(period.id) : null;
+                                         
+                                         return (
+                                             <div key={dayIndex} className="p-2 border-r last:border-0 min-h-[120px] relative group/cell">
+                                                 {slot ? (
+                                                     <div 
+                                                        onClick={() => handleSlotClick(slot)}
+                                                        className="h-full w-full rounded-lg bg-primary/5 border border-primary/10 p-3 cursor-pointer hover:bg-primary/10 hover:border-primary/30 transition-all hover:shadow-sm flex flex-col gap-1"
+                                                     >
+                                                         <div className="flex items-start justify-between">
+                                                            <span className="font-semibold text-sm text-primary line-clamp-1">
+                                                                {slot.classGroup.subject?.name || slot.classGroup.name}
+                                                            </span>
+                                                            {slot.assessmentPlan && (
+                                                                <div className="h-1.5 w-1.5 rounded-full bg-accent-mint animate-pulse" title="Assessment Scheduled" />
+                                                            )}
+                                                         </div>
+                                                         
+                                                         <div className="mt-auto space-y-1">
+                                                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                                <User className="h-3 w-3" />
+                                                                <span className="line-clamp-1">
+                                                                    {slot.teacher ? `${slot.teacher.firstName[0]}. ${slot.teacher.lastName}` : 'No Teacher'}
+                                                                </span>
+                                                             </div>
+                                                             {slot.room && (
+                                                                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                                    <MapPin className="h-3 w-3" />
+                                                                    <span>{slot.room}</span>
+                                                                 </div>
+                                                             )}
+                                                         </div>
+                                                     </div>
+                                                 ) : (
+                                                     period ? (
+                                                         <div className="h-full w-full flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-opacity">
+                                                             <span className="text-xs text-muted-foreground/40 font-medium uppercase tracking-wider">Free</span>
+                                                         </div>
+                                                     ) : (
+                                                         <div className="h-full w-full bg-muted/10 pattern-diagonal-lines pattern-muted/20"></div>
+                                                     )
+                                                 )}
+                                             </div>
+                                         )
+                                     })}
+                                 </div>
+                             )
+                         })}
+                     </div>
+                 </div>
+             </div>
+         </div>
+      ) : (
+         // Day View
+          <div className="space-y-6">
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                {DAYS.map((day, index) => (
+                <Button
+                    key={day}
+                    variant={selectedDay === index ? "default" : "outline"}
+                    onClick={() => setSelectedDay(index)}
+                    className="flex-shrink-0 rounded-full px-6"
+                >
+                    {day}
+                </Button>
+                ))}
+            </div>
+
+            <div className="grid gap-4">
+                {periodsByDay[selectedDay]?.map((period) => {
+                const slot = getSlotForPeriod(period.id);
+                
+                return (
+                    <Card
+                    key={period.id}
+                    className={cn(
+                        "transition-all hover:shadow-md border-l-4",
+                        slot ? "cursor-pointer border-l-primary" : "border-l-transparent border-dashed opacity-70"
+                    )}
+                    onClick={() => slot && handleSlotClick(slot)}
+                    >
+                    <CardContent className="p-6">
+                        <div className="flex items-start gap-6">
+                            <div className="flex flex-col items-center justify-center min-w-[100px] py-2 bg-muted/30 rounded-lg">
+                                <span className="text-2xl font-bold text-foreground">{period.startTime}</span>
+                                <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Period {period.periodNumber}</span>
+                            </div>
+
+                        <div className="flex-1 space-y-3">
+                            {slot ? (
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h3 className="font-semibold text-lg text-primary">
+                                            {slot.classGroup.subject?.name || slot.classGroup.name}
+                                        </h3>
+                                        <p className="text-sm text-muted-foreground">{slot.classGroup.name}</p>
+                                    </div>
+                                    {slot.assessmentPlan && (
+                                        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                                            Assessment
+                                        </Badge>
+                                    )}
+                                </div>
+
+                                <div className="flex flex-wrap gap-4 pt-2">
+                                    {slot.teacher && (
+                                    <div className="flex items-center gap-2 text-sm bg-muted/50 px-3 py-1.5 rounded-full">
+                                        <User className="h-4 w-4 text-muted-foreground" />
+                                        <span>
+                                        {slot.teacher.firstName} {slot.teacher.lastName}
+                                        </span>
+                                    </div>
+                                    )}
+
+                                    {slot.room && (
+                                    <div className="flex items-center gap-2 text-sm bg-muted/50 px-3 py-1.5 rounded-full">
+                                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                                        <span>{slot.room}</span>
+                                    </div>
+                                    )}
+                                </div>
+
+                                {slot.notes && (
+                                <p className="text-sm text-muted-foreground italic bg-yellow-50/50 p-2 rounded border border-yellow-100/50">
+                                    {slot.notes}
+                                </p>
+                                )}
+                            </div>
+                            ) : (
+                            <div className="py-4 text-muted-foreground">
+                                <p className="text-sm">No class scheduled</p>
+                            </div>
+                            )}
+                        </div>
+                        </div>
+                    </CardContent>
+                    </Card>
+                );
+                })}
+
+                {(!periodsByDay[selectedDay] || periodsByDay[selectedDay].length === 0) && (
+                <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed rounded-xl bg-muted/5">
+                    <Calendar className="h-12 w-12 text-muted-foreground/30 mb-4" />
+                    <p className="text-muted-foreground font-medium">
+                    No periods scheduled for {DAYS[selectedDay]}
+                    </p>
+                </div>
+                )}
             </div>
           </div>
-        </CardHeader>
-      </Card>
-
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {DAYS.map((day, index) => (
-          <Button
-            key={day}
-            variant={selectedDay === index ? "default" : "outline"}
-            onClick={() => setSelectedDay(index)}
-            className="flex-shrink-0"
-          >
-            {day}
-          </Button>
-        ))}
-      </div>
-
-      <div className="grid gap-4">
-        {periodsByDay[selectedDay]?.map((period) => {
-          const slot = getSlotForPeriod(period.id);
-          
-          return (
-            <Card
-              key={period.id}
-              className={`transition-all hover:shadow-md ${slot ? "cursor-pointer border-l-4 border-l-primary" : "border-dashed"}`}
-              onClick={() => slot && onSlotClick?.(slot)}
-            >
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 space-y-3">
-                    <div className="flex items-center gap-3">
-                      <Badge variant="secondary" className="font-mono">
-                        Period {period.periodNumber}
-                      </Badge>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                        {period.startTime} - {period.endTime}
-                      </div>
-                    </div>
-
-                    {slot ? (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <BookOpen className="h-5 w-5 text-primary" />
-                          <div>
-                            <p className="font-semibold text-lg">
-                              {slot.classGroup.name}
-                            </p>
-                            {slot.classGroup.subject && (
-                              <p className="text-sm text-muted-foreground">
-                                {slot.classGroup.subject.name}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        {slot.teacher && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            <span>
-                              {slot.teacher.firstName} {slot.teacher.lastName}
-                            </span>
-                          </div>
-                        )}
-
-                        {slot.room && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <span>{slot.room}</span>
-                          </div>
-                        )}
-
-                        {slot.assessmentPlan && (
-                          <Badge variant="outline" className="bg-purple-50">
-                            Linked to Assessment Plan
-                          </Badge>
-                        )}
-
-                        {slot.notes && (
-                          <p className="text-sm text-muted-foreground italic">
-                            {slot.notes}
-                          </p>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-center py-4 text-muted-foreground">
-                        <p className="text-sm">No class scheduled</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-
-        {(!periodsByDay[selectedDay] || periodsByDay[selectedDay].length === 0) && (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">
-                No periods scheduled for {DAYS[selectedDay]}
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      )}
     </div>
   );
 }

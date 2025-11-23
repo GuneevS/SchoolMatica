@@ -53,7 +53,7 @@ export default async function AssessmentPlansPage() {
           ]}
           actions={
             <CreatePlanDialog
-              classes={classes.map((item) => ({ id: item.id, name: `${item.name} · ${item.subject.name}` }))}
+              classes={classes.map((item) => ({ id: item.id, name: `${item.name} · ${item.subject?.name ?? "No Subject"}` }))}
               templates={templates.map((template) => ({
                 id: template.id,
                 name: template.name,

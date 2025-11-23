@@ -28,11 +28,9 @@ const userInclude = {
   },
 } satisfies Prisma.AppUserInclude;
 
-type RawAuthUser = Awaited<
-  ReturnType<typeof prisma.appUser.findUnique<{
-    include: typeof userInclude;
-  }>>
->;
+type RawAuthUser = Prisma.AppUserGetPayload<{
+  include: typeof userInclude;
+}> | null;
 
 type AppUserWithRoles = NonNullable<RawAuthUser>;
 

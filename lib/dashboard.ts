@@ -128,7 +128,7 @@ export async function getDashboardData(schoolId: string): Promise<DashboardData>
     return {
       id: classGroup.id,
       name: classGroup.name,
-      subject: classGroup.subject.name,
+      subject: classGroup.subject?.name ?? "No Subject",
       totalStudents: classGroup.students.length,
       planStatus: plan?.status ?? "No plan",
       averageSba,
@@ -169,7 +169,7 @@ export async function getDashboardData(schoolId: string): Promise<DashboardData>
     name: plan.name,
     status: plan.status,
     className: plan.classGroup.name,
-    subjectName: plan.classGroup.subject.name,
+    subjectName: plan.classGroup.subject?.name ?? "No Subject",
   }));
 
   const openThreads = openThreadsRaw.map((thread) => {

@@ -86,7 +86,7 @@ export default async function ClassesPage() {
                 <div>
                   <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground/70">Grade {classGroup.grade}</p>
                   <CardTitle className="mt-1 text-2xl">{classGroup.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{classGroup.subject.name}</p>
+                  <p className="text-sm text-muted-foreground">{classGroup.subject?.name ?? "No Subject"}</p>
                 </div>
                 <Button asChild size="sm" variant="ghost">
                   <Link href={`/classes/${classGroup.id}`}>Open</Link>
@@ -131,7 +131,7 @@ export default async function ClassesPage() {
                   )}
                 </div>
                 <div className="mt-4 flex gap-2">
-                  <AssignTeacherDialog classId={classGroup.id} subjectId={classGroup.subjectId} teachers={teacherOptions} triggerLabel="Assign teacher" />
+                  <AssignTeacherDialog classId={classGroup.id} subjectId={classGroup.subjectId ?? undefined} teachers={teacherOptions} triggerLabel="Assign teacher" />
                   <Button asChild variant="outline" size="sm">
                     <Link href={`/classes/${classGroup.id}`}>Manage class</Link>
                   </Button>

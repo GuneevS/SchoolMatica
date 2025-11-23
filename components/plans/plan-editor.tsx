@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useState, useTransition } from "react";
+import { type ReactNode, useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   DndContext,
@@ -33,12 +33,17 @@ interface Props {
 export function PlanEditor({ plan, threads, weightInsights }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [mounted, setMounted] = useState(false);
   const role = useRoleStore((state) => state.role);
   const canEdit = role !== "Teacher";
   const [orderedAssessments, setOrderedAssessments] = useState(plan.assessments);
   const totalWeight = orderedAssessments.reduce((sum, item) => sum + item.weightPercent, 0);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const showEffectiveColumn = Boolean(weightInsights?.hasConfiguredTermWeights);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   function handleReorder(event: DragEndEvent) {
     if (!canEdit) return;
@@ -160,9 +165,10 @@ export function PlanEditor({ plan, threads, weightInsights }: Props) {
           </div>
         </div>
       )}
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleReorder}>
-        <SortableContext items={orderedAssessments.map((assessment) => assessment.id)} strategy={verticalListSortingStrategy}>
-          <Table>
+      {mounted ? (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleReorder}>
+          <SortableContext items={orderedAssessments.map((assessment) => assessment.id)} strategy={verticalListSortingStrategy}>
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12"></TableHead>
@@ -273,6 +279,40 @@ export function PlanEditor({ plan, threads, weightInsights }: Props) {
           </Table>
         </SortableContext>
       </DndContext>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-12"></TableHead>
+              <TableHead className="min-w-[200px]">Task</TableHead>
+              <TableHead className="w-24">Term</TableHead>
+              <TableHead className="w-24">Total</TableHead>
+              <TableHead className="w-28">Raw weight</TableHead>
+              <TableHead className="w-24">Weight %</TableHead>
+              {showEffectiveColumn && <TableHead className="w-28">Effective %</TableHead>}
+              <TableHead className="w-32"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {orderedAssessments.map((assessment) => (
+              <TableRow key={assessment.id}>
+                <TableCell>
+                  <Button variant="ghost" size="icon" disabled={true}>
+                    <GripVertical className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+                <TableCell><Input defaultValue={assessment.taskName} disabled={true} className="min-w-[200px]" /></TableCell>
+                <TableCell>{assessment.term}</TableCell>
+                <TableCell>{assessment.totalMark}</TableCell>
+                <TableCell>{assessment.rawWeight}</TableCell>
+                <TableCell className="font-medium">{assessment.weightPercent.toFixed(1)}%</TableCell>
+                {showEffectiveColumn && <TableCell>-</TableCell>}
+                <TableCell></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
       <Button variant="secondary" onClick={createAssessment} disabled={isPending || !canEdit}>
         Add assessment
       </Button>

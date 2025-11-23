@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useState, useTransition } from "react";
+import { type ReactNode, useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   DndContext,
@@ -36,6 +36,7 @@ interface Props {
 export function PlanEditorGrouped({ plan, threads, weightInsights }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [mounted, setMounted] = useState(false);
   const role = useRoleStore((state) => state.role);
   const canEdit = role !== "Teacher";
   const [orderedAssessments, setOrderedAssessments] = useState(plan.assessments);
@@ -43,6 +44,10 @@ export function PlanEditorGrouped({ plan, threads, weightInsights }: Props) {
   const totalWeight = orderedAssessments.reduce((sum, item) => sum + item.weightPercent, 0);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const showEffectiveColumn = Boolean(weightInsights?.hasConfiguredTermWeights);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Group assessments by term
   const groupedAssessments = orderedAssessments.reduce((acc, assessment) => {
@@ -138,9 +143,29 @@ export function PlanEditorGrouped({ plan, threads, weightInsights }: Props) {
     });
   }
 
-  const AssessmentRow = ({ assessment }: { assessment: Assessment }) => (
-    <SortableAssessmentRow key={assessment.id} assessmentId={assessment.id}>
-      {({ attributes, listeners }) => (
+  const AssessmentRow = ({ assessment }: { assessment: Assessment }) => {
+    if (!mounted) {
+      return (
+        <TableRow key={assessment.id}>
+          <TableCell>
+            <Button variant="ghost" size="icon" className="cursor-grab" disabled={true}>
+              <GripVertical className="h-4 w-4" />
+            </Button>
+          </TableCell>
+          <TableCell><Input defaultValue={assessment.taskName} disabled={true} className="min-w-[200px]" /></TableCell>
+          <TableCell>{assessment.term}</TableCell>
+          <TableCell>{assessment.totalMark}</TableCell>
+          <TableCell>{assessment.rawWeight}</TableCell>
+          <TableCell className="font-medium">{assessment.weightPercent.toFixed(1)}%</TableCell>
+          {showEffectiveColumn && <TableCell>-</TableCell>}
+          <TableCell></TableCell>
+        </TableRow>
+      );
+    }
+    
+    return (
+      <SortableAssessmentRow key={assessment.id} assessmentId={assessment.id}>
+        {({ attributes, listeners }) => (
         <>
           <TableCell>
             <Button
@@ -230,7 +255,8 @@ export function PlanEditorGrouped({ plan, threads, weightInsights }: Props) {
         </>
       )}
     </SortableAssessmentRow>
-  );
+    );
+  };
 
   return (
     <div className="space-y-4">

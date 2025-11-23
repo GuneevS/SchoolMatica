@@ -72,6 +72,83 @@ export default async function PlanDetailPage({ params }: Props) {
       />
 
       <div className="grid gap-4 md:grid-cols-2">
+        {/* Approval History */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Approval History</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {plan.createdAt && (
+                <div className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <div className="h-2 w-2 rounded-full bg-gray-400" />
+                    <div className="h-full w-0.5 bg-gray-200 dark:bg-gray-700" />
+                  </div>
+                  <div className="flex-1 pb-4">
+                    <p className="text-sm font-medium">Plan Created</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDateReadable(plan.createdAt)}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {plan.submittedAt && (
+                <div className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <div className="h-2 w-2 rounded-full bg-blue-500" />
+                    <div className="h-full w-0.5 bg-gray-200 dark:bg-gray-700" />
+                  </div>
+                  <div className="flex-1 pb-4">
+                    <p className="text-sm font-medium">Submitted for Approval</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDateReadable(plan.submittedAt)}
+                      {plan.submittedByRole && ` • by ${plan.submittedByRole}`}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {plan.approvedAt && (
+                <div className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                    <div className="h-full w-0.5 bg-gray-200 dark:bg-gray-700" />
+                  </div>
+                  <div className="flex-1 pb-4">
+                    <p className="text-sm font-medium">Approved</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDateReadable(plan.approvedAt)}
+                      {plan.approvedByRole && ` • by ${plan.approvedByRole}`}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {plan.lockedAt && (
+                <div className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <div className="h-2 w-2 rounded-full bg-gray-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Locked</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDateReadable(plan.lockedAt)} • Plan finalized
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {!plan.submittedAt && plan.status === "Draft" && (
+                <p className="text-sm text-muted-foreground italic">
+                  Not yet submitted for approval
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         <PlanDocuments planId={plan.id} documents={plan.documents} />
         <ModerationPanel planId={plan.id} threads={plan.moderationThreads} />
       </div>

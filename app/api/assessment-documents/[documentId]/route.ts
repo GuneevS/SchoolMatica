@@ -74,3 +74,23 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   return NextResponse.json(refreshed);
 }
 
+export async function DELETE(_: NextRequest, { params }: Params) {
+  const { documentId } = await params;
+
+  try {
+    // Delete all approvals first
+    await prisma.documentApproval.deleteMany({
+      where: { documentId },
+    });
+
+    // Delete the document
+    await prisma.assessmentDocument.delete({
+      where: { id: documentId },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Failed to delete document", error);
+    return NextResponse.json({ error: "Document not found" }, { status: 404 });
+  }
+}

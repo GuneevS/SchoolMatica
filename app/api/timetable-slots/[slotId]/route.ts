@@ -7,6 +7,7 @@ interface Params {
 }
 
 const updateSlotSchema = z.object({
+  classGroupId: z.string().optional(),
   teacherId: z.string().optional().nullable(),
   room: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
@@ -20,6 +21,16 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
+  }
+
+  // Validate class exists if classGroupId is provided
+  if (parsed.data.classGroupId) {
+    const classGroup = await prisma.classGroup.findUnique({
+      where: { id: parsed.data.classGroupId },
+    });
+    if (!classGroup) {
+      return NextResponse.json({ error: "Class not found" }, { status: 404 });
+    }
   }
 
   const slot = await prisma.timetableSlot.update({

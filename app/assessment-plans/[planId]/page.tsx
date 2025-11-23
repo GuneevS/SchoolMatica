@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PlanEditor } from "@/components/plans/plan-editor";
+import { PlanEditorGrouped } from "@/components/plans/plan-editor-grouped";
 import { ModerationPanel } from "@/components/plans/moderation-panel";
 import { WeightChart } from "@/components/plans/weight-chart";
 import { PlanDocuments } from "@/components/plans/plan-documents";
@@ -72,7 +72,7 @@ export default async function PlanDetailPage({ params }: Props) {
             />
           }
         />
-        <PlanEditor
+        <PlanEditorGrouped
           key={plan.updatedAt.toISOString()}
           plan={plan}
           threads={plan.moderationThreads}

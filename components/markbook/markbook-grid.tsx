@@ -10,8 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Info } from "lucide-react";
+import { Info, TrendingUp, Flame } from "lucide-react";
 import { useRoleStore } from "@/lib/stores/role-store";
+import { Progress } from "@/components/ui/progress";
 
 interface Props {
   payload: MarkbookPayload;
@@ -21,6 +22,7 @@ export function MarkbookGrid({ payload }: Props) {
   const router = useRouter();
   const [termFilter, setTermFilter] = useState<string>("ALL");
   const [highlightLow, setHighlightLow] = useState(false);
+  const [heatMapMode, setHeatMapMode] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState(payload.rows[0]?.student.id ?? "");
   const [isPending, startTransition] = useTransition();
   const role = useRoleStore((state) => state.role);
@@ -129,10 +131,24 @@ export function MarkbookGrid({ payload }: Props) {
     return mark.isAbsent ? "-" : mark.rawMark?.toString() ?? "";
   }
 
+  // Get heat map color based on percentage
+  function getHeatMapColor(percentage: number): string {
+    if (percentage >= 80) return "bg-emerald-100 dark:bg-emerald-950/30 border-emerald-300";
+    if (percentage >= 70) return "bg-green-100 dark:bg-green-950/30 border-green-300";
+    if (percentage >= 60) return "bg-yellow-100 dark:bg-yellow-950/30 border-yellow-300";
+    if (percentage >= 50) return "bg-orange-100 dark:bg-orange-950/30 border-orange-300";
+    if (percentage >= 40) return "bg-red-100 dark:bg-red-950/30 border-red-300";
+    return "bg-red-200 dark:bg-red-950/50 border-red-400";
+  }
+
+  // Color palette for assessments
+  const assessmentColors = ["#3b82f6", "#8b5cf6", "#ec4899", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#6366f1"];
+
   return (
     <TooltipProvider>
       <div className="flex flex-col gap-4 lg:flex-row">
         <div className="flex-1 overflow-auto rounded-lg border border-[hsl(var(--border))/0.6] bg-[hsl(var(--surface-strong))] shadow-ambient-sm">
+          {/* Header Controls */}
           <div className="flex items-center justify-between border-b border-[hsl(var(--border))/0.5] p-4">
             <div className="flex items-center gap-2 text-sm">
               <Select value={termFilter} onValueChange={setTermFilter}>
@@ -152,14 +168,69 @@ export function MarkbookGrid({ payload }: Props) {
                 size="sm"
                 onClick={() => setHighlightLow((prev) => !prev)}
               >
+                <Flame className="h-4 w-4 mr-1" />
                 Highlight below 40%
               </Button>
+              <Button
+                variant={heatMapMode ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setHeatMapMode((prev) => !prev)}
+              >
+                <TrendingUp className="h-4 w-4 mr-1" />
+                Heat Map
+              </Button>
             </div>
-          </div>
-          <div className="flex items-center justify-between border-b border-[hsl(var(--border))/0.5] px-4 pb-4">
             <div className="text-right">
               {isPending && canEdit && <p className="text-xs text-muted-foreground">Saving…</p>}
               {!canEdit && <p className="text-xs text-muted-foreground">Switch to Teacher role to edit marks.</p>}
+            </div>
+          </div>
+          
+          {/* Visual Weight Distribution */}
+          <div className="border-b border-[hsl(var(--border))/0.5] p-4 bg-muted/30">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-semibold">Assessment Weight Distribution</h3>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>Shows the relative contribution of each assessment to the final grade</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <div className="space-y-2">
+              {assessments.map((assessment, index) => {
+                const insight = weightInsights?.assessments?.[assessment.id];
+                const effectiveWeight = insight?.effectiveFinalPercent ?? assessment.weightPercent;
+                const color = assessmentColors[index % assessmentColors.length];
+                
+                return (
+                  <div key={assessment.id} className="space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: color }}
+                        />
+                        <span className="font-medium">{assessment.taskName}</span>
+                        <Badge variant="outline" className="text-[0.65rem]">{assessment.term}</Badge>
+                      </div>
+                      <span className="font-semibold text-primary">{effectiveWeight.toFixed(1)}%</span>
+                    </div>
+                    <div className="relative h-2 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="absolute inset-y-0 left-0 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${effectiveWeight}%`,
+                          backgroundColor: color,
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
           {hasConfiguredTermWeights && (
@@ -246,6 +317,15 @@ export function MarkbookGrid({ payload }: Props) {
                     const showWarning = Boolean(
                       displayValue && !Number.isNaN(numericValue) && numericValue > assessment.totalMark,
                     );
+                    
+                    // Calculate percentage for heat map
+                    const percentage = mark && !mark.isAbsent && mark.rawMark !== null
+                      ? (mark.rawMark / assessment.totalMark) * 100
+                      : 0;
+                    const heatMapClass = heatMapMode && mark && !mark.isAbsent && mark.rawMark !== null
+                      ? getHeatMapColor(percentage)
+                      : "";
+                    
                     return (
                       <td key={assessment.id} className="p-3">
                         <Input
@@ -253,7 +333,11 @@ export function MarkbookGrid({ payload }: Props) {
                           value={displayValue}
                           onChange={(event) => handleInputChange(row.student.id, assessment.id, event.target.value)}
                           onBlur={() => handlePersist(row.student.id, assessment.id, assessment.totalMark)}
-                          className={cn("h-9", showWarning && "border-red-500 focus-visible:ring-red-500")}
+                          className={cn(
+                            "h-9",
+                            showWarning && "border-red-500 focus-visible:ring-red-500",
+                            heatMapClass
+                          )}
                           disabled={!canEdit}
                         />
                         <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">

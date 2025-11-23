@@ -2,12 +2,13 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PlanEditorGrouped } from "@/components/plans/plan-editor-grouped";
+import { PlanEditorOptimized } from "@/components/plans/plan-editor-optimized";
 import { ModerationPanel } from "@/components/plans/moderation-panel";
 import { WeightChart } from "@/components/plans/weight-chart";
 import { PlanDocuments } from "@/components/plans/plan-documents";
 import { TermWeightConfig } from "@/components/plans/term-weight-config";
 import { WeightAdjusterPanel } from "@/components/plans/weight-adjuster-panel";
+import { AssessmentFlexibilityGuide } from "@/components/plans/assessment-flexibility-guide";
 import { formatDateReadable } from "@/lib/date-utils";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 import { ClipboardList } from "lucide-react";
@@ -72,7 +73,7 @@ export default async function PlanDetailPage({ params }: Props) {
             />
           }
         />
-        <PlanEditorGrouped
+        <PlanEditorOptimized
           key={plan.updatedAt.toISOString()}
           plan={plan}
           threads={plan.moderationThreads}
@@ -138,6 +139,7 @@ export default async function PlanDetailPage({ params }: Props) {
             )}
           </CardContent>
         </Card>
+        <AssessmentFlexibilityGuide />
         <PlanDocuments planId={plan.id} documents={plan.documents} />
         <WeightChart assessments={plan.assessments} />
         <ModerationPanel planId={plan.id} threads={plan.moderationThreads} />

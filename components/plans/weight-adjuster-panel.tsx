@@ -21,6 +21,8 @@ export function WeightAdjusterPanel({ planId, assessments }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ updates }),
       });
+      // Revalidate dashboard to update stats
+      await fetch("/api/revalidate?path=/dashboard", { method: "POST" });
       router.refresh();
     });
   }

@@ -83,10 +83,14 @@ export default async function PlanDetailPage({ params }: Props) {
           initialWeights={termWeights || undefined}
           onSave={async (weights) => {
             "use server";
+            const { revalidatePath } = await import("next/cache");
             await prisma.assessmentPlan.update({
               where: { id: plan.id },
               data: { termWeights: weights },
             });
+            // Revalidate both this page and dashboard
+            revalidatePath(`/assessment-plans/${plan.id}`);
+            revalidatePath("/dashboard");
           }}
         />
         <WeightAdjusterPanel planId={plan.id} assessments={plan.assessments} />

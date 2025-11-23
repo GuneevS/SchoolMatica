@@ -62,6 +62,10 @@ export function TermWeightConfig({ termCount, initialWeights = {}, onSave, readO
     setSaving(true);
     try {
       await onSave(weights);
+      // Force refresh to show updated values
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to save term weights:", error);
     } finally {
       setSaving(false);
     }
@@ -189,12 +193,13 @@ export function TermWeightConfig({ termCount, initialWeights = {}, onSave, readO
                             </div>
                             <Input
                               type="number"
-                              value={weight}
+                              value={weight.toFixed(2)}
                               onChange={(e) => handleWeightChange(term, Number(e.target.value))}
-                              className="w-24 text-center"
+                              className="w-24 text-center font-semibold"
                               min={0}
                               max={100}
                               step={0.5}
+                              disabled={readOnly}
                             />
                           </div>
                         </div>

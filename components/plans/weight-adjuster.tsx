@@ -49,6 +49,10 @@ export function WeightAdjuster({ assessments, onSave, readOnly = false }: Props)
         rawWeight: weights[a.id] ?? a.rawWeight,
       }));
       await onSave(updates);
+      // Force refresh to show updated values
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to save assessment weights:", error);
     } finally {
       setSaving(false);
     }

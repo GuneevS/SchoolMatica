@@ -69,6 +69,8 @@ export function PlanEditor({ plan, threads, weightInsights }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
+      // Revalidate dashboard and current page
+      await fetch("/api/revalidate?path=/dashboard", { method: "POST" });
       router.refresh();
     });
   }
@@ -87,6 +89,8 @@ export function PlanEditor({ plan, threads, weightInsights }: Props) {
           rawWeight: 10,
         }),
       });
+      // Revalidate dashboard and current page
+      await fetch("/api/revalidate?path=/dashboard", { method: "POST" });
       router.refresh();
     });
   }
@@ -95,6 +99,8 @@ export function PlanEditor({ plan, threads, weightInsights }: Props) {
     if (!canEdit) return;
     startTransition(async () => {
       await fetch(`/api/assessments/${id}`, { method: "DELETE" });
+      // Revalidate dashboard and current page
+      await fetch("/api/revalidate?path=/dashboard", { method: "POST" });
       router.refresh();
     });
   }
@@ -160,13 +166,13 @@ export function PlanEditor({ plan, threads, weightInsights }: Props) {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12"></TableHead>
-                <TableHead>Task</TableHead>
-                <TableHead>Term</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Raw weight</TableHead>
-                <TableHead>Weight %</TableHead>
-                {showEffectiveColumn && <TableHead>Effective %</TableHead>}
-                <TableHead></TableHead>
+                <TableHead className="min-w-[200px]">Task</TableHead>
+                <TableHead className="w-24">Term</TableHead>
+                <TableHead className="w-24">Total</TableHead>
+                <TableHead className="w-28">Raw weight</TableHead>
+                <TableHead className="w-24">Weight %</TableHead>
+                {showEffectiveColumn && <TableHead className="w-28">Effective %</TableHead>}
+                <TableHead className="w-32"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -191,6 +197,7 @@ export function PlanEditor({ plan, threads, weightInsights }: Props) {
                           defaultValue={assessment.taskName}
                           onBlur={(event) => mutateAssessment(assessment.id, { taskName: event.target.value })}
                           disabled={!canEdit}
+                          className="min-w-[200px]"
                         />
                       </TableCell>
                       <TableCell>
@@ -199,7 +206,7 @@ export function PlanEditor({ plan, threads, weightInsights }: Props) {
                           onValueChange={(value) => mutateAssessment(assessment.id, { term: value as Assessment["term"] })}
                           disabled={!canEdit}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="w-20">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -221,6 +228,8 @@ export function PlanEditor({ plan, threads, weightInsights }: Props) {
                             })
                           }
                           disabled={!canEdit}
+                          className="w-20"
+                          min="1"
                         />
                       </TableCell>
                       <TableCell>
@@ -233,9 +242,12 @@ export function PlanEditor({ plan, threads, weightInsights }: Props) {
                             })
                           }
                           disabled={!canEdit}
+                          className="w-24"
+                          min="0"
+                          step="0.5"
                         />
                       </TableCell>
-                      <TableCell>{assessment.weightPercent.toFixed(1)}%</TableCell>
+                      <TableCell className="font-medium">{assessment.weightPercent.toFixed(1)}%</TableCell>
                       {showEffectiveColumn && (
                         <TableCell>
                           {(

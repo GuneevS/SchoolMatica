@@ -502,7 +502,7 @@ model LearnerComment {
   term         String
   year         Int
   commentType  String     @default("General") // General, Subject, Behaviour, Attendance
-  comment      String     @db.Text
+  comment      String
   authorRole   String
   authorName   String
   createdAt    DateTime   @default(now())
@@ -524,9 +524,9 @@ model ReportCard {
   overallGrade     String?
   overallPercentage Float?
   achievementLevel Int?
-  teacherComment   String?    @db.Text
-  hodComment       String?    @db.Text
-  principalComment String?    @db.Text
+  teacherComment   String?
+  hodComment       String?
+  principalComment String?
   attendanceData   Json?
   conductGrade     String?
   effortGrade      String?

@@ -169,7 +169,7 @@ export function ReportGeneratorForm({ classGroups, currentYear, terms }: Props) 
                 <Checkbox
                   id="includeComments"
                   checked={includeComments}
-                  onCheckedChange={(checked) => setIncludeComments(checked as boolean)}
+                  onCheckedChange={(checked: boolean) => setIncludeComments(checked)}
                 />
                 <label htmlFor="includeComments" className="text-sm cursor-pointer">
                   Include teacher comments
@@ -180,7 +180,7 @@ export function ReportGeneratorForm({ classGroups, currentYear, terms }: Props) 
                 <Checkbox
                   id="includeConduct"
                   checked={includeConduct}
-                  onCheckedChange={(checked) => setIncludeConduct(checked as boolean)}
+                  onCheckedChange={(checked: boolean) => setIncludeConduct(checked)}
                 />
                 <label htmlFor="includeConduct" className="text-sm cursor-pointer">
                   Include conduct and effort grades

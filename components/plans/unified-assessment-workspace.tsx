@@ -14,6 +14,7 @@ import { Slider } from "@/components/ui/slider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip, Cell } from "recharts";
 import { 
   GripVertical, 
   Plus, 
@@ -22,7 +23,8 @@ import {
   TrendingUp, 
   Calendar,
   CheckCircle2,
-  Save
+  Save,
+  PieChart as PieChartIcon
 } from "lucide-react";
 import { useRoleStore } from "@/lib/stores/role-store";
 import type { AssessmentWeightInsightMap, TermWeights } from "@/lib/calculations";
@@ -68,6 +70,18 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
     totalWeight: asms.reduce((sum, a) => sum + a.weightPercent, 0),
     termWeight: termWeights[term] || 0,
   }));
+
+  // Visualization colors
+  const palette = ["#38bdf8", "#a855f7", "#fb7185", "#34d399", "#f97316", "#fbbf24", "#0ea5e9", "#22d3ee"];
+  
+  // Chart data for term weights
+  const termWeightChartData = termStats
+    .filter(stat => stat.termWeight > 0)
+    .map((stat, index) => ({
+      name: stat.term,
+      value: Number(stat.termWeight.toFixed(2)),
+      color: palette[index % palette.length],
+    }));
 
   const updateAssessment = async (id: string, data: Partial<Assessment>) => {
     if (!canEdit) return;
@@ -174,6 +188,132 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
           </div>
         </CardHeader>
       </Card>
+
+      {/* Visual Data Overview */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Term Weight Distribution Pie Chart */}
+        <Card className="border-2 border-primary/20">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <PieChartIcon className="h-5 w-5 text-primary" />
+              Term Weight Distribution
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {termWeightChartData.length > 0 ? (
+              <div className="relative flex h-64 flex-col items-center justify-center">
+                <div className="pointer-events-none absolute inset-6 rounded-[2rem] border border-primary/10 bg-gradient-to-br from-background via-background/90 to-background/60 shadow-inner"></div>
+                <ResponsiveContainer>
+                  <PieChart>
+                    <RechartsTooltip
+                      content={({ active, payload }) => {
+                        if (!active || !payload?.length) return null;
+                        const item = payload[0];
+                        return (
+                          <div className="rounded-xl border bg-popover px-3 py-2 text-sm shadow-lg">
+                            <p className="text-xs uppercase tracking-wider text-muted-foreground">{item.payload?.name}</p>
+                            <p className="text-lg font-semibold">{Number(item.value).toFixed(1)}%</p>
+                            <p className="text-xs text-muted-foreground">Final grade weight</p>
+                          </div>
+                        );
+                      }}
+                    />
+                    <Pie
+                      data={termWeightChartData}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius="60%"
+                      outerRadius="90%"
+                      paddingAngle={3}
+                      cornerRadius={12}
+                      stroke="transparent"
+                    >
+                      {termWeightChartData.map((entry, index) => (
+                        <Cell key={`term-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Total</p>
+                  <p className="text-3xl font-semibold text-primary">{termWeightTotal.toFixed(0)}%</p>
+                  <p className="text-xs text-muted-foreground">Allocated</p>
+                </div>
+              </div>
+            ) : (
+              <div className="h-64 flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <PieChartIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Configure term weights to see distribution</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Overall Assessment Distribution */}
+        <Card className="border-2 border-primary/20">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <PieChartIcon className="h-5 w-5 text-primary" />
+              Assessment Weight Distribution
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {assessments.length > 0 ? (
+              <div className="relative flex h-64 flex-col items-center justify-center">
+                <div className="pointer-events-none absolute inset-6 rounded-[2rem] border border-primary/10 bg-gradient-to-br from-background via-background/90 to-background/60 shadow-inner"></div>
+                <ResponsiveContainer>
+                  <PieChart>
+                    <RechartsTooltip
+                      content={({ active, payload }) => {
+                        if (!active || !payload?.length) return null;
+                        const item = payload[0];
+                        return (
+                          <div className="rounded-xl border bg-popover px-3 py-2 text-sm shadow-lg">
+                            <p className="text-xs uppercase tracking-wider text-muted-foreground">{item.payload?.name}</p>
+                            <p className="text-lg font-semibold">{Number(item.value).toFixed(1)}%</p>
+                            <p className="text-xs text-muted-foreground">Assessment weight</p>
+                          </div>
+                        );
+                      }}
+                    />
+                    <Pie
+                      data={assessments.map((a, idx) => ({
+                        name: a.taskName,
+                        value: Number(a.weightPercent.toFixed(2)),
+                      }))}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius="60%"
+                      outerRadius="90%"
+                      paddingAngle={3}
+                      cornerRadius={12}
+                      stroke="transparent"
+                    >
+                      {assessments.map((_, index) => (
+                        <Cell key={`assessment-${index}`} fill={palette[index % palette.length]} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Total</p>
+                  <p className="text-3xl font-semibold text-primary">{totalWeight.toFixed(0)}%</p>
+                  <p className="text-xs text-muted-foreground">Allocated</p>
+                </div>
+              </div>
+            ) : (
+              <div className="h-64 flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <PieChartIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Add assessments to see distribution</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Main Workspace */}
       <Tabs defaultValue="T1" className="space-y-4">

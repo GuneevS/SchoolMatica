@@ -187,7 +187,7 @@ export default async function ClassMarkbookPage({ params, searchParams }: Props)
 
             <TabsContent value="timetable">
                  {timetable ? (
-                     <TimetableGrid timetable={timetable} teachers={teacherOptions} />
+                     <TimetableGrid timetable={timetable} />
                  ) : (
                      <Card>
                          <CardHeader><CardTitle>No Timetable</CardTitle></CardHeader>

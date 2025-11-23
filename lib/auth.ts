@@ -55,19 +55,7 @@ export async function getAuthContext(request: NextRequest): Promise<AuthContext 
   if (resolvedEmail) {
     user = await prisma.appUser.findUnique({
       where: { email: resolvedEmail },
-      include: {
-        roleAssignments: {
-          include: {
-            role: {
-              include: {
-                permissions: {
-                  include: { permission: true },
-                },
-              },
-            },
-          },
-        },
-      },
+      include: userInclude,
     });
   }
   if (!user) {

@@ -17,8 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, Pencil, Search, Trash2, User } from "lucide-react";
+import { Loader2, Pencil, Search, Trash2 } from "lucide-react";
 
 interface Props {
   classId: string;
@@ -69,7 +68,12 @@ export function ManageStudents({ classId, students }: Props) {
   };
 
   const handleRemove = async (studentId: string) => {
-    if (!confirm("Are you sure you want to remove this student? This will delete all their marks and records for this class.")) return;
+    if (
+      !confirm(
+        `Remove this student from class ${classId}? This will delete all marks and records for this class.`,
+      )
+    )
+      return;
     
     startTransition(async () => {
       try {

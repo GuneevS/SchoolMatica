@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 
 const createSchema = z.object({
   name: z.string().min(3),
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
   const year = searchParams.get("year");
   const term = searchParams.get("term");
 
-  const where: any = {};
+  const where: Prisma.TimetableWhereInput = {};
   if (schoolId) where.schoolId = schoolId;
   if (year) where.year = parseInt(year);
   if (term) where.term = term;

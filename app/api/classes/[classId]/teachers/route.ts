@@ -85,6 +85,7 @@ export async function DELETE(
     });
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error("Failed to delete teacher assignment", error);
     return NextResponse.json({ error: "Assignment not found" }, { status: 404 });
   }
 }

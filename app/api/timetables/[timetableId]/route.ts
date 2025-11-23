@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 
 interface Params {
   params: Promise<{ timetableId: string }>;
@@ -51,9 +52,10 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
   }
 
-  const updateData: any = { ...parsed.data };
-  if (updateData.startDate) updateData.startDate = new Date(updateData.startDate);
-  if (updateData.endDate) updateData.endDate = new Date(updateData.endDate);
+  const { startDate, endDate, ...rest } = parsed.data;
+  const updateData: Prisma.TimetableUpdateInput = { ...rest };
+  if (startDate) updateData.startDate = new Date(startDate);
+  if (endDate) updateData.endDate = new Date(endDate);
 
   const timetable = await prisma.timetable.update({
     where: { id: timetableId },

@@ -24,7 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Trash2, UserX } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 
 interface TeacherWithAssignment extends ClassTeacherAssignment {
   teacher: Teacher;

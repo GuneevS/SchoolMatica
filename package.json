@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "prisma generate && cross-env HOST=0.0.0.0 next dev --hostname 0.0.0.0",
+    "dev": "prisma generate && cross-env HOST=0.0.0.0 PORT=44777 next dev --hostname 0.0.0.0 --port 44777",
     "build": "prisma generate && next build",
-    "start": "next start",
+    "start": "cross-env HOST=0.0.0.0 PORT=44777 next start --hostname 0.0.0.0 --port 44777",
     "lint": "eslint"
   },
   "dependencies": {

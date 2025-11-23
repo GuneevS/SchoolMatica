@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ThemeMode, useThemeStore } from "@/lib/stores/theme-store";
 
 const STORAGE_KEY = "schoolmatica-theme";
@@ -8,7 +8,6 @@ const STORAGE_KEY = "schoolmatica-theme";
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const mode = useThemeStore((state) => state.mode);
   const setMode = useThemeStore((state) => state.setMode);
-  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -20,11 +19,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
       setMode("dark");
     }
-    setHydrated(true);
   }, [setMode]);
 
   useEffect(() => {
-    if (!hydrated || typeof window === "undefined") {
+    if (typeof window === "undefined") {
       return;
     }
 
@@ -36,7 +34,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.classList.remove("dark");
     }
     window.localStorage.setItem(STORAGE_KEY, mode);
-  }, [mode, hydrated]);
+  }, [mode]);
 
   return <>{children}</>;
 }

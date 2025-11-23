@@ -78,6 +78,7 @@ export async function PATCH(
 
     return NextResponse.json(student);
   } catch (error) {
+    console.error("Failed to update student", error);
     return NextResponse.json({ error: "Failed to update student" }, { status: 500 });
   }
 }

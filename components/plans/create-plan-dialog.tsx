@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,12 @@ interface Props {
   templates: TemplateOption[];
 }
 
+type CreatePlanPayload = FormValues & {
+  templateId?: string;
+  useTemplateAssessments: boolean;
+  termWeights?: Record<string, number>;
+};
+
 export function CreatePlanDialog({ classes, templates }: Props) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -67,10 +73,12 @@ export function CreatePlanDialog({ classes, templates }: Props) {
 
   function onSubmit(values: FormValues) {
     startTransition(async () => {
-      const payload: any = {
+      const templateSelected = selectedTemplate !== MANUAL_TEMPLATE_VALUE ? selectedTemplate : undefined;
+
+      const payload: CreatePlanPayload = {
         ...values,
-        templateId: selectedTemplate || undefined,
-        useTemplateAssessments: Boolean(selectedTemplate),
+        templateId: templateSelected,
+        useTemplateAssessments: Boolean(templateSelected),
       };
       
       if (configureWeights && Object.keys(termWeights).length > 0) {
@@ -93,7 +101,7 @@ export function CreatePlanDialog({ classes, templates }: Props) {
     setTermWeights((prev) => ({ ...prev, [term]: value }));
   };
   
-  const termCount = form.watch("termCount") || 4;
+  const termCount = useWatch({ control: form.control, name: "termCount" }) || 4;
   const terms = Array.from({ length: termCount }, (_, i) => `T${i + 1}`);
   const totalWeight = Object.values(termWeights).reduce((sum, w) => sum + w, 0);
   const isWeightValid = !configureWeights || Math.abs(totalWeight - 100) < 0.01;

@@ -1,26 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, MapPin, User, BookOpen, LayoutGrid, List, Loader2 } from "lucide-react";
-import type { Timetable, TimetablePeriod, TimetableSlot, ClassGroup, Teacher, Subject, AssessmentPlan } from "@prisma/client";
+import { Calendar, MapPin, User, LayoutGrid, List } from "lucide-react";
+import type { Timetable, TimetablePeriod, TimetableSlot, ClassGroup, Subject, AssessmentPlan, Teacher } from "@prisma/client";
 import { cn } from "@/lib/utils";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type TimetableSlotWithRelations = TimetableSlot & {
   classGroup: ClassGroup & { subject: Subject | null };
@@ -39,17 +25,13 @@ interface TimetableGridProps {
     slots: TimetableSlotWithRelations[];
   };
   onSlotClick?: (slot: TimetableSlotWithRelations) => void;
-  teachers?: Teacher[];
 }
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
-export function TimetableGrid({ timetable, teachers = [] }: TimetableGridProps) {
+export function TimetableGrid({ timetable, onSlotClick }: TimetableGridProps) {
   const [viewMode, setViewMode] = useState<"day" | "week">("week");
   const [selectedDay, setSelectedDay] = useState(0);
-  const [editingSlot, setEditingSlot] = useState<TimetableSlotWithRelations | null>(null);
-  const [isPending, startTransition] = useTransition();
-  const router = useRouter();
 
   const periodsByDay = timetable.periods.reduce((acc, period) => {
     if (!acc[period.dayOfWeek]) {
@@ -74,41 +56,6 @@ export function TimetableGrid({ timetable, teachers = [] }: TimetableGridProps) 
   Object.keys(periodsByDay).forEach((day) => {
     periodsByDay[Number(day)].sort((a, b) => a.periodNumber - b.periodNumber);
   });
-
-  const handleSlotClick = (slot: TimetableSlotWithRelations) => {
-    setEditingSlot(slot);
-  };
-
-  const handleSaveSlot = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!editingSlot) return;
-
-    const formData = new FormData(e.currentTarget);
-    const data = {
-      classGroupId: editingSlot.classGroupId,
-      teacherId: formData.get("teacherId") === "unassigned" ? null : formData.get("teacherId"),
-      room: formData.get("room"),
-      notes: formData.get("notes"),
-    };
-
-    startTransition(async () => {
-      try {
-        const res = await fetch(`/api/timetable/slots/${editingSlot.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        });
-
-        if (!res.ok) throw new Error("Failed to update slot");
-
-        setEditingSlot(null);
-        router.refresh();
-      } catch (error) {
-        console.error(error);
-        alert("Failed to update timetable slot");
-      }
-    });
-  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -190,7 +137,7 @@ export function TimetableGrid({ timetable, teachers = [] }: TimetableGridProps) 
                                              <div key={dayIndex} className="p-2 border-r last:border-0 min-h-[120px] relative group/cell">
                                                  {slot ? (
                                                      <div 
-                                                        onClick={() => handleSlotClick(slot)}
+                                                       onClick={() => onSlotClick?.(slot)}
                                                         className="h-full w-full rounded-lg bg-primary/5 border border-primary/10 p-3 cursor-pointer hover:bg-primary/10 hover:border-primary/30 transition-all hover:shadow-sm flex flex-col gap-1"
                                                      >
                                                          <div className="flex items-start justify-between">
@@ -263,7 +210,7 @@ export function TimetableGrid({ timetable, teachers = [] }: TimetableGridProps) 
                         "transition-all hover:shadow-md border-l-4",
                         slot ? "cursor-pointer border-l-primary" : "border-l-transparent border-dashed opacity-70"
                     )}
-                    onClick={() => slot && handleSlotClick(slot)}
+                    onClick={() => slot && onSlotClick?.(slot)}
                     >
                     <CardContent className="p-6">
                         <div className="flex items-start gap-6">

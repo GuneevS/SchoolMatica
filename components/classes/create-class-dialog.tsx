@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -59,6 +59,8 @@ export function CreateClassDialog({ subjects, teachers, grades }: Props) {
     },
   });
   const [selectedSubject, setSelectedSubject] = useState(form.getValues("subjectId"));
+  const gradeLevelId = useWatch({ control: form.control, name: "gradeLevelId" }) ?? "";
+  const primaryTeacherId = useWatch({ control: form.control, name: "primaryTeacherId" }) ?? "";
 
   function onSubmit(values: FormValues) {
     startTransition(async () => {
@@ -120,7 +122,7 @@ export function CreateClassDialog({ subjects, teachers, grades }: Props) {
           <div className="space-y-1">
             <Label>Grade band</Label>
             <Select
-              value={form.watch("gradeLevelId")}
+              value={gradeLevelId}
               onValueChange={(value) => form.setValue("gradeLevelId", value)}
             >
               <SelectTrigger>
@@ -138,7 +140,7 @@ export function CreateClassDialog({ subjects, teachers, grades }: Props) {
           <div className="space-y-1">
             <Label>Primary teacher</Label>
             <Select
-              value={form.watch("primaryTeacherId")}
+              value={primaryTeacherId}
               onValueChange={(value) => form.setValue("primaryTeacherId", value)}
             >
               <SelectTrigger>

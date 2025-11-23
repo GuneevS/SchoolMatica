@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, ExternalLink, X, FileText, Image as ImageIcon, File } from "lucide-react";
+import { Download, ExternalLink, FileText, Image as ImageIcon, File } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface DocumentPreviewerProps {
@@ -20,7 +21,6 @@ export function DocumentPreviewer({ open, onOpenChange, fileUrl, fileName, mimeT
   const isImage = mimeType.startsWith("image/");
   const isPDF = mimeType.includes("pdf");
   const isText = mimeType.startsWith("text/");
-  const canPreview = isImage || isPDF || isText;
 
   const handleDownload = () => {
     const link = document.createElement("a");
@@ -40,12 +40,13 @@ export function DocumentPreviewer({ open, onOpenChange, fileUrl, fileName, mimeT
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
           )}
-          <img
+          <Image
             src={fileUrl}
             alt={fileName}
-            className="max-w-full max-h-full object-contain"
-            onLoad={() => setLoading(false)}
-            onError={() => setLoading(false)}
+            fill
+            className="object-contain"
+            onLoadingComplete={() => setLoading(false)}
+            unoptimized
           />
         </div>
       );

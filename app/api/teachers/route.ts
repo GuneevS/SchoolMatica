@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { authorizeWithSchool, getUserSchoolIds, isSystemAdmin, hasSchoolAccess } from "@/lib/auth";
 
 const teacherSchema = z.object({
   firstName: z.string().min(2),
@@ -13,10 +14,37 @@ const teacherSchema = z.object({
 });
 
 export async function GET(request: NextRequest) {
+  const result = await authorizeWithSchool(request, "teacher:read");
+  if ("error" in result) {
+    return result.error;
+  }
+  
+  const { auth } = result;
   const { searchParams } = new URL(request.url);
   const schoolId = searchParams.get("schoolId") ?? undefined;
+  
+  // Validate school access if schoolId is provided
+  if (schoolId && !hasSchoolAccess(auth, schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+  }
+  
+  // Build where clause based on user permissions
+  let whereClause: any = {};
+  if (isSystemAdmin(auth)) {
+    // Admin can see all teachers
+    if (schoolId) {
+      whereClause = { schoolId };
+    }
+  } else {
+    // Non-admins can only see teachers from their schools
+    const userSchoolIds = getUserSchoolIds(auth);
+    whereClause = schoolId 
+      ? { schoolId, id: { in: userSchoolIds } }
+      : { schoolId: { in: userSchoolIds } };
+  }
+  
   const teachers = await prisma.teacher.findMany({
-    where: schoolId ? { schoolId } : undefined,
+    where: whereClause,
     include: {
       classAssignments: {
         include: { classGroup: true, subject: true },
@@ -34,11 +62,24 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const result = await authorizeWithSchool(request, "teacher:create");
+  if ("error" in result) {
+    return result.error;
+  }
+  
+  const { auth } = result;
+  
   const payload = await request.json();
   const parsed = teacherSchema.safeParse(payload);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
   }
+  
+  // Verify user has access to this school
+  if (!hasSchoolAccess(auth, parsed.data.schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+  }
+  
   const schoolExists = await prisma.school.count({ where: { id: parsed.data.schoolId } });
   if (!schoolExists) {
     return NextResponse.json({ error: "School not found" }, { status: 404 });

@@ -3,12 +3,49 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createStudentRecord } from "@/lib/domain/student-onboarding";
+import { authorizeWithSchool, getUserSchoolIds, isSystemAdmin, hasSchoolAccess } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
+  const result = await authorizeWithSchool(request, "student:read");
+  if ("error" in result) {
+    return result.error;
+  }
+  
+  const { auth } = result;
   const { searchParams } = new URL(request.url);
   const classId = searchParams.get("classId");
+  
+  // Build where clause based on user permissions
+  let whereClause: any = {};
+  
+  if (classId) {
+    // Verify the class belongs to an accessible school
+    const classGroup = await prisma.classGroup.findUnique({
+      where: { id: classId },
+      select: { schoolId: true },
+    });
+    
+    if (!classGroup) {
+      return NextResponse.json({ error: "Class not found" }, { status: 404 });
+    }
+    
+    if (!hasSchoolAccess(auth, classGroup.schoolId)) {
+      return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+    }
+    
+    whereClause = { classGroupId: classId };
+  } else if (!isSystemAdmin(auth)) {
+    // Non-admins can only see students from classes in their schools
+    const userSchoolIds = getUserSchoolIds(auth);
+    whereClause = {
+      classGroup: {
+        schoolId: { in: userSchoolIds },
+      },
+    };
+  }
+  
   const students = await prisma.student.findMany({
-    where: classId ? { classGroupId: classId } : undefined,
+    where: whereClause,
     include: { classGroup: true },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
   });
@@ -29,6 +66,13 @@ const studentSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const result = await authorizeWithSchool(request, "student:create");
+  if ("error" in result) {
+    return result.error;
+  }
+  
+  const { auth } = result;
+  
   const json = await request.json();
   const parsed = studentSchema.safeParse(json);
   if (!parsed.success) {
@@ -38,6 +82,11 @@ export async function POST(request: NextRequest) {
   const classGroup = await prisma.classGroup.findUnique({ where: { id: parsed.data.classGroupId } });
   if (!classGroup) {
     return NextResponse.json({ error: "Class not found" }, { status: 404 });
+  }
+  
+  // Verify user has access to this school
+  if (!hasSchoolAccess(auth, classGroup.schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
   }
 
   const guardian = parsed.data.guardianName

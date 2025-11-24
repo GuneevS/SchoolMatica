@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { cloneTemplateToPlan } from "@/lib/assessment-service";
+import { authorizeWithSchool, hasSchoolAccess, getUserSchoolIds, isSystemAdmin } from "@/lib/auth";
 
 const createSchema = z.object({
   name: z.string().min(3),
@@ -21,10 +22,46 @@ const createSchema = z.object({
 });
 
 export async function GET(request: NextRequest) {
+  const result = await authorizeWithSchool(request, "assessmentPlan:read");
+  if ("error" in result) {
+    return result.error;
+  }
+  
+  const { auth } = result;
   const { searchParams } = new URL(request.url);
   const classId = searchParams.get("classId");
+  
+  // Build where clause based on user permissions
+  let whereClause: any = {};
+  
+  if (classId) {
+    // Verify the class belongs to an accessible school
+    const classGroup = await prisma.classGroup.findUnique({
+      where: { id: classId },
+      select: { schoolId: true },
+    });
+    
+    if (!classGroup) {
+      return NextResponse.json({ error: "Class not found" }, { status: 404 });
+    }
+    
+    if (!hasSchoolAccess(auth, classGroup.schoolId)) {
+      return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+    }
+    
+    whereClause = { classGroupId: classId };
+  } else if (!isSystemAdmin(auth)) {
+    // Non-admins can only see plans from classes in their schools
+    const userSchoolIds = getUserSchoolIds(auth);
+    whereClause = {
+      classGroup: {
+        schoolId: { in: userSchoolIds },
+      },
+    };
+  }
+  
   const plans = await prisma.assessmentPlan.findMany({
-    where: classId ? { classGroupId: classId } : undefined,
+    where: whereClause,
     include: {
       classGroup: { include: { subject: true } },
       template: true,
@@ -38,12 +75,33 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const result = await authorizeWithSchool(request, "assessmentPlan:create");
+  if ("error" in result) {
+    return result.error;
+  }
+  
+  const { auth } = result;
+  
   const json = await request.json();
   const parsed = createSchema.safeParse(json);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
   }
   const { name, year, termCount, classGroupId, templateId, useTemplateAssessments, termWeights } = parsed.data;
+  
+  // Verify the class belongs to an accessible school
+  const classGroup = await prisma.classGroup.findUnique({
+    where: { id: classGroupId },
+    select: { schoolId: true },
+  });
+  
+  if (!classGroup) {
+    return NextResponse.json({ error: "Class not found" }, { status: 404 });
+  }
+  
+  if (!hasSchoolAccess(auth, classGroup.schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+  }
 
   if (templateId && useTemplateAssessments !== false) {
     const plan = await cloneTemplateToPlan({

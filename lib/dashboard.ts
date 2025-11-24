@@ -49,6 +49,11 @@ export interface DashboardData {
   registrations: RegistrationSummary;
 }
 
+/**
+ * Get dashboard data for a specific school
+ * Note: Authorization and school access validation should be done by the caller
+ * This function assumes the schoolId has already been validated for the current user
+ */
 export async function getDashboardData(schoolId: string): Promise<DashboardData> {
   const [classes, openThreadsCount, registrationCounts] = await Promise.all([
     prisma.classGroup.findMany({

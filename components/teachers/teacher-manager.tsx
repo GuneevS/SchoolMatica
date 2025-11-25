@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PermissionGate } from "@/components/auth/permission-gate";
 
 type Assignment = {
   id: string;
@@ -79,10 +80,11 @@ export function TeacherManager({ teachers, classes, subjects, schoolId }: Teache
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>Create teacher</Button>
-          </DialogTrigger>
+        <PermissionGate permission="teacher:create">
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button>Create teacher</Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add teacher</DialogTitle>
@@ -124,7 +126,8 @@ export function TeacherManager({ teachers, classes, subjects, schoolId }: Teache
               </Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </PermissionGate>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -162,10 +165,12 @@ export function TeacherManager({ teachers, classes, subjects, schoolId }: Teache
                   {teacher.subjectAssignments.length === 0 && <span className="text-xs text-muted-foreground">No subject focus yet.</span>}
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <AssignToClassButton teacherId={teacher.id} classes={classes} onSuccess={() => router.refresh()} />
-                <TagSubjectButton teacherId={teacher.id} subjects={subjects} onSuccess={() => router.refresh()} />
-              </div>
+              <PermissionGate permission="class:manage">
+                <div className="flex flex-wrap gap-2">
+                  <AssignToClassButton teacherId={teacher.id} classes={classes} onSuccess={() => router.refresh()} />
+                  <TagSubjectButton teacherId={teacher.id} subjects={subjects} onSuccess={() => router.refresh()} />
+                </div>
+              </PermissionGate>
             </CardContent>
           </Card>
         ))}

@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { calculateStudentSba } from "@/lib/calculations";
+import { calculateStudentSba, getBandsForPhase, mapPercentToLevel } from "@/lib/calculations";
+import { authorizeWithSchool, hasSchoolAccess } from "@/lib/auth";
+import { auditReportGeneration } from "@/lib/audit";
 
 export async function POST(request: NextRequest) {
+  // Authorize the request
+  const authResult = await authorizeWithSchool(request, "report:generate");
+  if ("error" in authResult) {
+    return authResult.error;
+  }
+  const { auth } = authResult;
+
   try {
     const body = await request.json();
     const {
@@ -22,10 +31,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get class group with assessment plan
+    // Get class group with assessment plan and school's grading config
     const classGroup = await prisma.classGroup.findUnique({
       where: { id: classGroupId },
       include: {
+        school: {
+          include: { gradingConfig: true },
+        },
+        gradeLevel: true,
         assessmentPlans: {
           include: {
             assessments: {
@@ -44,8 +57,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Class not found" }, { status: 404 });
     }
 
+    // Verify school access
+    if (!hasSchoolAccess(auth, classGroup.schoolId)) {
+      return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+    }
+
     const assessmentPlan = classGroup.assessmentPlans[0];
     const assessments = assessmentPlan?.assessments ?? [];
+
+    // Get grading bands from school's config - FIX: use actual config instead of hardcoded values
+    const phase = classGroup.gradeLevel?.name ?? "default";
+    const gradingBands = getBandsForPhase(classGroup.school.gradingConfig, phase);
 
     // Generate report cards for each student
     const reportCards = [];
@@ -56,21 +78,12 @@ export async function POST(request: NextRequest) {
         studentId,
       });
 
-      // Determine achievement level (1-7 scale)
-      const achievementLevel = 
-        sbaResult.sbaPercent >= 80 ? 7 :
-        sbaResult.sbaPercent >= 70 ? 6 :
-        sbaResult.sbaPercent >= 60 ? 5 :
-        sbaResult.sbaPercent >= 50 ? 4 :
-        sbaResult.sbaPercent >= 40 ? 3 :
-        sbaResult.sbaPercent >= 30 ? 2 : 1;
+      // Use school's grading config to determine level - FIX: dynamic grading
+      const levelResult = mapPercentToLevel(sbaResult.sbaPercent, gradingBands);
+      const achievementLevel = levelResult.level;
 
-      // Determine overall grade (A-E scale)
-      const overallGrade =
-        sbaResult.sbaPercent >= 80 ? "A" :
-        sbaResult.sbaPercent >= 70 ? "B" :
-        sbaResult.sbaPercent >= 60 ? "C" :
-        sbaResult.sbaPercent >= 50 ? "D" : "E";
+      // Map level to letter grade (using descriptor or fallback)
+      const overallGrade = getLetterGrade(sbaResult.sbaPercent, gradingBands);
 
       // Create or update report card
       const reportCard = await prisma.reportCard.upsert({
@@ -110,6 +123,14 @@ export async function POST(request: NextRequest) {
       reportCards.push(reportCard);
     }
 
+    // Audit the report generation
+    await auditReportGeneration(auth, "report_card", classGroup.schoolId, {
+      classGroupId,
+      term,
+      year,
+      studentCount: studentIds.length,
+    });
+
     return NextResponse.json({
       success: true,
       count: reportCards.length,
@@ -122,4 +143,36 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Convert percentage to letter grade based on grading bands.
+ * Falls back to standard A-E scale if no bands configured.
+ */
+function getLetterGrade(percent: number, bands: { minPercent: number; level: number; descriptor: string }[]): string {
+  if (bands.length === 0) {
+    // Fallback to standard scale
+    if (percent >= 80) return "A";
+    if (percent >= 70) return "B";
+    if (percent >= 60) return "C";
+    if (percent >= 50) return "D";
+    return "E";
+  }
+
+  // Use the descriptor from the matched band, or derive from level
+  const matched = mapPercentToLevel(percent, bands);
+  
+  // Try to use descriptor first letter if it looks like a grade
+  const descriptor = matched.descriptor;
+  if (descriptor && /^[A-F]$/i.test(descriptor.charAt(0))) {
+    return descriptor.charAt(0).toUpperCase();
+  }
+  
+  // Otherwise map level to grade (7=A, 6=B, 5=C, 4=D, 1-3=E)
+  const level = matched.level;
+  if (level >= 7) return "A";
+  if (level >= 6) return "B";
+  if (level >= 5) return "C";
+  if (level >= 4) return "D";
+  return "E";
 }

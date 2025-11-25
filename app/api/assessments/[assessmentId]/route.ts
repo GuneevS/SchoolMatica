@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { recalculateWeightsForPlan } from "@/lib/assessment-service";
+import { authorizeWithSchool, hasSchoolAccess } from "@/lib/auth";
 
 interface Params {
   params: Promise<{ assessmentId: string }>;
@@ -20,7 +21,26 @@ const updateSchema = z.object({
   category: z.string().optional(),
 });
 
+// Helper to get assessment with school info
+async function getAssessmentWithSchool(assessmentId: string) {
+  return prisma.assessment.findUnique({
+    where: { id: assessmentId },
+    include: {
+      assessmentPlan: {
+        select: { classGroup: { select: { schoolId: true } } },
+      },
+    },
+  });
+}
+
 export async function PATCH(request: NextRequest, { params }: Params) {
+  // Authorize the request
+  const authResult = await authorizeWithSchool(request, "assessment:update");
+  if ("error" in authResult) {
+    return authResult.error;
+  }
+  const { auth } = authResult;
+
   const { assessmentId } = await params;
   const json = await request.json();
   const parsed = updateSchema.safeParse(json);
@@ -28,11 +48,14 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
   }
 
-  const existing = await prisma.assessment.findUnique({
-    where: { id: assessmentId },
-  });
+  const existing = await getAssessmentWithSchool(assessmentId);
   if (!existing) {
     return NextResponse.json({ error: "Assessment not found" }, { status: 404 });
+  }
+
+  // Verify school access
+  if (!hasSchoolAccess(auth, existing.assessmentPlan.classGroup.schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
   }
 
   const assessment = await prisma.assessment.update({
@@ -50,11 +73,28 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   return NextResponse.json(assessment);
 }
 
-export async function DELETE(_: NextRequest, { params }: Params) {
+export async function DELETE(request: NextRequest, { params }: Params) {
+  // Authorize the request
+  const authResult = await authorizeWithSchool(request, "assessment:delete");
+  if ("error" in authResult) {
+    return authResult.error;
+  }
+  const { auth } = authResult;
+
   const { assessmentId } = await params;
-  const existing = await prisma.assessment.delete({
-    where: { id: assessmentId },
-  });
+  
+  const existing = await getAssessmentWithSchool(assessmentId);
+  if (!existing) {
+    return NextResponse.json({ error: "Assessment not found" }, { status: 404 });
+  }
+
+  // Verify school access
+  if (!hasSchoolAccess(auth, existing.assessmentPlan.classGroup.schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+  }
+
+  await prisma.assessment.delete({ where: { id: assessmentId } });
   await recalculateWeightsForPlan(existing.assessmentPlanId);
+  
   return NextResponse.json({ success: true });
 }

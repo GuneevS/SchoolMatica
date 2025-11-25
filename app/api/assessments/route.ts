@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { recalculateWeightsForPlan } from "@/lib/assessment-service";
+import { authorizeWithSchool, hasSchoolAccess } from "@/lib/auth";
 
 const createSchema = z.object({
   assessmentPlanId: z.string(),
@@ -17,10 +18,31 @@ const createSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  // Authorize the request
+  const authResult = await authorizeWithSchool(request, "assessment:create");
+  if ("error" in authResult) {
+    return authResult.error;
+  }
+  const { auth } = authResult;
+
   const json = await request.json();
   const parsed = createSchema.safeParse(json);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
+  }
+
+  // Verify school access for the assessment plan
+  const plan = await prisma.assessmentPlan.findUnique({
+    where: { id: parsed.data.assessmentPlanId },
+    select: { classGroup: { select: { schoolId: true } } },
+  });
+  
+  if (!plan) {
+    return NextResponse.json({ error: "Assessment plan not found" }, { status: 404 });
+  }
+  
+  if (!hasSchoolAccess(auth, plan.classGroup.schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
   }
 
   const existingCount = await prisma.assessment.count({

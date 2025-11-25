@@ -85,6 +85,7 @@ model School {
   learnerRegistrations LearnerRegistration[]
   users           AppUser[]
   timetables      Timetable[]
+  teacherInvitations TeacherInvitation[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 }
@@ -171,6 +172,7 @@ model Teacher {
   advisees    Student[]                  @relation("AdvisorTeacher")
   account     AppUser?                   @relation("TeacherAccount")
   timetableSlots TimetableSlot[]
+  invitations TeacherInvitation[]
   createdAt   DateTime                   @default(now())
   updatedAt   DateTime                   @updatedAt
 }
@@ -537,5 +539,28 @@ model ReportCard {
 
   @@unique([studentId, term, year])
   @@index([classGroupId, term, year])
+  @@index([status])
+}
+
+// Teacher invitation for account linking
+model TeacherInvitation {
+  id          String   @id @default(cuid())
+  teacher     Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId   String
+  school      School   @relation(fields: [schoolId], references: [id])
+  schoolId    String
+  email       String   // Email to send invitation to
+  token       String   @unique // Secure token for accepting invitation
+  roleKey     String   @default("teacher") // Role to assign upon acceptance
+  status      String   @default("Pending") // Pending, Accepted, Expired, Revoked
+  invitedBy   String?  // User ID who sent the invitation
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([teacherId, email])
+  @@index([token])
+  @@index([email])
   @@index([status])
 }

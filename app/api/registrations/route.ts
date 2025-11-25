@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { authorizeWithSchool, hasSchoolAccess, isSystemAdmin, getUserSchoolIds } from "@/lib/auth";
 
 const createSchema = z.object({
   schoolId: z.string(),
@@ -12,14 +13,44 @@ const createSchema = z.object({
 });
 
 export async function GET(request: NextRequest) {
+  // Authorize the request
+  const authResult = await authorizeWithSchool(request, "registration:read");
+  if ("error" in authResult) {
+    return authResult.error;
+  }
+  const { auth } = authResult;
+
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status") ?? undefined;
   const classGroupId = searchParams.get("classGroupId") ?? undefined;
+  const schoolId = searchParams.get("schoolId") ?? undefined;
+
+  // Validate school access if schoolId is provided
+  if (schoolId && !hasSchoolAccess(auth, schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+  }
+
+  // Build where clause based on user permissions
+  let whereClause: Prisma.LearnerRegistrationWhereInput = {
+    status,
+    classGroupId,
+  };
+
+  if (isSystemAdmin(auth)) {
+    // Admin can see all registrations, optionally filtered by schoolId
+    if (schoolId) {
+      whereClause.schoolId = schoolId;
+    }
+  } else {
+    // Non-admins can only see registrations from their schools
+    const userSchoolIds = getUserSchoolIds(auth);
+    whereClause.schoolId = schoolId 
+      ? schoolId 
+      : { in: userSchoolIds };
+  }
+
   const registrations = await prisma.learnerRegistration.findMany({
-    where: {
-      status,
-      classGroupId,
-    },
+    where: whereClause,
     include: {
       classGroup: true,
     },
@@ -29,10 +60,22 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // Authorize the request
+  const authResult = await authorizeWithSchool(request, "registration:create");
+  if ("error" in authResult) {
+    return authResult.error;
+  }
+  const { auth } = authResult;
+
   const json = await request.json();
   const parsed = createSchema.safeParse(json);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
+  }
+
+  // Verify user has access to this school
+  if (!hasSchoolAccess(auth, parsed.data.schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
   }
 
   const school = await prisma.school.findUnique({ where: { id: parsed.data.schoolId } });

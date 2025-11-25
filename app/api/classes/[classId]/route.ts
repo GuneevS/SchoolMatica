@@ -1,11 +1,19 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { authorizeWithSchool, hasSchoolAccess } from "@/lib/auth";
 
 interface Params {
   params: Promise<{ classId: string }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
+export async function GET(request: NextRequest, { params }: Params) {
+  // Authorize the request
+  const authResult = await authorizeWithSchool(request, "class:read");
+  if ("error" in authResult) {
+    return authResult.error;
+  }
+  const { auth } = authResult;
+
   const { classId } = await params;
   const classGroup = await prisma.classGroup.findUnique({
     where: { id: classId },
@@ -21,6 +29,11 @@ export async function GET(_: Request, { params }: Params) {
 
   if (!classGroup) {
     return NextResponse.json({ error: "Class not found" }, { status: 404 });
+  }
+
+  // Verify user has access to this school
+  if (!hasSchoolAccess(auth, classGroup.schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
   }
 
   return NextResponse.json(classGroup);

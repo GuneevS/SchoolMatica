@@ -5,11 +5,23 @@ import { Button } from "@/components/ui/button";
 import { CreateClassDialog } from "@/components/classes/create-class-dialog";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 import { Users } from "lucide-react";
-import { getActiveSchool } from "@/lib/school";
+import { getAuthorizedActiveSchool, getServerAuthContext } from "@/lib/auth-server";
 import { AssignTeacherDialog } from "@/components/classes/assign-teacher-dialog";
 
 export default async function ClassesPage() {
-  const school = await getActiveSchool();
+  const [auth, school] = await Promise.all([
+    getServerAuthContext(),
+    getAuthorizedActiveSchool(),
+  ]);
+
+  if (!auth) {
+    return (
+      <div className="p-10 text-center text-muted-foreground">
+        <p>Please sign in to access classes.</p>
+      </div>
+    );
+  }
+
   if (!school) {
     return (
       <div className="p-10 text-center text-muted-foreground">

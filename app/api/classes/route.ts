@@ -28,8 +28,9 @@ export async function GET(request: NextRequest) {
   } else {
     // Non-admins can only see classes from their schools
     const userSchoolIds = getUserSchoolIds(auth);
+    // BUG FIX: Was incorrectly using `id: { in: userSchoolIds }` which filtered class IDs by school IDs
     whereClause = schoolId 
-      ? { schoolId, id: { in: userSchoolIds } }
+      ? { schoolId }  // schoolId already validated above via hasSchoolAccess
       : { schoolId: { in: userSchoolIds } };
   }
   

@@ -99,6 +99,15 @@ export const PERMISSION_KEYS = [
   "gradeLevel:update",
   "gradeLevel:delete",
   
+  // User Management
+  "user:read",
+  "user:create",
+  "user:update",
+  "user:delete",
+  "role:read",
+  "role:assign",
+  "role:remove",
+  
   // System Admin - cross-school access
   "system:admin",
 ] as const;

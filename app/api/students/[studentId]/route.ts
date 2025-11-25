@@ -2,12 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { calculateStudentSba, calculateTermPercentages, getBandsForPhase, mapPercentToLevel } from "@/lib/calculations";
+import { authorizeWithSchool, hasSchoolAccess } from "@/lib/auth";
 
 interface Params {
   params: Promise<{ studentId: string }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
+export async function GET(request: NextRequest, { params }: Params) {
+  // Authorize the request
+  const authResult = await authorizeWithSchool(request, "student:read");
+  if ("error" in authResult) {
+    return authResult.error;
+  }
+  const { auth } = authResult;
+
   const { studentId } = await params;
   const student = await prisma.student.findUnique({
     where: { id: studentId },
@@ -28,6 +36,11 @@ export async function GET(_: Request, { params }: Params) {
 
   if (!student) {
     return NextResponse.json({ error: "Student not found" }, { status: 404 });
+  }
+
+  // Verify user has access to this school
+  if (!hasSchoolAccess(auth, student.classGroup.schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
   }
 
   const plan = student.classGroup.assessmentPlans[0];
@@ -62,7 +75,30 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ studentId: string }> }
 ) {
+  // Authorize the request
+  const authResult = await authorizeWithSchool(request, "student:update");
+  if ("error" in authResult) {
+    return authResult.error;
+  }
+  const { auth } = authResult;
+
   const { studentId } = await params;
+  
+  // Get student to verify school access
+  const existingStudent = await prisma.student.findUnique({
+    where: { id: studentId },
+    select: { classGroup: { select: { schoolId: true } } },
+  });
+  
+  if (!existingStudent) {
+    return NextResponse.json({ error: "Student not found" }, { status: 404 });
+  }
+  
+  // Verify user has access to this school
+  if (!hasSchoolAccess(auth, existingStudent.classGroup.schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+  }
+
   const json = await request.json();
   const parsed = updateSchema.safeParse(json);
 
@@ -87,7 +123,29 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ studentId: string }> }
 ) {
+  // Authorize the request
+  const authResult = await authorizeWithSchool(request, "student:delete");
+  if ("error" in authResult) {
+    return authResult.error;
+  }
+  const { auth } = authResult;
+
   const { studentId } = await params;
+  
+  // Get student to verify school access
+  const existingStudent = await prisma.student.findUnique({
+    where: { id: studentId },
+    select: { classGroup: { select: { schoolId: true } } },
+  });
+  
+  if (!existingStudent) {
+    return NextResponse.json({ error: "Student not found" }, { status: 404 });
+  }
+  
+  // Verify user has access to this school
+  if (!hasSchoolAccess(auth, existingStudent.classGroup.schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+  }
 
   try {
     // Transaction to ensure clean cleanup
@@ -103,6 +161,12 @@ export async function DELETE(
 
         // Delete learner registrations
         await tx.learnerRegistration.deleteMany({ where: { studentId } });
+
+        // Delete learner comments
+        await tx.learnerComment.deleteMany({ where: { studentId } });
+
+        // Delete report cards
+        await tx.reportCard.deleteMany({ where: { studentId } });
 
         // Finally delete student
         await tx.student.delete({ where: { id: studentId } });

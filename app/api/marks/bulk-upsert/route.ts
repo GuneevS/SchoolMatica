@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { buildMarkSnapshot } from "@/lib/calculations";
+import { authorizeWithSchool, hasSchoolAccess, isSystemAdmin, getUserSchoolIds } from "@/lib/auth";
 
 const payloadSchema = z.object({
   entries: z
@@ -19,10 +20,43 @@ const payloadSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  // Authorize the request - marks require mark:update permission
+  const authResult = await authorizeWithSchool(request, "mark:update");
+  if ("error" in authResult) {
+    return authResult.error;
+  }
+  const { auth } = authResult;
+
   const json = await request.json();
   const parsed = payloadSchema.safeParse(json);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
+  }
+
+  // Validate school access for all assessments being modified
+  const entryAssessmentIds = [...new Set(parsed.data.entries.map((entry) => entry.assessmentId))];
+  const assessmentsWithSchool = await prisma.assessment.findMany({
+    where: { id: { in: entryAssessmentIds } },
+    select: {
+      id: true,
+      assessmentPlan: {
+        select: {
+          classGroup: {
+            select: { schoolId: true },
+          },
+        },
+      },
+    },
+  });
+
+  // Check user has access to all schools involved
+  const schoolIds = new Set(
+    assessmentsWithSchool.map((a) => a.assessmentPlan.classGroup.schoolId)
+  );
+  for (const schoolId of schoolIds) {
+    if (!hasSchoolAccess(auth, schoolId)) {
+      return NextResponse.json({ error: "Access denied to one or more schools" }, { status: 403 });
+    }
   }
 
   await prisma.$transaction(

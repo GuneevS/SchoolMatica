@@ -11,7 +11,7 @@ import { WelcomeBanner } from "@/components/welcome-banner";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
-import { getActiveSchool } from "@/lib/school";
+import { getAuthorizedActiveSchool, getServerAuthContext } from "@/lib/auth-server";
 import { RolePersonalizedHighlights } from "@/components/dashboard/role-personalized-highlights";
 
 const heroHighlights = [
@@ -21,7 +21,20 @@ const heroHighlights = [
 ];
 
 export default async function DashboardPage() {
-  const school = await getActiveSchool();
+  // Get authenticated user context and authorized school
+  const [auth, school] = await Promise.all([
+    getServerAuthContext(),
+    getAuthorizedActiveSchool(),
+  ]);
+
+  if (!auth) {
+    return (
+      <div className="p-10 text-center text-muted-foreground">
+        <p>Please sign in to access the dashboard.</p>
+      </div>
+    );
+  }
+
   if (!school) {
     return (
       <div className="p-10 text-center text-muted-foreground">

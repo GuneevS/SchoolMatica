@@ -2,10 +2,22 @@ import { prisma } from "@/lib/prisma";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 import { GraduationCap } from "lucide-react";
 import { TeacherManager } from "@/components/teachers/teacher-manager";
-import { getActiveSchool } from "@/lib/school";
+import { getAuthorizedActiveSchool, getServerAuthContext } from "@/lib/auth-server";
 
 export default async function TeachersPage() {
-  const school = await getActiveSchool();
+  const [auth, school] = await Promise.all([
+    getServerAuthContext(),
+    getAuthorizedActiveSchool(),
+  ]);
+
+  if (!auth) {
+    return (
+      <div className="p-10 text-center text-muted-foreground">
+        <p>Please sign in to access teachers.</p>
+      </div>
+    );
+  }
+
   if (!school) {
     return (
       <div className="p-10 text-center text-muted-foreground">

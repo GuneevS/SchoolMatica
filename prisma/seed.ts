@@ -122,6 +122,15 @@ const permissionSeeds = [
   { key: "gradeLevel:update", resource: "gradeLevel", action: "update", description: "Update grade levels" },
   { key: "gradeLevel:delete", resource: "gradeLevel", action: "delete", description: "Delete grade levels" },
   
+  // User Management
+  { key: "user:read", resource: "user", action: "read", description: "View users" },
+  { key: "user:create", resource: "user", action: "create", description: "Create users" },
+  { key: "user:update", resource: "user", action: "update", description: "Update users" },
+  { key: "user:delete", resource: "user", action: "delete", description: "Delete users" },
+  { key: "role:read", resource: "role", action: "read", description: "View roles" },
+  { key: "role:assign", resource: "role", action: "assign", description: "Assign roles to users" },
+  { key: "role:remove", resource: "role", action: "remove", description: "Remove roles from users" },
+  
   // System Admin
   { key: "system:admin", resource: "system", action: "admin", description: "Full system access across all schools" },
 ];
@@ -318,9 +327,23 @@ const rolePermissionMatrix: Record<string, string[]> = {
     "school:read",
     "school:update",
     "school:manage",
+    // User Management (within their school)
+    "user:read",
+    "user:create",
+    "user:update",
+    "role:read",
+    "role:assign",
   ],
   admin: [
     "system:admin", // This grants everything
+    // Explicit user management for completeness
+    "user:read",
+    "user:create",
+    "user:update",
+    "user:delete",
+    "role:read",
+    "role:assign",
+    "role:remove",
   ],
 };
 

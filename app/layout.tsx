@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AppShell } from "@/components/layout/app-shell";
 import { Providers } from "@/components/providers";
+import { HydrationErrorFilter } from "@/components/hydration-error-filter";
 import { getActiveSchool } from "@/lib/school";
 import "./globals.css";
 
@@ -50,6 +51,7 @@ export default async function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <HydrationErrorFilter />
         <Providers>
           <AppShell
             initialSchool={

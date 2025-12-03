@@ -11,55 +11,87 @@ interface Props {
 export function MarkbookSummary({ stats, plan }: Props) {
   const totalAssessments = plan.assessments?.length ?? 0;
   const completion = stats.totalMarks === 0 ? 0 : (stats.capturedMarks / stats.totalMarks) * 100;
-  
+
   const getTrend = (value: number, threshold: number) => {
     if (value >= threshold + 10) return "up";
     if (value < threshold) return "down";
     return "neutral";
   };
-  
+
+  const cards: Array<{
+    label: string;
+    value: string;
+    helper: string;
+    tooltip?: string;
+    color?: "blue" | "emerald" | "amber" | "purple" | "cyan";
+    trend?: "up" | "down" | "neutral";
+  }> = [
+    {
+      label: "Assessments",
+      value: String(totalAssessments),
+      helper: `${plan.termCount} terms`,
+      tooltip: "Total number of assessments in this plan. Weights are automatically normalized across all assessments.",
+      color: "blue",
+    },
+    {
+      label: "Captured marks",
+      value: `${stats.capturedMarks}/${stats.totalMarks}`,
+      helper: `${completion.toFixed(1)}% complete`,
+      tooltip: "Number of marks entered vs. total possible marks. Includes all students and assessments.",
+      color: "purple",
+      trend: completion >= 80 ? "up" : completion >= 50 ? "neutral" : "down",
+    },
+    {
+      label: "Average SBA",
+      value: `${stats.averageSba.toFixed(1)}%`,
+      helper: "Across class",
+      tooltip:
+        "School-Based Assessment average. Calculated from weighted assessments, excluding absent marks. Automatically renormalizes when marks are missing.",
+      color: "emerald",
+      trend: getTrend(stats.averageSba, 60),
+    },
+    {
+      label: "At-risk learners",
+      value: String(stats.atRiskLearners),
+      helper: "Below 40%",
+      tooltip: "Students with SBA percentage below 40%. These learners may need additional support or intervention.",
+      color: stats.atRiskLearners > 0 ? "amber" : "emerald",
+      trend: stats.atRiskLearners === 0 ? "up" : "down",
+    },
+    {
+      label: "Average PAT",
+      value: `${stats.averagePat.toFixed(1)}%`,
+      helper: "Practical components",
+      tooltip: "Average for Practical Assessment Tasks only. PAT components are weighted separately from other school-based assessments.",
+      color: "cyan",
+      trend: getTrend(stats.averagePat, 60),
+    },
+  ];
+
+  if (stats.hasTermWeights) {
+    cards.splice(2, 0, {
+      label: "Final-year avg",
+      value: `${stats.averageFinal.toFixed(1)}%`,
+      helper: "Term-weighted",
+      tooltip: "Final-year mark after applying configured term weights across SBA and PAT components.",
+      color: "purple",
+      trend: getTrend(stats.averageFinal, 60),
+    });
+  }
+
   return (
     <TooltipProvider>
-      <div className="grid gap-4 md:grid-cols-5">
-        <SummaryCard 
-          label="Assessments" 
-          value={totalAssessments} 
-          helper={`${plan.termCount} terms`}
-          tooltip="Total number of assessments in this plan. Weights are automatically normalized across all assessments."
-          color="blue"
-        />
-        <SummaryCard 
-          label="Captured marks" 
-          value={`${stats.capturedMarks}/${stats.totalMarks}`} 
-          helper={`${completion.toFixed(1)}% complete`}
-          tooltip="Number of marks entered vs. total possible marks. Includes all students and assessments."
-          color="purple"
-          trend={completion >= 80 ? "up" : completion >= 50 ? "neutral" : "down"}
-        />
-        <SummaryCard 
-          label="Average SBA" 
-          value={`${stats.averageSba.toFixed(1)}%`} 
-          helper="Across class"
-          tooltip="School-Based Assessment average. Calculated from weighted assessments, excluding absent marks. Automatically renormalizes when marks are missing."
-          color="emerald"
-          trend={getTrend(stats.averageSba, 60)}
-        />
-        <SummaryCard 
-          label="At-risk learners" 
-          value={stats.atRiskLearners.toString()} 
-          helper="Below 40%"
-          tooltip="Students with SBA percentage below 40%. These learners may need additional support or intervention."
-          color={stats.atRiskLearners > 0 ? "amber" : "emerald"}
-          trend={stats.atRiskLearners === 0 ? "up" : "down"}
-        />
-        <SummaryCard 
-          label="Average PAT" 
-          value={`${stats.averagePat.toFixed(1)}%`} 
-          helper="Practical components"
-          tooltip="Average for Practical Assessment Tasks only. PAT components are weighted separately from other school-based assessments."
-          color="cyan"
-          trend={getTrend(stats.averagePat, 60)}
-        />
+      <div className="space-y-3">
+        {stats.hasTermWeights && (
+          <div className="rounded-lg border border-[hsl(var(--border))/0.6] bg-[hsl(var(--surface-soft))] px-4 py-3 text-xs text-muted-foreground">
+            Term weighting is active for this plan. Final-year marks and dashboards will reflect configured term contributions.
+          </div>
+        )}
+        <div className="grid gap-4 md:grid-cols-5">
+          {cards.map((card) => (
+            <SummaryCard key={card.label} {...card} />
+          ))}
+        </div>
       </div>
     </TooltipProvider>
   );

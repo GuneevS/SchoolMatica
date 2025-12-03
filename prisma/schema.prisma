@@ -4,8 +4,71 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  url      = "file:./dev.db"
 }
+
+model AppUser {
+  id            String               @id @default(cuid())
+  email         String               @unique
+  displayName   String
+  school        School               @relation(fields: [schoolId], references: [id])
+  schoolId      String
+  teacher       Teacher?             @relation("TeacherAccount", fields: [teacherId], references: [id])
+  teacherId     String?              @unique
+  roleAssignments UserRoleAssignment[]
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+}
+
+model RoleDefinition {
+  id          String             @id @default(cuid())
+  key         String             @unique
+  name        String
+  description String?
+  priority    Int                @default(0)
+  assignments UserRoleAssignment[]
+  permissions RolePermission[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+model PermissionDefinition {
+  id          String           @id @default(cuid())
+  key         String           @unique
+  resource    String
+  action      String
+  description String?
+  grants      RolePermission[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([resource, action])
+}
+
+model RolePermission {
+  id            String               @id @default(cuid())
+  role          RoleDefinition       @relation(fields: [roleId], references: [id])
+  roleId        String
+  permission    PermissionDefinition @relation(fields: [permissionId], references: [id])
+  permissionId  String
+  createdAt     DateTime             @default(now())
+
+  @@unique([roleId, permissionId])
+}
+
+model UserRoleAssignment {
+  id            String         @id @default(cuid())
+  user          AppUser        @relation(fields: [userId], references: [id])
+  userId        String
+  role          RoleDefinition @relation(fields: [roleId], references: [id])
+  roleId        String
+  scopeSchoolId String?
+  scopeClassId  String?
+  createdAt     DateTime       @default(now())
+
+  @@index([userId, roleId])
+}
+
 
 model School {
   id              String          @id @default(cuid())
@@ -20,6 +83,8 @@ model School {
   gradeLevels     GradeLevel[]
   auditLogs       AuditLog[]
   learnerRegistrations LearnerRegistration[]
+  users           AppUser[]
+  timetables      Timetable[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 }
@@ -48,8 +113,9 @@ model ClassGroup {
   name            String
   grade           Int
   year            Int
-  subject         Subject          @relation(fields: [subjectId], references: [id])
-  subjectId       String
+  classType       ClassType        @default(Subject)
+  subject         Subject?         @relation(fields: [subjectId], references: [id])
+  subjectId       String?
   school          School           @relation(fields: [schoolId], references: [id])
   schoolId        String
   curriculumTemplate CurriculumTemplate? @relation(fields: [curriculumTemplateId], references: [id])
@@ -62,6 +128,9 @@ model ClassGroup {
   assessmentPlans AssessmentPlan[]
   learnerRegistrations LearnerRegistration[]
   teacherAssignments ClassTeacherAssignment[]
+  timetableSlots  TimetableSlot[]
+  learnerComments LearnerComment[]
+  reportCards     ReportCard[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 }
@@ -80,6 +149,8 @@ model Student {
   registrations    LearnerRegistration[]
   snapshots        MarkSnapshot[]
   parents          ParentContact[]
+  comments         LearnerComment[]
+  reportCards      ReportCard[]
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 }
@@ -98,6 +169,8 @@ model Teacher {
   classAssignments ClassTeacherAssignment[]
   subjectAssignments TeacherSubjectAssignment[]
   advisees    Student[]                  @relation("AdvisorTeacher")
+  account     AppUser?                   @relation("TeacherAccount")
+  timetableSlots TimetableSlot[]
   createdAt   DateTime                   @default(now())
   updatedAt   DateTime                   @updatedAt
 }
@@ -112,6 +185,13 @@ model ClassTeacherAssignment {
   subject       Subject?   @relation(fields: [subjectId], references: [id])
   subjectId     String?
   createdAt     DateTime   @default(now())
+
+  @@unique([classGroupId, teacherId])
+}
+
+enum ClassType {
+  Subject
+  Homeroom
 }
 
 model TeacherSubjectAssignment {
@@ -168,6 +248,7 @@ model AssessmentPlan {
   moderationThreads  ModerationThread[]
   documents          AssessmentDocument[]
   snapshots          MarkSnapshot[]
+  timetableSlots     TimetableSlot[]
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 }
@@ -354,4 +435,107 @@ model MarkSnapshot {
 
   @@index([assessmentPlanId, term])
   @@unique([assessmentPlanId, studentId, term])
+}
+
+model Timetable {
+  id          String           @id @default(cuid())
+  name        String
+  school      School           @relation(fields: [schoolId], references: [id])
+  schoolId    String
+  year        Int
+  term        String
+  startDate   DateTime
+  endDate     DateTime
+  status      String           @default("Draft")
+  cycleType   String           @default("Weekly")
+  periods     TimetablePeriod[]
+  slots       TimetableSlot[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([schoolId, year, term])
+}
+
+model TimetablePeriod {
+  id           String        @id @default(cuid())
+  timetable    Timetable     @relation(fields: [timetableId], references: [id], onDelete: Cascade)
+  timetableId  String
+  name         String
+  periodNumber Int
+  startTime    String
+  endTime      String
+  dayOfWeek    Int
+  slots        TimetableSlot[]
+  createdAt    DateTime      @default(now())
+
+  @@index([timetableId, dayOfWeek, periodNumber])
+}
+
+model TimetableSlot {
+  id              String           @id @default(cuid())
+  timetable       Timetable        @relation(fields: [timetableId], references: [id], onDelete: Cascade)
+  timetableId     String
+  period          TimetablePeriod  @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  periodId        String
+  classGroup      ClassGroup       @relation(fields: [classGroupId], references: [id])
+  classGroupId    String
+  teacher         Teacher?         @relation(fields: [teacherId], references: [id])
+  teacherId       String?
+  room            String?
+  notes           String?
+  assessmentPlan  AssessmentPlan?  @relation(fields: [assessmentPlanId], references: [id])
+  assessmentPlanId String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([timetableId, periodId])
+  @@index([classGroupId])
+  @@index([teacherId])
+}
+
+model LearnerComment {
+  id           String     @id @default(cuid())
+  student      Student    @relation(fields: [studentId], references: [id])
+  studentId    String
+  classGroup   ClassGroup @relation(fields: [classGroupId], references: [id])
+  classGroupId String
+  term         String
+  year         Int
+  commentType  String     @default("General") // General, Subject, Behaviour, Attendance
+  comment      String
+  authorRole   String
+  authorName   String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([studentId, term, year])
+  @@index([classGroupId, term])
+}
+
+model ReportCard {
+  id               String     @id @default(cuid())
+  student          Student    @relation(fields: [studentId], references: [id])
+  studentId        String
+  classGroup       ClassGroup @relation(fields: [classGroupId], references: [id])
+  classGroupId     String
+  term             String
+  year             Int
+  status           String     @default("Draft") // Draft, Published, Finalized
+  overallGrade     String?
+  overallPercentage Float?
+  achievementLevel Int?
+  teacherComment   String?
+  hodComment       String?
+  principalComment String?
+  attendanceData   Json?
+  conductGrade     String?
+  effortGrade      String?
+  generatedAt      DateTime?
+  publishedAt      DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  @@unique([studentId, term, year])
+  @@index([classGroupId, term, year])
+  @@index([status])
 }

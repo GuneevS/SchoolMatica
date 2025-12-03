@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useState, useTransition } from "react";
+import { type ReactNode, useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   DndContext,
@@ -22,20 +22,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRoleStore } from "@/lib/stores/role-store";
 import { AssessmentModerationDialog } from "@/components/plans/assessment-moderation-dialog";
+import type { AssessmentWeightInsightMap } from "@/lib/calculations";
 
 interface Props {
   plan: AssessmentPlan & { assessments: Assessment[] };
   threads: (ModerationThread & { comments: ModerationComment[] })[];
+  weightInsights?: AssessmentWeightInsightMap;
 }
 
-export function PlanEditor({ plan, threads }: Props) {
+export function PlanEditor({ plan, threads, weightInsights }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [mounted, setMounted] = useState(false);
   const role = useRoleStore((state) => state.role);
   const canEdit = role !== "Teacher";
   const [orderedAssessments, setOrderedAssessments] = useState(plan.assessments);
   const totalWeight = orderedAssessments.reduce((sum, item) => sum + item.weightPercent, 0);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const showEffectiveColumn = Boolean(weightInsights?.hasConfiguredTermWeights);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   function handleReorder(event: DragEndEvent) {
     if (!canEdit) return;
@@ -66,6 +74,8 @@ export function PlanEditor({ plan, threads }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
+      // Revalidate dashboard and current page
+      await fetch("/api/revalidate?path=/dashboard", { method: "POST" });
       router.refresh();
     });
   }
@@ -84,6 +94,8 @@ export function PlanEditor({ plan, threads }: Props) {
           rawWeight: 10,
         }),
       });
+      // Revalidate dashboard and current page
+      await fetch("/api/revalidate?path=/dashboard", { method: "POST" });
       router.refresh();
     });
   }
@@ -92,6 +104,8 @@ export function PlanEditor({ plan, threads }: Props) {
     if (!canEdit) return;
     startTransition(async () => {
       await fetch(`/api/assessments/${id}`, { method: "DELETE" });
+      // Revalidate dashboard and current page
+      await fetch("/api/revalidate?path=/dashboard", { method: "POST" });
       router.refresh();
     });
   }
@@ -122,18 +136,49 @@ export function PlanEditor({ plan, threads }: Props) {
         </div>
       </div>
       {!canEdit && <p className="text-xs text-muted-foreground">Switch to HOD or SMT role to edit weightings.</p>}
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleReorder}>
-        <SortableContext items={orderedAssessments.map((assessment) => assessment.id)} strategy={verticalListSortingStrategy}>
-          <Table>
+      {weightInsights && (
+        <div className="rounded-lg border border-dashed border-[hsl(var(--border))/0.6] bg-[hsl(var(--surface-soft))] p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground">Term weighting overview</span>
+            {weightInsights.hasConfiguredTermWeights ? (
+              <span className="text-emerald-500">Configured term weights active</span>
+            ) : (
+              <span>Using assessment-level weights only</span>
+            )}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {Object.entries(weightInsights.termSummaries).map(([term, summary]) => (
+              <div
+                key={term}
+                className="rounded-full border border-[hsl(var(--border))/0.5] bg-background px-3 py-1 text-xs"
+              >
+                <span className="font-semibold mr-2">{term}</span>
+                <span>{summary.configuredWeightPercent.toFixed(1)}% target</span>
+                {Math.abs(summary.deltaPercent) > 0.1 && (
+                  <span className={summary.deltaPercent > 0 ? "text-emerald-500" : "text-amber-500"}>
+                    {summary.deltaPercent > 0 ? "+" : ""}
+                    {summary.deltaPercent.toFixed(1)}% delta
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {mounted ? (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleReorder}>
+          <SortableContext items={orderedAssessments.map((assessment) => assessment.id)} strategy={verticalListSortingStrategy}>
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12"></TableHead>
-                <TableHead>Task</TableHead>
-                <TableHead>Term</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Raw weight</TableHead>
-                <TableHead>Weight %</TableHead>
-                <TableHead></TableHead>
+                <TableHead className="min-w-[200px]">Task</TableHead>
+                <TableHead className="w-24">Term</TableHead>
+                <TableHead className="w-24">Total</TableHead>
+                <TableHead className="w-28">Raw weight</TableHead>
+                <TableHead className="w-24">Weight %</TableHead>
+                {showEffectiveColumn && <TableHead className="w-28">Effective %</TableHead>}
+                <TableHead className="w-32"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -158,6 +203,7 @@ export function PlanEditor({ plan, threads }: Props) {
                           defaultValue={assessment.taskName}
                           onBlur={(event) => mutateAssessment(assessment.id, { taskName: event.target.value })}
                           disabled={!canEdit}
+                          className="min-w-[200px]"
                         />
                       </TableCell>
                       <TableCell>
@@ -166,7 +212,7 @@ export function PlanEditor({ plan, threads }: Props) {
                           onValueChange={(value) => mutateAssessment(assessment.id, { term: value as Assessment["term"] })}
                           disabled={!canEdit}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="w-20">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -188,6 +234,8 @@ export function PlanEditor({ plan, threads }: Props) {
                             })
                           }
                           disabled={!canEdit}
+                          className="w-20"
+                          min="1"
                         />
                       </TableCell>
                       <TableCell>
@@ -200,9 +248,19 @@ export function PlanEditor({ plan, threads }: Props) {
                             })
                           }
                           disabled={!canEdit}
+                          className="w-24"
+                          min="0"
+                          step="0.5"
                         />
                       </TableCell>
-                      <TableCell>{assessment.weightPercent.toFixed(1)}%</TableCell>
+                      <TableCell className="font-medium">{assessment.weightPercent.toFixed(1)}%</TableCell>
+                      {showEffectiveColumn && (
+                        <TableCell>
+                          {(
+                            weightInsights?.assessments?.[assessment.id]?.effectiveFinalPercent ?? assessment.weightPercent
+                          ).toFixed(1)}%
+                        </TableCell>
+                      )}
                       <TableCell className="text-right flex items-center gap-2 justify-end">
                         <AssessmentModerationDialog
                           assessment={assessment}
@@ -221,6 +279,40 @@ export function PlanEditor({ plan, threads }: Props) {
           </Table>
         </SortableContext>
       </DndContext>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-12"></TableHead>
+              <TableHead className="min-w-[200px]">Task</TableHead>
+              <TableHead className="w-24">Term</TableHead>
+              <TableHead className="w-24">Total</TableHead>
+              <TableHead className="w-28">Raw weight</TableHead>
+              <TableHead className="w-24">Weight %</TableHead>
+              {showEffectiveColumn && <TableHead className="w-28">Effective %</TableHead>}
+              <TableHead className="w-32"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {orderedAssessments.map((assessment) => (
+              <TableRow key={assessment.id}>
+                <TableCell>
+                  <Button variant="ghost" size="icon" disabled={true}>
+                    <GripVertical className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+                <TableCell><Input defaultValue={assessment.taskName} disabled={true} className="min-w-[200px]" /></TableCell>
+                <TableCell>{assessment.term}</TableCell>
+                <TableCell>{assessment.totalMark}</TableCell>
+                <TableCell>{assessment.rawWeight}</TableCell>
+                <TableCell className="font-medium">{assessment.weightPercent.toFixed(1)}%</TableCell>
+                {showEffectiveColumn && <TableCell>-</TableCell>}
+                <TableCell></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
       <Button variant="secondary" onClick={createAssessment} disabled={isPending || !canEdit}>
         Add assessment
       </Button>

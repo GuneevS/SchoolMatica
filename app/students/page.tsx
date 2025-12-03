@@ -30,9 +30,9 @@ export default async function StudentsPage() {
     grade: student.classGroup.grade,
     className: student.classGroup.name,
     classId: student.classGroup.id,
-    subjectName: student.classGroup.subject.name,
-    subjectCode: student.classGroup.subject.code,
-    subjectPhase: student.classGroup.subject.phase,
+    subjectName: student.classGroup.subject?.name ?? "No Subject",
+    subjectCode: student.classGroup.subject?.code ?? "",
+    subjectPhase: student.classGroup.subject?.phase ?? "FET",
     advisorName: student.advisor ? `${student.advisor.firstName} ${student.advisor.lastName}` : null,
     parents: student.parents.map((parent) => ({
       id: parent.id,

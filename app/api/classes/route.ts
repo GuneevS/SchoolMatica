@@ -1,12 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { authorizeWithSchool, getUserSchoolIds, isSystemAdmin, hasSchoolAccess } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
+  const result = await authorizeWithSchool(request, "class:read");
+  if ("error" in result) {
+    return result.error;
+  }
+  
+  const { auth } = result;
   const { searchParams } = new URL(request.url);
   const schoolId = searchParams.get("schoolId") ?? undefined;
+  
+  // Validate school access if schoolId is provided
+  if (schoolId && !hasSchoolAccess(auth, schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+  }
+  
+  // Build where clause based on user permissions
+  let whereClause: any = {};
+  if (isSystemAdmin(auth)) {
+    // Admin can see all classes, optionally filtered by schoolId
+    if (schoolId) {
+      whereClause = { schoolId };
+    }
+  } else {
+    // Non-admins can only see classes from their schools
+    const userSchoolIds = getUserSchoolIds(auth);
+    whereClause = schoolId 
+      ? { schoolId, id: { in: userSchoolIds } }
+      : { schoolId: { in: userSchoolIds } };
+  }
+  
   const classes = await prisma.classGroup.findMany({
-    where: schoolId ? { schoolId } : undefined,
+    where: whereClause,
     include: {
       subject: true,
       _count: {
@@ -48,6 +76,13 @@ const classSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const result = await authorizeWithSchool(request, "class:create");
+  if ("error" in result) {
+    return result.error;
+  }
+  
+  const { auth } = result;
+  
   const json = await request.json();
   const parsed = classSchema.safeParse(json);
   if (!parsed.success) {
@@ -57,6 +92,11 @@ export async function POST(request: NextRequest) {
   const subject = await prisma.subject.findUnique({ where: { id: parsed.data.subjectId } });
   if (!subject) {
     return NextResponse.json({ error: "Subject not found" }, { status: 404 });
+  }
+  
+  // Verify user has access to this school
+  if (!hasSchoolAccess(auth, subject.schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
   }
 
   if (parsed.data.gradeLevelId) {

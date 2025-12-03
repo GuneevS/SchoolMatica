@@ -1,0 +1,297 @@
+import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+
+export const PERMISSION_KEYS = [
+  // Assessment Plans
+  "assessmentPlan:read",
+  "assessmentPlan:create",
+  "assessmentPlan:update",
+  "assessmentPlan:delete",
+  "assessmentPlan:advance",
+  "assessmentPlan:approve",
+  
+  // Assessment Documents
+  "assessmentDocument:read",
+  "assessmentDocument:upload",
+  "assessmentDocument:decide",
+  "assessmentDocument:delete",
+  
+  // Assessments
+  "assessment:read",
+  "assessment:create",
+  "assessment:update",
+  "assessment:delete",
+  
+  // Marks
+  "mark:read",
+  "mark:create",
+  "mark:update",
+  "mark:delete",
+  
+  // Classes
+  "class:read",
+  "class:create",
+  "class:update",
+  "class:delete",
+  "class:manage",
+  
+  // Students
+  "student:read",
+  "student:create",
+  "student:update",
+  "student:delete",
+  
+  // Teachers
+  "teacher:read",
+  "teacher:create",
+  "teacher:update",
+  "teacher:delete",
+  
+  // Schools
+  "school:read",
+  "school:create",
+  "school:update",
+  "school:delete",
+  "school:manage",
+  
+  // Subjects
+  "subject:read",
+  "subject:create",
+  "subject:update",
+  "subject:delete",
+  
+  // Reports
+  "report:read",
+  "report:generate",
+  "report:publish",
+  
+  // Registrations
+  "registration:read",
+  "registration:create",
+  "registration:update",
+  "registration:decide",
+  
+  // Audit Logs
+  "audit:read",
+  
+  // Moderation
+  "moderation:read",
+  "moderation:create",
+  "moderation:update",
+  "moderation:resolve",
+  
+  // Timetables
+  "timetable:read",
+  "timetable:create",
+  "timetable:update",
+  "timetable:delete",
+  
+  // Curriculum Templates
+  "template:read",
+  "template:create",
+  "template:update",
+  "template:delete",
+  
+  // Grade Levels
+  "gradeLevel:read",
+  "gradeLevel:create",
+  "gradeLevel:update",
+  "gradeLevel:delete",
+  
+  // System Admin - cross-school access
+  "system:admin",
+] as const;
+
+export type PermissionKey = (typeof PERMISSION_KEYS)[number];
+
+const userInclude = {
+  roleAssignments: {
+    include: {
+      role: {
+        include: {
+          permissions: {
+            include: { permission: true },
+          },
+        },
+      },
+    },
+  },
+} satisfies Prisma.AppUserInclude;
+
+type RawAuthUser = Prisma.AppUserGetPayload<{
+  include: typeof userInclude;
+}> | null;
+
+type AppUserWithRoles = NonNullable<RawAuthUser>;
+
+export interface AuthContext {
+  user: AppUserWithRoles;
+  permissions: Set<PermissionKey>;
+}
+
+const permissionSet = new Set<PermissionKey>(PERMISSION_KEYS);
+
+function deriveEmail(request: NextRequest) {
+  return request.headers.get("x-user-email") ?? process.env.DEFAULT_USER_EMAIL ?? null;
+}
+
+function isPermissionKey(value: string): value is PermissionKey {
+  return permissionSet.has(value as PermissionKey);
+}
+
+export async function getAuthContext(request: NextRequest): Promise<AuthContext | null> {
+  const resolvedEmail = deriveEmail(request);
+  let user: AppUserWithRoles | null = null;
+  if (resolvedEmail) {
+    user = await prisma.appUser.findUnique({
+      where: { email: resolvedEmail },
+      include: userInclude,
+    });
+  }
+  if (!user) {
+    return null;
+  }
+
+  const permissions = new Set<PermissionKey>();
+  for (const assignment of user.roleAssignments) {
+    for (const grant of assignment.role.permissions) {
+      const key = `${grant.permission.resource}:${grant.permission.action}`;
+      if (isPermissionKey(key)) {
+        permissions.add(key);
+      }
+    }
+  }
+
+  return { user, permissions };
+}
+
+export type AuthorizationResult = { auth: AuthContext } | { error: NextResponse };
+
+export async function authorize(request: NextRequest, permission: PermissionKey): Promise<AuthorizationResult> {
+  const auth = await getAuthContext(request);
+  if (!auth || !auth.permissions.has(permission)) {
+    return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
+  }
+  return { auth };
+}
+
+export function getPrimaryRoleName(auth: AuthContext): string | null {
+  if (!auth.user.roleAssignments.length) {
+    return null;
+  }
+  const [highest] = [...auth.user.roleAssignments].sort((a, b) => b.role.priority - a.role.priority);
+  return highest?.role.name ?? null;
+}
+
+/**
+ * Check if user is a system admin with cross-school access
+ */
+export function isSystemAdmin(auth: AuthContext): boolean {
+  return auth.permissions.has("system:admin");
+}
+
+/**
+ * Get the school IDs that the user has access to
+ */
+export function getUserSchoolIds(auth: AuthContext): string[] {
+  if (isSystemAdmin(auth)) {
+    return []; // Empty array means all schools
+  }
+  
+  const schoolIds = new Set<string>();
+  for (const assignment of auth.user.roleAssignments) {
+    if (assignment.scopeSchoolId) {
+      schoolIds.add(assignment.scopeSchoolId);
+    }
+  }
+  
+  // Fallback to user's primary school
+  if (schoolIds.size === 0 && auth.user.schoolId) {
+    schoolIds.add(auth.user.schoolId);
+  }
+  
+  return Array.from(schoolIds);
+}
+
+/**
+ * Check if user has access to a specific school
+ */
+export function hasSchoolAccess(auth: AuthContext, schoolId: string): boolean {
+  if (isSystemAdmin(auth)) {
+    return true;
+  }
+  
+  const schoolIds = getUserSchoolIds(auth);
+  return schoolIds.includes(schoolId);
+}
+
+/**
+ * Validate that a schoolId is accessible by the user
+ * Returns error response if not authorized
+ */
+export function validateSchoolAccess(auth: AuthContext, schoolId: string | null | undefined): { error: NextResponse } | { schoolId: string } {
+  if (!schoolId) {
+    return { error: NextResponse.json({ error: "School ID is required" }, { status: 400 }) };
+  }
+  
+  if (!hasSchoolAccess(auth, schoolId)) {
+    return { error: NextResponse.json({ error: "Access denied to this school" }, { status: 403 }) };
+  }
+  
+  return { schoolId };
+}
+
+/**
+ * Get the primary school for the user (for creating new resources)
+ */
+export function getPrimarySchoolId(auth: AuthContext): string | null {
+  if (isSystemAdmin(auth)) {
+    return null; // Admin must specify school
+  }
+  
+  return auth.user.schoolId;
+}
+
+/**
+ * Enhanced authorization that checks both permission and school access
+ */
+export async function authorizeWithSchool(
+  request: NextRequest,
+  permission: PermissionKey,
+  schoolId?: string
+): Promise<{ auth: AuthContext; schoolId?: string } | { error: NextResponse }> {
+  const auth = await getAuthContext(request);
+  
+  if (!auth) {
+    return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
+  }
+  
+  if (!auth.permissions.has(permission)) {
+    return { error: NextResponse.json({ error: "Forbidden - insufficient permissions" }, { status: 403 }) };
+  }
+  
+  // If schoolId is provided, validate access
+  if (schoolId) {
+    if (!hasSchoolAccess(auth, schoolId)) {
+      return { error: NextResponse.json({ error: "Access denied to this school" }, { status: 403 }) };
+    }
+    return { auth, schoolId };
+  }
+  
+  return { auth };
+}
+
+/**
+ * Check multiple permissions at once
+ */
+export function hasAnyPermission(auth: AuthContext, permissions: PermissionKey[]): boolean {
+  return permissions.some(p => auth.permissions.has(p));
+}
+
+/**
+ * Check if user has all specified permissions
+ */
+export function hasAllPermissions(auth: AuthContext, permissions: PermissionKey[]): boolean {
+  return permissions.every(p => auth.permissions.has(p));
+}

@@ -25,6 +25,305 @@ const gradingBands = [
   { minPercent: 90, level: 7, descriptor: "Outstanding" },
 ];
 
+const permissionSeeds = [
+  // Assessment Plans
+  { key: "assessmentPlan:read", resource: "assessmentPlan", action: "read", description: "View assessment plans" },
+  { key: "assessmentPlan:create", resource: "assessmentPlan", action: "create", description: "Create assessment plans" },
+  { key: "assessmentPlan:update", resource: "assessmentPlan", action: "update", description: "Edit assessment plans" },
+  { key: "assessmentPlan:delete", resource: "assessmentPlan", action: "delete", description: "Delete assessment plans" },
+  { key: "assessmentPlan:advance", resource: "assessmentPlan", action: "advance", description: "Submit plans for approval" },
+  { key: "assessmentPlan:approve", resource: "assessmentPlan", action: "approve", description: "Approve or lock assessment plans" },
+  
+  // Assessment Documents
+  { key: "assessmentDocument:read", resource: "assessmentDocument", action: "read", description: "View assessment documents" },
+  { key: "assessmentDocument:upload", resource: "assessmentDocument", action: "upload", description: "Upload assessment documents" },
+  { key: "assessmentDocument:decide", resource: "assessmentDocument", action: "decide", description: "Approve or request changes on documents" },
+  { key: "assessmentDocument:delete", resource: "assessmentDocument", action: "delete", description: "Delete assessment documents" },
+  
+  // Assessments
+  { key: "assessment:read", resource: "assessment", action: "read", description: "View assessments" },
+  { key: "assessment:create", resource: "assessment", action: "create", description: "Create assessments" },
+  { key: "assessment:update", resource: "assessment", action: "update", description: "Edit assessments" },
+  { key: "assessment:delete", resource: "assessment", action: "delete", description: "Delete assessments" },
+  
+  // Marks
+  { key: "mark:read", resource: "mark", action: "read", description: "View marks" },
+  { key: "mark:create", resource: "mark", action: "create", description: "Enter marks" },
+  { key: "mark:update", resource: "mark", action: "update", description: "Update marks" },
+  { key: "mark:delete", resource: "mark", action: "delete", description: "Delete marks" },
+  
+  // Classes
+  { key: "class:read", resource: "class", action: "read", description: "View classes" },
+  { key: "class:create", resource: "class", action: "create", description: "Create classes" },
+  { key: "class:update", resource: "class", action: "update", description: "Update classes" },
+  { key: "class:delete", resource: "class", action: "delete", description: "Delete classes" },
+  { key: "class:manage", resource: "class", action: "manage", description: "Manage class assignments" },
+  
+  // Students
+  { key: "student:read", resource: "student", action: "read", description: "View students" },
+  { key: "student:create", resource: "student", action: "create", description: "Add students" },
+  { key: "student:update", resource: "student", action: "update", description: "Update student info" },
+  { key: "student:delete", resource: "student", action: "delete", description: "Remove students" },
+  
+  // Teachers
+  { key: "teacher:read", resource: "teacher", action: "read", description: "View teachers" },
+  { key: "teacher:create", resource: "teacher", action: "create", description: "Add teachers" },
+  { key: "teacher:update", resource: "teacher", action: "update", description: "Update teacher info" },
+  { key: "teacher:delete", resource: "teacher", action: "delete", description: "Remove teachers" },
+  
+  // Schools
+  { key: "school:read", resource: "school", action: "read", description: "View schools" },
+  { key: "school:create", resource: "school", action: "create", description: "Create schools" },
+  { key: "school:update", resource: "school", action: "update", description: "Update schools" },
+  { key: "school:delete", resource: "school", action: "delete", description: "Delete schools" },
+  { key: "school:manage", resource: "school", action: "manage", description: "Manage school settings" },
+  
+  // Subjects
+  { key: "subject:read", resource: "subject", action: "read", description: "View subjects" },
+  { key: "subject:create", resource: "subject", action: "create", description: "Create subjects" },
+  { key: "subject:update", resource: "subject", action: "update", description: "Update subjects" },
+  { key: "subject:delete", resource: "subject", action: "delete", description: "Delete subjects" },
+  
+  // Reports
+  { key: "report:read", resource: "report", action: "read", description: "View reports" },
+  { key: "report:generate", resource: "report", action: "generate", description: "Generate reports" },
+  { key: "report:publish", resource: "report", action: "publish", description: "Publish reports" },
+  
+  // Registrations
+  { key: "registration:read", resource: "registration", action: "read", description: "View registrations" },
+  { key: "registration:create", resource: "registration", action: "create", description: "Create registrations" },
+  { key: "registration:update", resource: "registration", action: "update", description: "Update registrations" },
+  { key: "registration:decide", resource: "registration", action: "decide", description: "Approve/reject registrations" },
+  
+  // Audit Logs
+  { key: "audit:read", resource: "audit", action: "read", description: "View audit logs" },
+  
+  // Moderation
+  { key: "moderation:read", resource: "moderation", action: "read", description: "View moderation threads" },
+  { key: "moderation:create", resource: "moderation", action: "create", description: "Create moderation threads" },
+  { key: "moderation:update", resource: "moderation", action: "update", description: "Update moderation threads" },
+  { key: "moderation:resolve", resource: "moderation", action: "resolve", description: "Resolve moderation issues" },
+  
+  // Timetables
+  { key: "timetable:read", resource: "timetable", action: "read", description: "View timetables" },
+  { key: "timetable:create", resource: "timetable", action: "create", description: "Create timetables" },
+  { key: "timetable:update", resource: "timetable", action: "update", description: "Update timetables" },
+  { key: "timetable:delete", resource: "timetable", action: "delete", description: "Delete timetables" },
+  
+  // Templates
+  { key: "template:read", resource: "template", action: "read", description: "View curriculum templates" },
+  { key: "template:create", resource: "template", action: "create", description: "Create curriculum templates" },
+  { key: "template:update", resource: "template", action: "update", description: "Update curriculum templates" },
+  { key: "template:delete", resource: "template", action: "delete", description: "Delete curriculum templates" },
+  
+  // Grade Levels
+  { key: "gradeLevel:read", resource: "gradeLevel", action: "read", description: "View grade levels" },
+  { key: "gradeLevel:create", resource: "gradeLevel", action: "create", description: "Create grade levels" },
+  { key: "gradeLevel:update", resource: "gradeLevel", action: "update", description: "Update grade levels" },
+  { key: "gradeLevel:delete", resource: "gradeLevel", action: "delete", description: "Delete grade levels" },
+  
+  // System Admin
+  { key: "system:admin", resource: "system", action: "admin", description: "Full system access across all schools" },
+];
+
+const roleSeeds = [
+  { key: "teacher", name: "Teacher", priority: 10, description: "Class educator" },
+  { key: "hod", name: "Head of Department", priority: 20, description: "Department approver" },
+  { key: "smt", name: "SMT", priority: 30, description: "School management team" },
+  { key: "admin", name: "System Administrator", priority: 100, description: "Full system access across all schools" },
+];
+
+const rolePermissionMatrix: Record<string, string[]> = {
+  teacher: [
+    // Assessment Plans
+    "assessmentPlan:read",
+    "assessmentPlan:create",
+    "assessmentPlan:update",
+    "assessmentPlan:advance",
+    // Assessments
+    "assessment:read",
+    "assessment:create",
+    "assessment:update",
+    // Documents
+    "assessmentDocument:read",
+    "assessmentDocument:upload",
+    // Marks
+    "mark:read",
+    "mark:create",
+    "mark:update",
+    // Classes
+    "class:read",
+    // Students
+    "student:read",
+    "student:create",
+    "student:update",
+    // Teachers
+    "teacher:read",
+    // Subjects
+    "subject:read",
+    // Reports
+    "report:read",
+    "report:generate",
+    // Moderation
+    "moderation:read",
+    "moderation:create",
+    // Timetables
+    "timetable:read",
+    // Templates
+    "template:read",
+    // Grade Levels
+    "gradeLevel:read",
+  ],
+  hod: [
+    // Assessment Plans
+    "assessmentPlan:read",
+    "assessmentPlan:create",
+    "assessmentPlan:update",
+    "assessmentPlan:delete",
+    "assessmentPlan:advance",
+    "assessmentPlan:approve",
+    // Assessments
+    "assessment:read",
+    "assessment:create",
+    "assessment:update",
+    "assessment:delete",
+    // Documents
+    "assessmentDocument:read",
+    "assessmentDocument:upload",
+    "assessmentDocument:decide",
+    "assessmentDocument:delete",
+    // Marks
+    "mark:read",
+    "mark:create",
+    "mark:update",
+    // Classes
+    "class:read",
+    "class:create",
+    "class:update",
+    "class:manage",
+    // Students
+    "student:read",
+    "student:create",
+    "student:update",
+    // Teachers
+    "teacher:read",
+    "teacher:create",
+    "teacher:update",
+    // Subjects
+    "subject:read",
+    "subject:create",
+    "subject:update",
+    // Reports
+    "report:read",
+    "report:generate",
+    "report:publish",
+    // Registrations
+    "registration:read",
+    "registration:update",
+    "registration:decide",
+    // Audit
+    "audit:read",
+    // Moderation
+    "moderation:read",
+    "moderation:create",
+    "moderation:update",
+    "moderation:resolve",
+    // Timetables
+    "timetable:read",
+    "timetable:create",
+    "timetable:update",
+    // Templates
+    "template:read",
+    "template:create",
+    "template:update",
+    // Grade Levels
+    "gradeLevel:read",
+  ],
+  smt: [
+    // Assessment Plans
+    "assessmentPlan:read",
+    "assessmentPlan:create",
+    "assessmentPlan:update",
+    "assessmentPlan:delete",
+    "assessmentPlan:advance",
+    "assessmentPlan:approve",
+    // Assessments
+    "assessment:read",
+    "assessment:create",
+    "assessment:update",
+    "assessment:delete",
+    // Documents
+    "assessmentDocument:read",
+    "assessmentDocument:upload",
+    "assessmentDocument:decide",
+    "assessmentDocument:delete",
+    // Marks
+    "mark:read",
+    "mark:create",
+    "mark:update",
+    "mark:delete",
+    // Classes
+    "class:read",
+    "class:create",
+    "class:update",
+    "class:delete",
+    "class:manage",
+    // Students
+    "student:read",
+    "student:create",
+    "student:update",
+    "student:delete",
+    // Teachers
+    "teacher:read",
+    "teacher:create",
+    "teacher:update",
+    "teacher:delete",
+    // Subjects
+    "subject:read",
+    "subject:create",
+    "subject:update",
+    "subject:delete",
+    // Reports
+    "report:read",
+    "report:generate",
+    "report:publish",
+    // Registrations
+    "registration:read",
+    "registration:create",
+    "registration:update",
+    "registration:decide",
+    // Audit
+    "audit:read",
+    // Moderation
+    "moderation:read",
+    "moderation:create",
+    "moderation:update",
+    "moderation:resolve",
+    // Timetables
+    "timetable:read",
+    "timetable:create",
+    "timetable:update",
+    "timetable:delete",
+    // Templates
+    "template:read",
+    "template:create",
+    "template:update",
+    "template:delete",
+    // Grade Levels
+    "gradeLevel:read",
+    "gradeLevel:create",
+    "gradeLevel:update",
+    "gradeLevel:delete",
+    // School Management (within their school)
+    "school:read",
+    "school:update",
+    "school:manage",
+  ],
+  admin: [
+    "system:admin", // This grants everything
+  ],
+};
+
 const assessmentSeed = [
   { taskName: "Listening & Speaking", term: "T1", totalMark: 10, rawWeight: 10, type: "Task", isPatComponent: false },
   { taskName: "Reading & Viewing", term: "T1", totalMark: 30, rawWeight: 15, type: "Assignment", isPatComponent: false },
@@ -57,6 +356,11 @@ async function seed() {
   await prisma.curriculumTemplate.deleteMany();
   await prisma.auditLog.deleteMany();
   await prisma.learnerRegistration.deleteMany();
+  await prisma.userRoleAssignment.deleteMany();
+  await prisma.rolePermission.deleteMany();
+  await prisma.permissionDefinition.deleteMany();
+  await prisma.roleDefinition.deleteMany();
+  await prisma.appUser.deleteMany();
   await prisma.student.deleteMany();
   await prisma.classGroup.deleteMany();
   await prisma.subject.deleteMany();
@@ -101,6 +405,61 @@ async function seed() {
       bio: "Grade 10 English HL lead teacher",
     },
   });
+
+  const hodTeacher = await prisma.teacher.create({
+    data: {
+      firstName: "Bongani",
+      lastName: "Khuzwayo",
+      email: "bongani.khuzwayo@schoolmatica.com",
+      phone: "+27 82 555 1111",
+      role: "HOD",
+      schoolId: school.id,
+      bio: "English department head",
+    },
+  });
+
+  const smtTeacher = await prisma.teacher.create({
+    data: {
+      firstName: "Thuli",
+      lastName: "Nkadimeng",
+      email: "thuli.nkadimeng@schoolmatica.com",
+      phone: "+27 82 999 2222",
+      role: "SMT",
+      schoolId: school.id,
+      bio: "Deputy Principal",
+    },
+  });
+
+  await prisma.permissionDefinition.createMany({ data: permissionSeeds });
+  const permissions = await prisma.permissionDefinition.findMany();
+  const permissionByKey = new Map<string, (typeof permissions)[number]>(
+    permissions.map((permission: (typeof permissions)[number]) => [permission.key, permission]),
+  );
+
+  const roles = await Promise.all(
+    roleSeeds.map((roleSeed) =>
+      prisma.roleDefinition.create({
+        data: roleSeed,
+      }),
+    ),
+  );
+  const roleByKey = new Map<string, (typeof roles)[number]>(
+    roles.map((role: (typeof roles)[number]) => [role.key, role]),
+  );
+
+  for (const [roleKey, permissionKeys] of Object.entries(rolePermissionMatrix)) {
+    const role = roleByKey.get(roleKey);
+    if (!role) continue;
+    const rolePermissionData: { roleId: string; permissionId: string }[] = [];
+    for (const permissionKey of permissionKeys) {
+      const permission = permissionByKey.get(permissionKey);
+      if (!permission) continue;
+      rolePermissionData.push({ roleId: role.id, permissionId: permission.id });
+    }
+    if (rolePermissionData.length) {
+      await prisma.rolePermission.createMany({ data: rolePermissionData });
+    }
+  }
 
   const subject = await prisma.subject.create({
     data: {
@@ -157,6 +516,67 @@ async function seed() {
         ],
       },
     },
+  });
+
+  const nalediUser = await prisma.appUser.create({
+    data: {
+      email: leadTeacher.email,
+      displayName: `${leadTeacher.firstName} ${leadTeacher.lastName}`,
+      schoolId: school.id,
+      teacherId: leadTeacher.id,
+    },
+  });
+
+  const hodUser = await prisma.appUser.create({
+    data: {
+      email: hodTeacher.email,
+      displayName: `${hodTeacher.firstName} ${hodTeacher.lastName}`,
+      schoolId: school.id,
+      teacherId: hodTeacher.id,
+    },
+  });
+
+  const smtUser = await prisma.appUser.create({
+    data: {
+      email: smtTeacher.email,
+      displayName: `${smtTeacher.firstName} ${smtTeacher.lastName}`,
+      schoolId: school.id,
+      teacherId: smtTeacher.id,
+    },
+  });
+
+  // Create system administrator with cross-school access
+  const adminUser = await prisma.appUser.create({
+    data: {
+      email: "admin@schoolmatica.com",
+      displayName: "System Administrator",
+      schoolId: school.id, // Primary school (can access all schools)
+    },
+  });
+
+  await prisma.userRoleAssignment.createMany({
+    data: [
+      {
+        userId: nalediUser.id,
+        roleId: roleByKey.get("teacher")!.id,
+        scopeSchoolId: school.id,
+      },
+      {
+        userId: hodUser.id,
+        roleId: roleByKey.get("hod")!.id,
+        scopeSchoolId: school.id,
+      },
+      {
+        userId: smtUser.id,
+        roleId: roleByKey.get("smt")!.id,
+        scopeSchoolId: school.id,
+      },
+      {
+        userId: adminUser.id,
+        roleId: roleByKey.get("admin")!.id,
+        scopeSchoolId: null, // null means cross-school access
+      },
+    ],
   });
 
   const students = await Promise.all(

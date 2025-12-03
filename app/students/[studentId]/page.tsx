@@ -38,7 +38,7 @@ export default async function StudentDetailPage({ params }: Props) {
 
   const plan = student.classGroup.assessmentPlans[0];
   const assessments = plan?.assessments ?? [];
-  const bands = getBandsForPhase(student.classGroup.school?.gradingConfig ?? null, student.classGroup.subject.phase);
+  const bands = getBandsForPhase(student.classGroup.school?.gradingConfig ?? null, student.classGroup.subject?.phase ?? "FET");
   const sba = calculateStudentSba({ assessments, studentId: student.id });
   const terms = calculateTermPercentages({ assessments, studentId: student.id });
   const level = mapPercentToLevel(sba.sbaPercent, bands);

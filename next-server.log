@@ -1,0 +1,634 @@
+nohup: ignoring input
+
+> schoolmatica@0.1.0 dev
+> prisma generate && cross-env HOST=0.0.0.0 next dev --hostname 0.0.0.0
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma config detected, skipping environment variable loading.
+Prisma schema loaded from prisma/schema.prisma
+┌─────────────────────────────────────────────────────────┐
+│  Update available 6.19.0 -> 7.0.0                       │
+│                                                         │
+│  This is a major update - please follow the guide at    │
+│  https://pris.ly/d/major-version-upgrade                │
+│                                                         │
+│  Run the following to update                            │
+│    npm i --save-dev prisma@latest                       │
+│    npm i @prisma/client@latest                          │
+└─────────────────────────────────────────────────────────┘
+
+✔ Generated Prisma Client (v6.19.0) to ./node_modules/@prisma/client in 252ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+
+ ⚠ Port 3000 is in use by an unknown process, using available port 3001 instead.
+   ▲ Next.js 16.0.3 (Turbopack)
+   - Local:         http://localhost:3001
+   - Network:       http://0.0.0.0:3001
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 826ms
+ ○ Compiling / ...
+ GET / 307 in 4.3s (compile: 4.1s, render: 261ms)
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+ GET /dashboard 200 in 2.4s (compile: 1861ms, render: 508ms)
+ ⚠ Cross origin request detected from cream-voters-championships-argument.trycloudflare.com to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ GET /api/schools 200 in 595ms (compile: 569ms, render: 27ms)
+ GET / 307 in 97ms (compile: 6ms, render: 91ms)
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+ GET /dashboard 200 in 165ms (compile: 3ms, render: 162ms)
+ GET /api/schools 200 in 19ms (compile: 5ms, render: 14ms)
+ GET / 307 in 136ms (compile: 7ms, render: 129ms)
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+ GET /dashboard 200 in 228ms (compile: 5ms, render: 223ms)
+ GET /api/schools 200 in 20ms (compile: 6ms, render: 14ms)
+ GET /classes 200 in 1265ms (compile: 1209ms, render: 56ms)
+ GET /assessment-plans 200 in 1059ms (compile: 1009ms, render: 50ms)
+ GET /registrations 200 in 932ms (compile: 880ms, render: 51ms)
+ GET /students 200 in 853ms (compile: 809ms, render: 44ms)
+ GET /classes/cmi2iouvw000hzrsg0l192aca 200 in 1884ms (compile: 1777ms, render: 107ms)
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+ GET /classes/cmi2iouvw000hzrsg0l192aca 200 in 509ms (compile: 79ms, render: 430ms)
+ GET /api/schools 200 in 18ms (compile: 5ms, render: 13ms)
+ GET /assessment-plans 200 in 102ms (compile: 7ms, render: 94ms)
+ GET /registrations 200 in 74ms (compile: 5ms, render: 68ms)
+ GET /students 200 in 63ms (compile: 5ms, render: 58ms)
+ GET /teachers 200 in 886ms (compile: 849ms, render: 37ms)
+ GET /schools 200 in 784ms (compile: 733ms, render: 52ms)
+ POST /api/grade-levels 201 in 338ms (compile: 302ms, render: 36ms)
+ GET /schools 200 in 77ms (compile: 4ms, render: 72ms)
+ POST /api/grade-levels 201 in 36ms (compile: 4ms, render: 33ms)
+ GET /schools 200 in 66ms (compile: 4ms, render: 62ms)
+ POST /api/grade-levels 201 in 33ms (compile: 1963µs, render: 31ms)
+ GET /schools 200 in 73ms (compile: 5ms, render: 68ms)
+ POST /api/grade-levels 201 in 33ms (compile: 3ms, render: 30ms)
+ GET /schools 200 in 63ms (compile: 5ms, render: 58ms)
+ POST /api/grade-levels 201 in 44ms (compile: 4ms, render: 41ms)
+ GET /schools 200 in 234ms (compile: 179ms, render: 55ms)
+ GET /registrations 200 in 70ms (compile: 5ms, render: 65ms)
+ GET /students 200 in 62ms (compile: 6ms, render: 56ms)
+ GET /teachers 200 in 67ms (compile: 4ms, render: 63ms)
+ GET /schools 200 in 55ms (compile: 5ms, render: 50ms)
+ GET /teachers 200 in 67ms (compile: 5ms, render: 62ms)
+ GET /assessment-plans 200 in 78ms (compile: 5ms, render: 74ms)
+ GET / 307 in 139ms (compile: 6ms, render: 133ms)
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+ GET /dashboard 200 in 194ms (compile: 4ms, render: 191ms)
+ GET /api/schools 200 in 18ms (compile: 4ms, render: 14ms)
+ ✓ Compiled in 329ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /assessment-plans 200 in 430ms (compile: 116ms, render: 314ms)
+ GET /api/schools 200 in 15ms (compile: 4ms, render: 11ms)
+ ✓ Compiled in 300ms
+ GET /students 200 in 147ms (compile: 99ms, render: 48ms)
+ GET /registrations 200 in 173ms (compile: 111ms, render: 62ms)
+ GET /classes 200 in 196ms (compile: 129ms, render: 67ms)
+ GET /teachers 200 in 227ms (compile: 171ms, render: 57ms)
+ GET /students 200 in 54ms (compile: 4ms, render: 49ms)
+ GET /schools 200 in 155ms (compile: 110ms, render: 45ms)
+ GET /settings/grading 200 in 693ms (compile: 641ms, render: 52ms)
+ GET /teachers 200 in 87ms (compile: 7ms, render: 80ms)
+ GET /registrations 200 in 74ms (compile: 5ms, render: 69ms)
+ GET /settings/grading 200 in 247ms (compile: 5ms, render: 242ms)
+ GET /api/schools 200 in 21ms (compile: 4ms, render: 16ms)
+ GET /students 200 in 54ms (compile: 5ms, render: 49ms)
+ GET /assessment-plans 200 in 210ms (compile: 140ms, render: 70ms)
+ GET /classes 200 in 89ms (compile: 5ms, render: 84ms)
+ GET /dashboard 200 in 151ms (compile: 5ms, render: 146ms)
+ GET /students 200 in 58ms (compile: 4ms, render: 53ms)
+ GET /registrations 200 in 68ms (compile: 5ms, render: 64ms)
+ GET /assessment-plans 200 in 89ms (compile: 5ms, render: 84ms)
+ GET /classes 200 in 90ms (compile: 5ms, render: 85ms)
+ GET /dashboard 200 in 141ms (compile: 5ms, render: 136ms)
+ GET /students 200 in 54ms (compile: 5ms, render: 49ms)
+ GET /students/cmi2iouvx000ozrsgzqqnbw3f 200 in 1088ms (compile: 1022ms, render: 65ms)
+ GET /teachers 200 in 77ms (compile: 5ms, render: 72ms)
+ GET /settings/grading 200 in 77ms (compile: 4ms, render: 73ms)
+ GET /teachers 200 in 58ms (compile: 4ms, render: 53ms)
+ GET /students 200 in 31ms (compile: 3ms, render: 29ms)
+ GET /assessment-plans 200 in 53ms (compile: 5ms, render: 48ms)
+ GET /classes 200 in 58ms (compile: 5ms, render: 53ms)
+ GET /dashboard 200 in 119ms (compile: 5ms, render: 114ms)
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+ GET /dashboard 200 in 184ms (compile: 4ms, render: 180ms)
+ GET /api/schools 200 in 15ms (compile: 4ms, render: 11ms)
+ GET /classes 200 in 105ms (compile: 7ms, render: 98ms)
+ GET /assessment-plans 200 in 81ms (compile: 5ms, render: 76ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 1507ms (compile: 1455ms, render: 52ms)
+ POST /api/uploads 200 in 281ms (compile: 196ms, render: 85ms)
+ POST /api/assessment-documents 400 in 197ms (compile: 189ms, render: 8ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 144ms (compile: 83ms, render: 61ms)
+ GET /registrations 200 in 70ms (compile: 5ms, render: 65ms)
+ GET /classes 200 in 76ms (compile: 5ms, render: 70ms)
+ GET /dashboard 200 in 106ms (compile: 4ms, render: 102ms)
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+ GET /dashboard 200 in 218ms (compile: 5ms, render: 213ms)
+ GET /api/schools 200 in 17ms (compile: 4ms, render: 13ms)
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+ GET /dashboard 200 in 226ms (compile: 5ms, render: 221ms)
+ GET /api/schools 200 in 13ms (compile: 3ms, render: 10ms)
+ GET /assessment-plans 200 in 81ms (compile: 4ms, render: 77ms)
+ GET /registrations 200 in 69ms (compile: 4ms, render: 64ms)
+ GET /students 200 in 59ms (compile: 4ms, render: 55ms)
+ GET /teachers 200 in 69ms (compile: 4ms, render: 64ms)
+ GET /schools 200 in 55ms (compile: 5ms, render: 51ms)
+ GET /settings/grading 200 in 65ms (compile: 7ms, render: 58ms)
+ GET /teachers 200 in 73ms (compile: 5ms, render: 68ms)
+ GET /students 200 in 55ms (compile: 4ms, render: 51ms)
+ GET /registrations 200 in 68ms (compile: 4ms, render: 63ms)
+ ✓ Compiled in 209ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /registrations 200 in 441ms (compile: 129ms, render: 312ms)
+ GET /api/schools 200 in 12ms (compile: 4ms, render: 8ms)
+ GET /classes 200 in 103ms (compile: 8ms, render: 95ms)
+ GET /classes 200 in 91ms (compile: 5ms, render: 86ms)
+ GET /classes 200 in 88ms (compile: 5ms, render: 84ms)
+ ✓ Compiled in 200ms
+ GET /classes 200 in 105ms (compile: 10ms, render: 95ms)
+ GET /dashboard 200 in 311ms (compile: 153ms, render: 158ms)
+ POST /api/classes 201 in 301ms (compile: 283ms, render: 19ms)
+ GET /classes 200 in 65ms (compile: 6ms, render: 59ms)
+ GET /teachers 200 in 72ms (compile: 5ms, render: 68ms)
+ POST /api/teachers 201 in 262ms (compile: 245ms, render: 17ms)
+ GET /teachers 200 in 87ms (compile: 5ms, render: 82ms)
+ GET /students 200 in 59ms (compile: 5ms, render: 54ms)
+ GET /classes/cmi2iouvw000hzrsg0l192aca 200 in 313ms (compile: 206ms, render: 107ms)
+ GET /dashboard 200 in 161ms (compile: 5ms, render: 156ms)
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+ GET /dashboard 200 in 714ms (compile: 5ms, render: 709ms)
+ GET /api/schools 200 in 17ms (compile: 5ms, render: 12ms)
+ GET /settings/grading 200 in 81ms (compile: 5ms, render: 76ms)
+ GET /students 200 in 56ms (compile: 5ms, render: 51ms)
+ GET /assessment-plans 200 in 101ms (compile: 8ms, render: 93ms)
+ GET /registrations 200 in 42ms (compile: 2ms, render: 40ms)
+ GET /assessment-plans 200 in 98ms (compile: 5ms, render: 93ms)
+ GET /classes 200 in 105ms (compile: 5ms, render: 99ms)
+ GET /dashboard 200 in 132ms (compile: 5ms, render: 128ms)
+ GET /registrations 200 in 49ms (compile: 6ms, render: 43ms)
+ GET /students 200 in 60ms (compile: 5ms, render: 55ms)
+ ✓ Compiled in 342ms
+ ⨯ TypeError: useSyncExternalStore only works in Client Components. Add the "use client" directive at the top of the file to use it. Read more: https://nextjs.org/docs/messages/react-client-hook-in-server-component
+    at RolePersonalizedHighlights (app/dashboard/page.tsx:34:28)
+  32 |
+  33 | function RolePersonalizedHighlights({ data }: { data: Awaited<ReturnType<typeof getDashboardData>> }) {
+> 34 |   const role = useRoleStore((state) => state.role);
+     |                            ^
+  35 |   if (role === "Teacher") {
+  36 |     return (
+  37 |       <div className="grid gap-4 md:grid-cols-2"> {
+  digest: '3004289506'
+}
+ GET /students 200 in 338ms (compile: 9ms, render: 329ms)
+ GET /dashboard 200 in 297ms (compile: 110ms, render: 186ms)
+ ⨯ ./app/dashboard/page.tsx:15:1
+Module not found: Can't resolve '@/components/dashboard/role-personalized-highlights'
+[0m [90m 13 |[39m [36mimport[39m { [33mAuroraHero[39m[33m,[39m [33mHeroMetricPanel[39m } [36mfrom[39m [32m"@/components/layout/aurora-hero"[39m[33m;[39m
+ [90m 14 |[39m [36mimport[39m { getActiveSchool } [36mfrom[39m [32m"@/lib/school"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 15 |[39m [36mimport[39m { [33mRolePersonalizedHighlights[39m } [36mfrom[39m [32m"@/components/dashboard/role-personalized-highlights"[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 16 |[39m
+ [90m 17 |[39m [36mconst[39m heroHighlights [33m=[39m [
+ [90m 18 |[39m   { label[33m:[39m [32m"Live SBA pulse"[39m[33m,[39m color[33m:[39m [32m"hsl(var(--accent-iris))"[39m }[33m,[39m[0m
+
+Import map: aliased to relative './components/dashboard/role-personalized-highlights' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⨯ ./app/dashboard/page.tsx:15:1
+Module not found: Can't resolve '@/components/dashboard/role-personalized-highlights'
+[0m [90m 13 |[39m [36mimport[39m { [33mAuroraHero[39m[33m,[39m [33mHeroMetricPanel[39m } [36mfrom[39m [32m"@/components/layout/aurora-hero"[39m[33m;[39m
+ [90m 14 |[39m [36mimport[39m { getActiveSchool } [36mfrom[39m [32m"@/lib/school"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 15 |[39m [36mimport[39m { [33mRolePersonalizedHighlights[39m } [36mfrom[39m [32m"@/components/dashboard/role-personalized-highlights"[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 16 |[39m
+ [90m 17 |[39m [36mconst[39m heroHighlights [33m=[39m [
+ [90m 18 |[39m   { label[33m:[39m [32m"Live SBA pulse"[39m[33m,[39m color[33m:[39m [32m"hsl(var(--accent-iris))"[39m }[33m,[39m[0m
+
+Import map: aliased to relative './components/dashboard/role-personalized-highlights' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⨯ ./app/dashboard/page.tsx:15:1
+Module not found: Can't resolve '@/components/dashboard/role-personalized-highlights'
+[0m [90m 13 |[39m [36mimport[39m { [33mAuroraHero[39m[33m,[39m [33mHeroMetricPanel[39m } [36mfrom[39m [32m"@/components/layout/aurora-hero"[39m[33m;[39m
+ [90m 14 |[39m [36mimport[39m { getActiveSchool } [36mfrom[39m [32m"@/lib/school"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 15 |[39m [36mimport[39m { [33mRolePersonalizedHighlights[39m } [36mfrom[39m [32m"@/components/dashboard/role-personalized-highlights"[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 16 |[39m
+ [90m 17 |[39m [36mconst[39m heroHighlights [33m=[39m [
+ [90m 18 |[39m   { label[33m:[39m [32m"Live SBA pulse"[39m[33m,[39m color[33m:[39m [32m"hsl(var(--accent-iris))"[39m }[33m,[39m[0m
+
+Import map: aliased to relative './components/dashboard/role-personalized-highlights' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⨯ ./app/dashboard/page.tsx:15:1
+Module not found: Can't resolve '@/components/dashboard/role-personalized-highlights'
+[0m [90m 13 |[39m [36mimport[39m { [33mAuroraHero[39m[33m,[39m [33mHeroMetricPanel[39m } [36mfrom[39m [32m"@/components/layout/aurora-hero"[39m[33m;[39m
+ [90m 14 |[39m [36mimport[39m { getActiveSchool } [36mfrom[39m [32m"@/lib/school"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 15 |[39m [36mimport[39m { [33mRolePersonalizedHighlights[39m } [36mfrom[39m [32m"@/components/dashboard/role-personalized-highlights"[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 16 |[39m
+ [90m 17 |[39m [36mconst[39m heroHighlights [33m=[39m [
+ [90m 18 |[39m   { label[33m:[39m [32m"Live SBA pulse"[39m[33m,[39m color[33m:[39m [32m"hsl(var(--accent-iris))"[39m }[33m,[39m[0m
+
+Import map: aliased to relative './components/dashboard/role-personalized-highlights' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⨯ ./app/dashboard/page.tsx:15:1
+Module not found: Can't resolve '@/components/dashboard/role-personalized-highlights'
+[0m [90m 13 |[39m [36mimport[39m { [33mAuroraHero[39m[33m,[39m [33mHeroMetricPanel[39m } [36mfrom[39m [32m"@/components/layout/aurora-hero"[39m[33m;[39m
+ [90m 14 |[39m [36mimport[39m { getActiveSchool } [36mfrom[39m [32m"@/lib/school"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 15 |[39m [36mimport[39m { [33mRolePersonalizedHighlights[39m } [36mfrom[39m [32m"@/components/dashboard/role-personalized-highlights"[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 16 |[39m
+ [90m 17 |[39m [36mconst[39m heroHighlights [33m=[39m [
+ [90m 18 |[39m   { label[33m:[39m [32m"Live SBA pulse"[39m[33m,[39m color[33m:[39m [32m"hsl(var(--accent-iris))"[39m }[33m,[39m[0m
+
+Import map: aliased to relative './components/dashboard/role-personalized-highlights' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⨯ ./app/dashboard/page.tsx:15:1
+Module not found: Can't resolve '@/components/dashboard/role-personalized-highlights'
+[0m [90m 13 |[39m [36mimport[39m { [33mAuroraHero[39m[33m,[39m [33mHeroMetricPanel[39m } [36mfrom[39m [32m"@/components/layout/aurora-hero"[39m[33m;[39m
+ [90m 14 |[39m [36mimport[39m { getActiveSchool } [36mfrom[39m [32m"@/lib/school"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 15 |[39m [36mimport[39m { [33mRolePersonalizedHighlights[39m } [36mfrom[39m [32m"@/components/dashboard/role-personalized-highlights"[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 16 |[39m
+ [90m 17 |[39m [36mconst[39m heroHighlights [33m=[39m [
+ [90m 18 |[39m   { label[33m:[39m [32m"Live SBA pulse"[39m[33m,[39m color[33m:[39m [32m"hsl(var(--accent-iris))"[39m }[33m,[39m[0m
+
+Import map: aliased to relative './components/dashboard/role-personalized-highlights' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⨯ ./app/dashboard/page.tsx:15:1
+Module not found: Can't resolve '@/components/dashboard/role-personalized-highlights'
+[0m [90m 13 |[39m [36mimport[39m { [33mAuroraHero[39m[33m,[39m [33mHeroMetricPanel[39m } [36mfrom[39m [32m"@/components/layout/aurora-hero"[39m[33m;[39m
+ [90m 14 |[39m [36mimport[39m { getActiveSchool } [36mfrom[39m [32m"@/lib/school"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 15 |[39m [36mimport[39m { [33mRolePersonalizedHighlights[39m } [36mfrom[39m [32m"@/components/dashboard/role-personalized-highlights"[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 16 |[39m
+ [90m 17 |[39m [36mconst[39m heroHighlights [33m=[39m [
+ [90m 18 |[39m   { label[33m:[39m [32m"Live SBA pulse"[39m[33m,[39m color[33m:[39m [32m"hsl(var(--accent-iris))"[39m }[33m,[39m[0m
+
+Import map: aliased to relative './components/dashboard/role-personalized-highlights' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⨯ ./app/dashboard/page.tsx:15:1
+Module not found: Can't resolve '@/components/dashboard/role-personalized-highlights'
+[0m [90m 13 |[39m [36mimport[39m { [33mAuroraHero[39m[33m,[39m [33mHeroMetricPanel[39m } [36mfrom[39m [32m"@/components/layout/aurora-hero"[39m[33m;[39m
+ [90m 14 |[39m [36mimport[39m { getActiveSchool } [36mfrom[39m [32m"@/lib/school"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 15 |[39m [36mimport[39m { [33mRolePersonalizedHighlights[39m } [36mfrom[39m [32m"@/components/dashboard/role-personalized-highlights"[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 16 |[39m
+ [90m 17 |[39m [36mconst[39m heroHighlights [33m=[39m [
+ [90m 18 |[39m   { label[33m:[39m [32m"Live SBA pulse"[39m[33m,[39m color[33m:[39m [32m"hsl(var(--accent-iris))"[39m }[33m,[39m[0m
+
+Import map: aliased to relative './components/dashboard/role-personalized-highlights' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⨯ ./app/dashboard/page.tsx:15:1
+Module not found: Can't resolve '@/components/dashboard/role-personalized-highlights'
+[0m [90m 13 |[39m [36mimport[39m { [33mAuroraHero[39m[33m,[39m [33mHeroMetricPanel[39m } [36mfrom[39m [32m"@/components/layout/aurora-hero"[39m[33m;[39m
+ [90m 14 |[39m [36mimport[39m { getActiveSchool } [36mfrom[39m [32m"@/lib/school"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 15 |[39m [36mimport[39m { [33mRolePersonalizedHighlights[39m } [36mfrom[39m [32m"@/components/dashboard/role-personalized-highlights"[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 16 |[39m
+ [90m 17 |[39m [36mconst[39m heroHighlights [33m=[39m [
+ [90m 18 |[39m   { label[33m:[39m [32m"Live SBA pulse"[39m[33m,[39m color[33m:[39m [32m"hsl(var(--accent-iris))"[39m }[33m,[39m[0m
+
+Import map: aliased to relative './components/dashboard/role-personalized-highlights' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ⨯ ./app/dashboard/page.tsx:15:1
+Module not found: Can't resolve '@/components/dashboard/role-personalized-highlights'
+[0m [90m 13 |[39m [36mimport[39m { [33mAuroraHero[39m[33m,[39m [33mHeroMetricPanel[39m } [36mfrom[39m [32m"@/components/layout/aurora-hero"[39m[33m;[39m
+ [90m 14 |[39m [36mimport[39m { getActiveSchool } [36mfrom[39m [32m"@/lib/school"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 15 |[39m [36mimport[39m { [33mRolePersonalizedHighlights[39m } [36mfrom[39m [32m"@/components/dashboard/role-personalized-highlights"[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 16 |[39m
+ [90m 17 |[39m [36mconst[39m heroHighlights [33m=[39m [
+ [90m 18 |[39m   { label[33m:[39m [32m"Live SBA pulse"[39m[33m,[39m color[33m:[39m [32m"hsl(var(--accent-iris))"[39m }[33m,[39m[0m
+
+Import map: aliased to relative './components/dashboard/role-personalized-highlights' inside of [project]/
+
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ ✓ Compiled in 313ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⨯ Error: Module [project]/components/providers.tsx [app-ssr] (ecmascript) was instantiated because it was required from module [project]/node_modules/next/dist/esm/build/templates/app-page.js?page=/students/page { GLOBAL_ERROR_MODULE => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", METADATA_0 => "[project]/app/favicon.ico.mjs { IMAGE => \"[project]/app/favicon.ico (static in ecmascript, tag client)\" } [app-rsc] (structured image object, ecmascript, Next.js Server Component)", MODULE_1 => "[project]/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)", MODULE_2 => "[project]/node_modules/next/dist/client/components/builtin/not-found.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_3 => "[project]/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_4 => "[project]/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_5 => "[project]/node_modules/next/dist/client/components/builtin/global-error.js [app-rsc] (ecmascript, Next.js Server Component)", MODULE_6 => "[project]/app/students/page.tsx [app-rsc] (ecmascript, Next.js Server Component)" } [app-rsc] (ecmascript) <locals>, but the module factory is not available.
+    at ignore-listed frames {
+  digest: '617470885'
+}
+ GET /students 200 in 890ms (compile: 45ms, render: 845ms)
+ GET /dashboard 500 in 1091ms (compile: 131ms, render: 960ms)
+ GET /api/schools 200 in 20ms (compile: 7ms, render: 13ms)
+ GET /dashboard 200 in 216ms (compile: 7ms, render: 208ms)
+ GET /classes 200 in 65ms (compile: 4ms, render: 62ms)
+ GET /classes 200 in 308ms (compile: 5ms, render: 303ms)
+ GET /api/schools 200 in 16ms (compile: 5ms, render: 11ms)
+ GET /dashboard 200 in 144ms (compile: 5ms, render: 139ms)
+ GET /dashboard 200 in 144ms (compile: 5ms, render: 140ms)
+ GET /settings/grading 200 in 77ms (compile: 5ms, render: 71ms)
+ GET /teachers 200 in 82ms (compile: 5ms, render: 77ms)
+ GET /schools 200 in 75ms (compile: 23ms, render: 52ms)
+ GET /dashboard 200 in 212ms (compile: 5ms, render: 207ms)
+ GET /dashboard 200 in 162ms (compile: 14ms, render: 149ms)
+ GET /dashboard 200 in 173ms (compile: 4ms, render: 169ms)
+ GET /dashboard 200 in 173ms (compile: 29ms, render: 144ms)
+ GET /dashboard 200 in 154ms (compile: 3ms, render: 151ms)
+ GET /dashboard 200 in 127ms (compile: 13ms, render: 114ms)
+ GET /students 200 in 60ms (compile: 5ms, render: 55ms)
+ GET /registrations 200 in 80ms (compile: 6ms, render: 74ms)
+ GET /registrations 200 in 141ms (compile: 4ms, render: 137ms)
+ GET /api/schools 200 in 18ms (compile: 4ms, render: 13ms)
+ POST /api/registrations 201 in 249ms (compile: 209ms, render: 40ms)
+ GET /registrations 200 in 160ms (compile: 96ms, render: 65ms)
+ GET /classes 200 in 108ms (compile: 5ms, render: 103ms)
+ GET /teachers 200 in 65ms (compile: 4ms, render: 61ms)
+ POST /api/teacher-class-assignments 201 in 281ms (compile: 232ms, render: 49ms)
+ GET /teachers 200 in 61ms (compile: 4ms, render: 57ms)
+ POST /api/teacher-class-assignments 201 in 30ms (compile: 3ms, render: 27ms)
+ GET /teachers 200 in 74ms (compile: 4ms, render: 69ms)
+ GET /registrations 200 in 69ms (compile: 4ms, render: 64ms)
+ GET /students 200 in 54ms (compile: 4ms, render: 50ms)
+ GET /students 200 in 52ms (compile: 4ms, render: 48ms)
+ GET /registrations 200 in 40ms (compile: 4ms, render: 36ms)
+ PATCH /api/registrations/cmi87m2ui000h4zdq4o8ee1rr 200 in 866ms (compile: 832ms, render: 34ms)
+ GET /registrations 200 in 77ms (compile: 4ms, render: 73ms)
+ PATCH /api/registrations/cmi87m2ui000h4zdq4o8ee1rr 200 in 117ms (compile: 86ms, render: 30ms)
+ GET /registrations 200 in 78ms (compile: 5ms, render: 73ms)
+ PATCH /api/registrations/cmi87m2ui000h4zdq4o8ee1rr 200 in 120ms (compile: 88ms, render: 32ms)
+ GET /registrations 200 in 84ms (compile: 5ms, render: 80ms)
+ PATCH /api/registrations/cmi87m2ui000h4zdq4o8ee1rr 200 in 143ms (compile: 79ms, render: 63ms)
+ GET /registrations 200 in 72ms (compile: 4ms, render: 67ms)
+ GET /assessment-plans 200 in 84ms (compile: 5ms, render: 78ms)
+ GET /students 200 in 54ms (compile: 5ms, render: 49ms)
+ GET /classes/cmi8680lv000b4zdqp08xsxzn 200 in 176ms (compile: 92ms, render: 83ms)
+ GET /assessment-plans 200 in 75ms (compile: 4ms, render: 71ms)
+ ✓ Compiled in 216ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /assessment-plans 200 in 489ms (compile: 138ms, render: 351ms)
+ GET /api/schools 200 in 15ms (compile: 4ms, render: 11ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 181ms (compile: 113ms, render: 68ms)
+ PATCH /api/assessments/cmi2iouyo001gzrsg7s2dp1xg 200 in 1130ms (compile: 921ms, render: 209ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 239ms (compile: 166ms, render: 73ms)
+ PATCH /api/assessments/cmi2iouyo001izrsgtmp4zrsi 200 in 282ms (compile: 89ms, render: 193ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 158ms (compile: 87ms, render: 71ms)
+ PATCH /api/assessments/cmi2iouyo001gzrsg7s2dp1xg 200 in 277ms (compile: 90ms, render: 187ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 149ms (compile: 76ms, render: 72ms)
+ PATCH /api/assessments/cmi2iouyo001hzrsgr094hdpx 200 in 275ms (compile: 87ms, render: 188ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 150ms (compile: 81ms, render: 69ms)
+ PATCH /api/assessments/cmi2iouyo001hzrsgr094hdpx 200 in 330ms (compile: 87ms, render: 242ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 149ms (compile: 88ms, render: 61ms)
+Error [PrismaClientKnownRequestError]: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].assessment.delete()` invocation in
+/home/guneev/AppDev/School/SchoolMatica/.next/dev/server/chunks/[root-of-the-server]__cde06592._.js:438:167
+
+  435 }
+  436 async function DELETE(_, { params }) {
+  437     const { assessmentId } = await params;
+→ 438     const existing = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].assessment.delete(
+Foreign key constraint violated on the foreign key
+    at <unknown> (app/api/assessments/[assessmentId]/route.ts:55:50)
+    at async DELETE (app/api/assessments/[assessmentId]/route.ts:55:20)
+  53 | export async function DELETE(_: NextRequest, { params }: Params) {
+  54 |   const { assessmentId } = await params;
+> 55 |   const existing = await prisma.assessment.delete({
+     |                                                  ^
+  56 |     where: { id: assessmentId },
+  57 |   });
+  58 |   await recalculateWeightsForPlan(existing.assessmentPlanId); {
+  code: 'P2003',
+  meta: [Object],
+  clientVersion: '6.19.0'
+}
+ DELETE /api/assessments/cmi2iouyo001kzrsgs42260y5 500 in 360ms (compile: 86ms, render: 274ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 127ms (compile: 71ms, render: 56ms)
+Error [PrismaClientKnownRequestError]: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].assessment.delete()` invocation in
+/home/guneev/AppDev/School/SchoolMatica/.next/dev/server/chunks/[root-of-the-server]__cde06592._.js:438:167
+
+  435 }
+  436 async function DELETE(_, { params }) {
+  437     const { assessmentId } = await params;
+→ 438     const existing = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].assessment.delete(
+Foreign key constraint violated on the foreign key
+    at <unknown> (app/api/assessments/[assessmentId]/route.ts:55:50)
+    at async DELETE (app/api/assessments/[assessmentId]/route.ts:55:20)
+  53 | export async function DELETE(_: NextRequest, { params }: Params) {
+  54 |   const { assessmentId } = await params;
+> 55 |   const existing = await prisma.assessment.delete({
+     |                                                  ^
+  56 |     where: { id: assessmentId },
+  57 |   });
+  58 |   await recalculateWeightsForPlan(existing.assessmentPlanId); {
+  code: 'P2003',
+  meta: [Object],
+  clientVersion: '6.19.0'
+}
+ DELETE /api/assessments/cmi2iouyo001kzrsgs42260y5 500 in 250ms (compile: 92ms, render: 158ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 113ms (compile: 55ms, render: 58ms)
+Error [PrismaClientKnownRequestError]: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].assessment.delete()` invocation in
+/home/guneev/AppDev/School/SchoolMatica/.next/dev/server/chunks/[root-of-the-server]__cde06592._.js:438:167
+
+  435 }
+  436 async function DELETE(_, { params }) {
+  437     const { assessmentId } = await params;
+→ 438     const existing = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].assessment.delete(
+Foreign key constraint violated on the foreign key
+    at <unknown> (app/api/assessments/[assessmentId]/route.ts:55:50)
+    at async DELETE (app/api/assessments/[assessmentId]/route.ts:55:20)
+  53 | export async function DELETE(_: NextRequest, { params }: Params) {
+  54 |   const { assessmentId } = await params;
+> 55 |   const existing = await prisma.assessment.delete({
+     |                                                  ^
+  56 |     where: { id: assessmentId },
+  57 |   });
+  58 |   await recalculateWeightsForPlan(existing.assessmentPlanId); {
+  code: 'P2003',
+  meta: [Object],
+  clientVersion: '6.19.0'
+}
+ DELETE /api/assessments/cmi2iouyo001kzrsgs42260y5 500 in 247ms (compile: 88ms, render: 158ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 126ms (compile: 75ms, render: 51ms)
+Error [PrismaClientKnownRequestError]: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].assessment.delete()` invocation in
+/home/guneev/AppDev/School/SchoolMatica/.next/dev/server/chunks/[root-of-the-server]__cde06592._.js:438:167
+
+  435 }
+  436 async function DELETE(_, { params }) {
+  437     const { assessmentId } = await params;
+→ 438     const existing = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].assessment.delete(
+Foreign key constraint violated on the foreign key
+    at <unknown> (app/api/assessments/[assessmentId]/route.ts:55:50)
+    at async DELETE (app/api/assessments/[assessmentId]/route.ts:55:20)
+  53 | export async function DELETE(_: NextRequest, { params }: Params) {
+  54 |   const { assessmentId } = await params;
+> 55 |   const existing = await prisma.assessment.delete({
+     |                                                  ^
+  56 |     where: { id: assessmentId },
+  57 |   });
+  58 |   await recalculateWeightsForPlan(existing.assessmentPlanId); {
+  code: 'P2003',
+  meta: [Object],
+  clientVersion: '6.19.0'
+}
+ DELETE /api/assessments/cmi2iouyo001kzrsgs42260y5 500 in 233ms (compile: 76ms, render: 157ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 110ms (compile: 64ms, render: 46ms)
+Error [PrismaClientKnownRequestError]: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].assessment.delete()` invocation in
+/home/guneev/AppDev/School/SchoolMatica/.next/dev/server/chunks/[root-of-the-server]__cde06592._.js:438:167
+
+  435 }
+  436 async function DELETE(_, { params }) {
+  437     const { assessmentId } = await params;
+→ 438     const existing = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].assessment.delete(
+Foreign key constraint violated on the foreign key
+    at <unknown> (app/api/assessments/[assessmentId]/route.ts:55:50)
+    at async DELETE (app/api/assessments/[assessmentId]/route.ts:55:20)
+  53 | export async function DELETE(_: NextRequest, { params }: Params) {
+  54 |   const { assessmentId } = await params;
+> 55 |   const existing = await prisma.assessment.delete({
+     |                                                  ^
+  56 |     where: { id: assessmentId },
+  57 |   });
+  58 |   await recalculateWeightsForPlan(existing.assessmentPlanId); {
+  code: 'P2003',
+  meta: [Object],
+  clientVersion: '6.19.0'
+}
+ DELETE /api/assessments/cmi2iouyo001kzrsgs42260y5 500 in 180ms (compile: 51ms, render: 128ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 137ms (compile: 70ms, render: 68ms)
+Error [PrismaClientKnownRequestError]: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].assessment.delete()` invocation in
+/home/guneev/AppDev/School/SchoolMatica/.next/dev/server/chunks/[root-of-the-server]__cde06592._.js:438:167
+
+  435 }
+  436 async function DELETE(_, { params }) {
+  437     const { assessmentId } = await params;
+→ 438     const existing = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].assessment.delete(
+Foreign key constraint violated on the foreign key
+    at <unknown> (app/api/assessments/[assessmentId]/route.ts:55:50)
+    at async DELETE (app/api/assessments/[assessmentId]/route.ts:55:20)
+  53 | export async function DELETE(_: NextRequest, { params }: Params) {
+  54 |   const { assessmentId } = await params;
+> 55 |   const existing = await prisma.assessment.delete({
+     |                                                  ^
+  56 |     where: { id: assessmentId },
+  57 |   });
+  58 |   await recalculateWeightsForPlan(existing.assessmentPlanId); {
+  code: 'P2003',
+  meta: [Object],
+  clientVersion: '6.19.0'
+}
+ DELETE /api/assessments/cmi2iouyo001hzrsgr094hdpx 500 in 233ms (compile: 87ms, render: 146ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 135ms (compile: 69ms, render: 66ms)
+Error [PrismaClientKnownRequestError]: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].assessment.delete()` invocation in
+/home/guneev/AppDev/School/SchoolMatica/.next/dev/server/chunks/[root-of-the-server]__cde06592._.js:438:167
+
+  435 }
+  436 async function DELETE(_, { params }) {
+  437     const { assessmentId } = await params;
+→ 438     const existing = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].assessment.delete(
+Foreign key constraint violated on the foreign key
+    at <unknown> (app/api/assessments/[assessmentId]/route.ts:55:50)
+    at async DELETE (app/api/assessments/[assessmentId]/route.ts:55:20)
+  53 | export async function DELETE(_: NextRequest, { params }: Params) {
+  54 |   const { assessmentId } = await params;
+> 55 |   const existing = await prisma.assessment.delete({
+     |                                                  ^
+  56 |     where: { id: assessmentId },
+  57 |   });
+  58 |   await recalculateWeightsForPlan(existing.assessmentPlanId); {
+  code: 'P2003',
+  meta: [Object],
+  clientVersion: '6.19.0'
+}
+ DELETE /api/assessments/cmi2iouyo001hzrsgr094hdpx 500 in 244ms (compile: 90ms, render: 154ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 129ms (compile: 74ms, render: 55ms)
+ PATCH /api/assessment-plans/cmi2iouyo001fzrsgz7xre8w3/workflow 400 in 881ms (compile: 871ms, render: 10ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 140ms (compile: 82ms, render: 59ms)
+ PATCH /api/assessment-plans/cmi2iouyo001fzrsgz7xre8w3/workflow 200 in 108ms (compile: 59ms, render: 50ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 135ms (compile: 78ms, render: 57ms)
+ PATCH /api/assessment-plans/cmi2iouyo001fzrsgz7xre8w3/workflow 400 in 101ms (compile: 89ms, render: 12ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 142ms (compile: 75ms, render: 66ms)
+ PATCH /api/assessment-documents/cmi2iouzm003gzrsg4jut4pvf 200 in 936ms (compile: 879ms, render: 57ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 212ms (compile: 84ms, render: 128ms)
+ PATCH /api/assessment-documents/cmi2iouzm003gzrsg4jut4pvf 200 in 100ms (compile: 64ms, render: 36ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 71ms (compile: 8ms, render: 63ms)
+ PATCH /api/assessment-documents/cmi2iouzm003gzrsg4jut4pvf 200 in 37ms (compile: 4ms, render: 33ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 134ms (compile: 77ms, render: 57ms)
+ PATCH /api/assessment-documents/cmi2iouzm003gzrsg4jut4pvf 200 in 102ms (compile: 90ms, render: 12ms)
+ GET /assessment-plans/cmi2iouyo001fzrsgz7xre8w3 200 in 119ms (compile: 67ms, render: 52ms)
+ GET /registrations 200 in 66ms (compile: 5ms, render: 61ms)
+ GET /assessment-plans 200 in 110ms (compile: 5ms, render: 105ms)
+ ✓ Compiled in 213ms
+ GET /assessment-plans 200 in 134ms (compile: 4ms, render: 130ms)
+ GET /api/schools 200 in 17ms (compile: 6ms, render: 11ms)
+ POST /api/assessment-plans 201 in 432ms (compile: 244ms, render: 187ms)
+ GET /assessment-plans 200 in 118ms (compile: 43ms, render: 75ms)
+ GET /assessment-plans/cmi88oahz000y4zdqu1ff137a 200 in 142ms (compile: 92ms, render: 50ms)
+ PATCH /api/assessments/cmi88oai0000z4zdqnqli4vh9 200 in 273ms (compile: 89ms, render: 184ms)
+ GET /assessment-plans/cmi88oahz000y4zdqu1ff137a 200 in 150ms (compile: 86ms, render: 63ms)

@@ -10,6 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { FileUpload } from "@/components/ui/file-upload";
+import { DocumentPreviewer } from "@/components/ui/document-previewer";
+import { Eye } from "lucide-react";
 import { useRoleStore } from "@/lib/stores/role-store";
 
 const STATUS_OPTIONS = ["Draft", "Pending", "Approved", "ChangesRequested"] as const;
@@ -36,42 +39,32 @@ export function PlanDocuments({ planId, documents }: Props) {
     status: "Pending" as (typeof STATUS_OPTIONS)[number],
     uploadedByName: "",
   });
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [previewDoc, setPreviewDoc] = useState<DocumentWithApprovals | null>(null);
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = event.target;
     setFormState((state) => ({ ...state, [name]: value }));
   }
 
-  async function handleFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setUploadError(null);
-    setUploading(true);
-    try {
-      const data = new FormData();
-      data.append("file", file);
-      const response = await fetch("/api/uploads", {
-        method: "POST",
-        body: data,
-      });
-      if (!response.ok) {
-        throw new Error("Upload failed");
-      }
-      const json = await response.json();
-      setFormState((state) => ({
-        ...state,
-        fileName: json.fileName ?? file.name,
-        fileUrl: json.url,
-        mimeType: json.mimeType ?? file.type ?? state.mimeType,
-      }));
-    } catch (error) {
-      setUploadError(error instanceof Error ? error.message : "Upload failed");
-    } finally {
-      setUploading(false);
+  async function handleFileUpload(file: File) {
+    const data = new FormData();
+    data.append("file", file);
+    const response = await fetch("/api/uploads", {
+      method: "POST",
+      body: data,
+    });
+    if (!response.ok) {
+      throw new Error("Upload failed");
     }
+    const json = await response.json();
+    setFormState((state) => ({
+      ...state,
+      fileName: json.fileName ?? file.name,
+      fileUrl: json.url,
+      mimeType: json.mimeType ?? file.type ?? state.mimeType,
+    }));
+    return json;
   }
 
   function createDocument() {
@@ -162,9 +155,11 @@ export function PlanDocuments({ planId, documents }: Props) {
               </div>
               <div className="space-y-1">
                 <Label htmlFor="doc-file">Upload file</Label>
-                <Input id="doc-file" type="file" onChange={handleFileUpload} disabled={uploading} />
-                {uploadError && <p className="text-sm text-destructive">{uploadError}</p>}
-                {uploading && <p className="text-xs text-muted-foreground">Uploading...</p>}
+                <FileUpload
+                  onUpload={handleFileUpload}
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
+                  maxSize={10 * 1024 * 1024}
+                />
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="space-y-1">
@@ -227,9 +222,17 @@ export function PlanDocuments({ planId, documents }: Props) {
               <Badge variant="outline">{document.status}</Badge>
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setPreviewDoc(document)}
+              >
+                <Eye className="h-4 w-4 mr-1" />
+                Preview
+              </Button>
               <Button asChild variant="ghost" size="sm">
                 <a href={document.fileUrl} target="_blank" rel="noreferrer">
-                  View file
+                  Open in New Tab
                 </a>
               </Button>
               <Select defaultValue={document.status} onValueChange={(value) => updateStatus(document.id, value as (typeof STATUS_OPTIONS)[number])}>
@@ -264,6 +267,16 @@ export function PlanDocuments({ planId, documents }: Props) {
           </div>
         ))}
       </CardContent>
+      
+      {previewDoc && (
+        <DocumentPreviewer
+          open={!!previewDoc}
+          onOpenChange={(open) => !open && setPreviewDoc(null)}
+          fileUrl={previewDoc.fileUrl}
+          fileName={previewDoc.fileName}
+          mimeType={previewDoc.mimeType}
+        />
+      )}
     </Card>
   );
 }

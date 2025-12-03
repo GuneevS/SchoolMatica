@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
             term,
             assessments: plan.assessments,
             gradingConfig: plan.classGroup.school?.gradingConfig ?? null,
-            phase: plan.classGroup.subject.phase,
+            phase: plan.classGroup.subject?.phase ?? "FET",
           });
           return prisma.markSnapshot.upsert({
             where: {

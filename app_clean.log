@@ -1,0 +1,115 @@
+   ▲ Next.js 16.0.3 (Turbopack)
+   - Local:         http://localhost:44777
+   - Network:       http://0.0.0.0:44777
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 805ms
+ ○ Compiling / ...
+ HEAD / 307 in 4.6s (compile: 4.3s, render: 255ms)
+ GET / 307 in 91ms (compile: 6ms, render: 86ms)
+ ⨯ Error [PrismaClientKnownRequestError]: 
+Invalid `{imported module ./lib/prisma.ts}["prisma"].classGroup.findMany()` invocation in
+/home/guneev/AppDev/School/SchoolMatica/.next/dev/server/chunks/ssr/[root-of-the-server]__081688f6._.js:490:140
+
+  487 ;
+  488 async function getDashboardData(schoolId) {
+  489     const [classes, openThreadsCount, registrationCounts] = await Promise.all([
+→ 490         {imported module ./lib/prisma.ts}["prisma"].classGroup.findMany(
+The column `main.ClassGroup.classType` does not exist in the current database.
+    at <unknown> (lib/dashboard.ts:54:23)
+    at async getDashboardData (lib/dashboard.ts:53:59)
+    at async DashboardPage (app/dashboard/page.tsx:33:16)
+  52 | export async function getDashboardData(schoolId: string): Promise<DashboardData> {
+  53 |   const [classes, openThreadsCount, registrationCounts] = await Promise.all([
+> 54 |     prisma.classGroup.findMany({
+     |                       ^
+  55 |       where: { schoolId },
+  56 |       include: {
+  57 |         subject: true, {
+  code: 'P2022',
+  meta: [Object],
+  clientVersion: '6.19.0',
+  digest: '1213151227'
+}
+ GET /dashboard 500 in 2.0s (compile: 1788ms, render: 242ms)
+ ⨯ Error [PrismaClientKnownRequestError]: 
+Invalid `{imported module ./lib/prisma.ts}["prisma"].classGroup.findMany()` invocation in
+/home/guneev/AppDev/School/SchoolMatica/.next/dev/server/chunks/ssr/[root-of-the-server]__081688f6._.js:490:140
+
+  487 ;
+  488 async function getDashboardData(schoolId) {
+  489     const [classes, openThreadsCount, registrationCounts] = await Promise.all([
+→ 490         {imported module ./lib/prisma.ts}["prisma"].classGroup.findMany(
+The column `main.ClassGroup.classType` does not exist in the current database.
+    at <unknown> (lib/dashboard.ts:54:23)
+    at async getDashboardData (lib/dashboard.ts:53:59)
+    at async DashboardPage (app/dashboard/page.tsx:33:16)
+  52 | export async function getDashboardData(schoolId: string): Promise<DashboardData> {
+  53 |   const [classes, openThreadsCount, registrationCounts] = await Promise.all([
+> 54 |     prisma.classGroup.findMany({
+     |                       ^
+  55 |       where: { schoolId },
+  56 |       include: {
+  57 |         subject: true, {
+  code: 'P2022',
+  meta: [Object],
+  clientVersion: '6.19.0',
+  digest: '1213151227'
+}
+ GET /dashboard 500 in 266ms (compile: 8ms, render: 258ms)
+ GET / 307 in 121ms (compile: 6ms, render: 115ms)
+ ⨯ Error [PrismaClientKnownRequestError]: 
+Invalid `{imported module ./lib/prisma.ts}["prisma"].classGroup.findMany()` invocation in
+/home/guneev/AppDev/School/SchoolMatica/.next/dev/server/chunks/ssr/[root-of-the-server]__081688f6._.js:490:140
+
+  487 ;
+  488 async function getDashboardData(schoolId) {
+  489     const [classes, openThreadsCount, registrationCounts] = await Promise.all([
+→ 490         {imported module ./lib/prisma.ts}["prisma"].classGroup.findMany(
+The column `main.ClassGroup.classType` does not exist in the current database.
+    at <unknown> (lib/dashboard.ts:54:23)
+    at async getDashboardData (lib/dashboard.ts:53:59)
+    at async DashboardPage (app/dashboard/page.tsx:33:16)
+  52 | export async function getDashboardData(schoolId: string): Promise<DashboardData> {
+  53 |   const [classes, openThreadsCount, registrationCounts] = await Promise.all([
+> 54 |     prisma.classGroup.findMany({
+     |                       ^
+  55 |       where: { schoolId },
+  56 |       include: {
+  57 |         subject: true, {
+  code: 'P2022',
+  meta: [Object],
+  clientVersion: '6.19.0',
+  digest: '1213151227'
+}
+ GET /dashboard 500 in 184ms (compile: 3ms, render: 181ms)
+ GET / 307 in 133ms (compile: 6ms, render: 127ms)
+ ⨯ Error [PrismaClientKnownRequestError]: 
+Invalid `{imported module ./lib/prisma.ts}["prisma"].classGroup.findMany()` invocation in
+/home/guneev/AppDev/School/SchoolMatica/.next/dev/server/chunks/ssr/[root-of-the-server]__081688f6._.js:490:140
+
+  487 ;
+  488 async function getDashboardData(schoolId) {
+  489     const [classes, openThreadsCount, registrationCounts] = await Promise.all([
+→ 490         {imported module ./lib/prisma.ts}["prisma"].classGroup.findMany(
+The column `main.ClassGroup.classType` does not exist in the current database.
+    at <unknown> (lib/dashboard.ts:54:23)
+    at async getDashboardData (lib/dashboard.ts:53:59)
+    at async DashboardPage (app/dashboard/page.tsx:33:16)
+  52 | export async function getDashboardData(schoolId: string): Promise<DashboardData> {
+  53 |   const [classes, openThreadsCount, registrationCounts] = await Promise.all([
+> 54 |     prisma.classGroup.findMany({
+     |                       ^
+  55 |       where: { schoolId },
+  56 |       include: {
+  57 |         subject: true, {
+  code: 'P2022',
+  meta: [Object],
+  clientVersion: '6.19.0',
+  digest: '1213151227'
+}
+ GET /dashboard 500 in 219ms (compile: 5ms, render: 215ms)
+ ⚠ Cross origin request detected from pilot-geo-newport-connections.trycloudflare.com to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+[?25h

@@ -10,6 +10,40 @@ const updateSchema = z.object({
   status: z.enum(["Open", "Resolved", "Escalated"]),
 });
 
+export async function GET(_: NextRequest, { params }: Params) {
+  const { threadId } = await params;
+
+  const thread = await prisma.moderationThread.findUnique({
+    where: { id: threadId },
+    include: {
+      comments: {
+        orderBy: { createdAt: "asc" },
+      },
+      documents: true,
+      assessmentPlan: {
+        include: {
+          classGroup: true,
+        },
+      },
+      assessment: {
+        include: {
+          assessmentPlan: {
+            include: {
+              classGroup: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!thread) {
+    return NextResponse.json({ error: "Thread not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(thread);
+}
+
 export async function PATCH(request: NextRequest, { params }: Params) {
   const { threadId } = await params;
   const json = await request.json();

@@ -34,7 +34,7 @@ export default async function RegistrationsPage() {
   const schoolId = school.id;
   const classOptions = classes.map((classGroup) => ({
     id: classGroup.id,
-    name: `${classGroup.name} · ${classGroup.subject.name}`,
+    name: `${classGroup.name} · ${classGroup.subject?.name ?? "No Subject"}`,
   }));
   const statusCounts: Record<string, number> = {
     Draft: 0,
@@ -61,7 +61,7 @@ export default async function RegistrationsPage() {
     classGroup: registration.classGroup
       ? {
           id: registration.classGroup.id,
-          name: `${registration.classGroup.name} · ${registration.classGroup.subject.name}`,
+          name: `${registration.classGroup.name} · ${registration.classGroup.subject?.name ?? "No Subject"}`,
         }
       : null,
     student: registration.student

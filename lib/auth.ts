@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { resolveUserEmailFromHeaders } from "@/lib/auth-email";
 
 export const PERMISSION_KEYS = [
   // Assessment Plans
@@ -142,7 +143,14 @@ export interface AuthContext {
 const permissionSet = new Set<PermissionKey>(PERMISSION_KEYS);
 
 function deriveEmail(request: NextRequest) {
-  return request.headers.get("x-user-email") ?? process.env.DEFAULT_USER_EMAIL ?? null;
+  return resolveUserEmailFromHeaders({
+    headerEmail: request.headers.get("x-user-email"),
+    proxySecret: request.headers.get("x-auth-proxy-secret"),
+    nodeEnv: process.env.NODE_ENV,
+    authProxySecret: process.env.AUTH_PROXY_SECRET,
+    defaultUserEmail: process.env.DEFAULT_USER_EMAIL,
+    allowDefaultUserEmailInProd: process.env.ALLOW_DEFAULT_USER_EMAIL_IN_PROD,
+  });
 }
 
 function isPermissionKey(value: string): value is PermissionKey {

@@ -1,6 +1,7 @@
 import { cookies, headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { cache } from "react";
+import { resolveUserEmailFromHeaders } from "@/lib/auth-email";
 
 export interface ServerAuthContext {
   user: {
@@ -30,7 +31,14 @@ export const getServerAuthContext = cache(async (): Promise<ServerAuthContext | 
   try {
     // Get user email from header or environment
     const headerStore = await headers();
-    const userEmail = headerStore.get("x-user-email") ?? process.env.DEFAULT_USER_EMAIL;
+    const userEmail = resolveUserEmailFromHeaders({
+      headerEmail: headerStore.get("x-user-email"),
+      proxySecret: headerStore.get("x-auth-proxy-secret"),
+      nodeEnv: process.env.NODE_ENV,
+      authProxySecret: process.env.AUTH_PROXY_SECRET,
+      defaultUserEmail: process.env.DEFAULT_USER_EMAIL,
+      allowDefaultUserEmailInProd: process.env.ALLOW_DEFAULT_USER_EMAIL_IN_PROD,
+    });
     
     if (!userEmail) {
       return null;
@@ -78,9 +86,9 @@ export const getServerAuthContext = cache(async (): Promise<ServerAuthContext | 
     }
 
     // Check if user is a system admin
-    const isAdmin = user.roleAssignments.some(
-      (ra) => ra.role.key === "system_admin"
-    );
+    const isAdmin =
+      permissions.has("system:admin") ||
+      user.roleAssignments.some((ra: { role: { key: string } }) => ra.role.key === "admin");
 
     return {
       user: {
@@ -92,14 +100,16 @@ export const getServerAuthContext = cache(async (): Promise<ServerAuthContext | 
       permissions,
       isAdmin,
       schoolIds: Array.from(schoolIds),
-      roleAssignments: user.roleAssignments.map((ra) => ({
+      roleAssignments: user.roleAssignments.map(
+        (ra: { role: { name: string; key: string; priority: number }; scopeSchoolId: string | null }) => ({
         role: {
           name: ra.role.name,
           key: ra.role.key,
           priority: ra.role.priority,
         },
         scopeSchoolId: ra.scopeSchoolId,
-      })),
+      }),
+      ),
     };
   } catch (error) {
     console.error("Error getting server auth context:", error);

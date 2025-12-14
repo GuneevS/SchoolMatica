@@ -8,10 +8,41 @@ import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 import { ClipboardList } from "lucide-react";
 import { HelpPanel } from "@/components/help/help-panel";
 import { assessmentPlansHelp } from "@/lib/help-content";
+import { getAuthorizedActiveSchool, getServerAuthContext } from "@/lib/auth-server";
 
 export default async function AssessmentPlansPage() {
+  const [auth, school] = await Promise.all([
+    getServerAuthContext(),
+    getAuthorizedActiveSchool(),
+  ]);
+
+  if (!auth) {
+    return (
+      <div className="p-10 text-center text-muted-foreground">
+        <p>Please sign in to access assessment plans.</p>
+      </div>
+    );
+  }
+
+  if (!auth.permissions.has("assessmentPlan:read")) {
+    return (
+      <div className="p-10 text-center text-muted-foreground">
+        <p>Access denied.</p>
+      </div>
+    );
+  }
+
+  if (!school) {
+    return (
+      <div className="p-10 text-center text-muted-foreground">
+        <p>No schools found. Create one from the Schools workspace to get started.</p>
+      </div>
+    );
+  }
+
   const [plans, classes, templates] = await Promise.all([
     prisma.assessmentPlan.findMany({
+      where: { classGroup: { schoolId: school.id } },
       include: {
         classGroup: { include: { subject: true } },
         _count: { select: { assessments: true } },
@@ -19,10 +50,14 @@ export default async function AssessmentPlansPage() {
       orderBy: { updatedAt: "desc" },
     }),
     prisma.classGroup.findMany({
+      where: { schoolId: school.id },
       include: { subject: true },
       orderBy: { name: "asc" },
     }),
     prisma.curriculumTemplate.findMany({
+      where: {
+        OR: [{ schoolId: null }, { schoolId: school.id }],
+      },
       orderBy: [{ grade: "asc" }, { name: "asc" }],
     }),
   ]);

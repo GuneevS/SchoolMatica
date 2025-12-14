@@ -4,10 +4,30 @@ import { HelpPanel } from "@/components/help/help-panel";
 import { registrationsHelp } from "@/lib/help-content";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 import { ShieldCheck } from "lucide-react";
-import { getActiveSchool } from "@/lib/school";
+import { getAuthorizedActiveSchool, getServerAuthContext } from "@/lib/auth-server";
 
 export default async function RegistrationsPage() {
-  const school = await getActiveSchool();
+  const [auth, school] = await Promise.all([
+    getServerAuthContext(),
+    getAuthorizedActiveSchool(),
+  ]);
+
+  if (!auth) {
+    return (
+      <div className="p-10 text-center text-muted-foreground">
+        <p>Please sign in to access registrations.</p>
+      </div>
+    );
+  }
+
+  if (!auth.permissions.has("registration:read")) {
+    return (
+      <div className="p-10 text-center text-muted-foreground">
+        <p>Access denied.</p>
+      </div>
+    );
+  }
+
   if (!school) {
     return (
       <div className="p-10 text-center text-muted-foreground">

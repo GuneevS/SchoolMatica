@@ -1,11 +1,32 @@
 import { prisma } from "@/lib/prisma";
 import { AuroraHero } from "@/components/layout/aurora-hero";
 import { SchoolManager } from "@/components/schools/school-manager";
-import { getActiveSchool } from "@/lib/school";
+import { getAuthorizedActiveSchool, getServerAuthContext } from "@/lib/auth-server";
 
 export default async function SchoolsPage() {
-  const activeSchool = await getActiveSchool();
+  const [auth, activeSchool] = await Promise.all([
+    getServerAuthContext(),
+    getAuthorizedActiveSchool(),
+  ]);
+
+  if (!auth) {
+    return (
+      <div className="p-10 text-center text-muted-foreground">
+        <p>Please sign in to access schools.</p>
+      </div>
+    );
+  }
+
+  if (!auth.permissions.has("school:read")) {
+    return (
+      <div className="p-10 text-center text-muted-foreground">
+        <p>Access denied.</p>
+      </div>
+    );
+  }
+
   const schools = await prisma.school.findMany({
+    where: auth.isAdmin ? {} : { id: { in: auth.schoolIds } },
     include: {
       gradeLevels: { orderBy: { order: "asc" } },
       _count: { select: { classes: true, subjects: true } },

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { authorizeWithSchool, hasSchoolAccess } from "@/lib/auth";
 
 interface Params {
   params: Promise<{ documentId: string }>;
@@ -19,8 +20,78 @@ const updateSchema = z.object({
     .optional(),
 });
 
-export async function GET(_: NextRequest, { params }: Params) {
+async function getSchoolIdForDocument(documentId: string): Promise<string | null> {
+  const doc = await prisma.assessmentDocument.findUnique({
+    where: { id: documentId },
+    select: {
+      assessmentPlanId: true,
+      assessmentId: true,
+      threadId: true,
+    },
+  });
+  if (!doc) return null;
+
+  if (doc.assessmentPlanId) {
+    const plan = await prisma.assessmentPlan.findUnique({
+      where: { id: doc.assessmentPlanId },
+      select: { classGroup: { select: { schoolId: true } } },
+    });
+    return plan?.classGroup.schoolId ?? null;
+  }
+
+  if (doc.assessmentId) {
+    const assessment = await prisma.assessment.findUnique({
+      where: { id: doc.assessmentId },
+      select: { assessmentPlan: { select: { classGroup: { select: { schoolId: true } } } } },
+    });
+    return assessment?.assessmentPlan.classGroup.schoolId ?? null;
+  }
+
+  if (doc.threadId) {
+    const thread = await prisma.moderationThread.findUnique({
+      where: { id: doc.threadId },
+      select: {
+        assessmentPlanId: true,
+        assessmentId: true,
+      },
+    });
+    if (!thread) return null;
+    if (thread.assessmentPlanId) {
+      const plan = await prisma.assessmentPlan.findUnique({
+        where: { id: thread.assessmentPlanId },
+        select: { classGroup: { select: { schoolId: true } } },
+      });
+      return plan?.classGroup.schoolId ?? null;
+    }
+    if (thread.assessmentId) {
+      const assessment = await prisma.assessment.findUnique({
+        where: { id: thread.assessmentId },
+        select: { assessmentPlan: { select: { classGroup: { select: { schoolId: true } } } } },
+      });
+      return assessment?.assessmentPlan.classGroup.schoolId ?? null;
+    }
+  }
+
+  return null;
+}
+
+export async function GET(request: NextRequest, { params }: Params) {
   const { documentId } = await params;
+
+  const authResult = await authorizeWithSchool(request, "assessmentDocument:read");
+  if ("error" in authResult) {
+    return authResult.error;
+  }
+  const { auth } = authResult;
+
+  const schoolId = await getSchoolIdForDocument(documentId);
+  if (!schoolId) {
+    return NextResponse.json({ error: "Document not found" }, { status: 404 });
+  }
+  if (!hasSchoolAccess(auth, schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+  }
+
   const document = await prisma.assessmentDocument.findUnique({
     where: { id: documentId },
     include: { approvals: true },
@@ -33,6 +104,21 @@ export async function GET(_: NextRequest, { params }: Params) {
 
 export async function PATCH(request: NextRequest, { params }: Params) {
   const { documentId } = await params;
+
+  const authResult = await authorizeWithSchool(request, "assessmentDocument:decide");
+  if ("error" in authResult) {
+    return authResult.error;
+  }
+  const { auth } = authResult;
+
+  const schoolId = await getSchoolIdForDocument(documentId);
+  if (!schoolId) {
+    return NextResponse.json({ error: "Document not found" }, { status: 404 });
+  }
+  if (!hasSchoolAccess(auth, schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+  }
+
   const json = await request.json();
   const parsed = updateSchema.safeParse(json);
   if (!parsed.success) {
@@ -76,6 +162,20 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
 export async function DELETE(_: NextRequest, { params }: Params) {
   const { documentId } = await params;
+
+  const authResult = await authorizeWithSchool(_, "assessmentDocument:delete");
+  if ("error" in authResult) {
+    return authResult.error;
+  }
+  const { auth } = authResult;
+
+  const schoolId = await getSchoolIdForDocument(documentId);
+  if (!schoolId) {
+    return NextResponse.json({ error: "Document not found" }, { status: 404 });
+  }
+  if (!hasSchoolAccess(auth, schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+  }
 
   try {
     // Delete all approvals first

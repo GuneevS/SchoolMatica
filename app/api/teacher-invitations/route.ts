@@ -52,7 +52,18 @@ export async function GET(request: NextRequest) {
 
   const invitations = await prisma.teacherInvitation.findMany({
     where: whereClause,
-    include: {
+    select: {
+      id: true,
+      teacherId: true,
+      schoolId: true,
+      email: true,
+      roleKey: true,
+      status: true,
+      invitedBy: true,
+      expiresAt: true,
+      acceptedAt: true,
+      createdAt: true,
+      updatedAt: true,
       teacher: {
         select: {
           id: true,
@@ -162,7 +173,18 @@ export async function POST(request: NextRequest) {
       invitedBy: auth.user.id,
       expiresAt,
     },
-    include: {
+    select: {
+      id: true,
+      teacherId: true,
+      schoolId: true,
+      email: true,
+      roleKey: true,
+      status: true,
+      invitedBy: true,
+      expiresAt: true,
+      acceptedAt: true,
+      createdAt: true,
+      updatedAt: true,
       teacher: {
         select: {
           id: true,
@@ -181,11 +203,11 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  // In a real app, you would send an email here
-  // For now, return the invitation with the token (for demo purposes)
+  const includeInviteUrl =
+    process.env.NODE_ENV !== "production" || process.env.ALLOW_INVITE_TOKEN_RESPONSE_IN_PROD === "true";
+
   return NextResponse.json({
     invitation,
-    // In production, remove this and send via email instead
-    inviteUrl: `/invite/teacher/${token}`,
+    ...(includeInviteUrl ? { inviteUrl: `/invite/teacher/${token}` } : {}),
   }, { status: 201 });
 }

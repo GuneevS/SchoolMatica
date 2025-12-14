@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { authorizeWithSchool, hasSchoolAccess } from "@/lib/auth";
 
 const slotUpdateSchema = z.object({
   classGroupId: z.string(),
@@ -9,11 +10,34 @@ const slotUpdateSchema = z.object({
   notes: z.string().optional().nullable(),
 });
 
+async function getSchoolIdForSlot(slotId: string): Promise<string | null> {
+  const slot = await prisma.timetableSlot.findUnique({
+    where: { id: slotId },
+    select: { timetable: { select: { schoolId: true } } },
+  });
+  return slot?.timetable.schoolId ?? null;
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ slotId: string }> }
 ) {
   const { slotId } = await params;
+
+  const authResult = await authorizeWithSchool(request, "timetable:update");
+  if ("error" in authResult) {
+    return authResult.error;
+  }
+  const { auth } = authResult;
+
+  const schoolId = await getSchoolIdForSlot(slotId);
+  if (!schoolId) {
+    return NextResponse.json({ error: "Slot not found" }, { status: 404 });
+  }
+  if (!hasSchoolAccess(auth, schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+  }
+
   const json = await request.json();
   const parsed = slotUpdateSchema.safeParse(json);
 
@@ -22,13 +46,23 @@ export async function PATCH(
   }
 
   try {
-    // Verify class exists
     const classGroup = await prisma.classGroup.findUnique({
-        where: { id: parsed.data.classGroupId }
+      where: { id: parsed.data.classGroupId },
+      select: { id: true, schoolId: true },
     });
 
-    if (!classGroup) {
-        return NextResponse.json({ error: "Class not found" }, { status: 404 });
+    if (!classGroup || classGroup.schoolId !== schoolId) {
+      return NextResponse.json({ error: "Invalid class" }, { status: 400 });
+    }
+
+    if (parsed.data.teacherId) {
+      const teacher = await prisma.teacher.findUnique({
+        where: { id: parsed.data.teacherId },
+        select: { id: true, schoolId: true },
+      });
+      if (!teacher || teacher.schoolId !== schoolId) {
+        return NextResponse.json({ error: "Invalid teacher" }, { status: 400 });
+      }
     }
 
     const slot = await prisma.timetableSlot.update({
@@ -40,11 +74,11 @@ export async function PATCH(
         notes: parsed.data.notes,
       },
       include: {
-          classGroup: { include: { subject: true } },
-          teacher: true,
-          period: true,
-          assessmentPlan: true
-      }
+        classGroup: { include: { subject: true } },
+        teacher: true,
+        period: true,
+        assessmentPlan: true,
+      },
     });
 
     return NextResponse.json(slot);

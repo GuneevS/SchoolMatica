@@ -8,6 +8,7 @@ import {
 } from "@/lib/calculations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { getServerAuthContext } from "@/lib/auth-server";
 
 interface Props {
   params: Promise<{ studentId: string }>;
@@ -15,6 +16,12 @@ interface Props {
 
 export default async function StudentDetailPage({ params }: Props) {
   const resolvedParams = await params;
+
+  const auth = await getServerAuthContext();
+  if (!auth || !auth.permissions.has("student:read")) {
+    notFound();
+  }
+
   const student = await prisma.student.findUnique({
     where: { id: resolvedParams.studentId },
     include: {
@@ -33,6 +40,10 @@ export default async function StudentDetailPage({ params }: Props) {
   });
 
   if (!student) {
+    notFound();
+  }
+
+  if (!auth.isAdmin && !auth.schoolIds.includes(student.classGroup.schoolId)) {
     notFound();
   }
 

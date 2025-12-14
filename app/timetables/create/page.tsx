@@ -1,12 +1,24 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getActiveSchool } from "@/lib/school";
+import { getAuthorizedActiveSchool, getServerAuthContext } from "@/lib/auth-server";
 import { CreateTimetableForm } from "@/components/timetable/create-timetable-form";
 import { AuroraHero } from "@/components/layout/aurora-hero";
 import { Calendar } from "lucide-react";
 
 export default async function CreateTimetablePage() {
-  const school = await getActiveSchool();
+  const [auth, school] = await Promise.all([
+    getServerAuthContext(),
+    getAuthorizedActiveSchool(),
+  ]);
+
+  if (!auth) {
+    redirect("/");
+  }
+
+  if (!auth.permissions.has("timetable:create")) {
+    redirect("/timetables");
+  }
+
   if (!school) {
     redirect("/");
   }

@@ -12,7 +12,7 @@ import { markbookHelp } from "@/lib/help-content";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 import { BookOpenCheck } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { getActiveSchool } from "@/lib/school";
+import { getServerAuthContext } from "@/lib/auth-server";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ManageTeachers } from "@/components/classes/manage-teachers";
 import { ManageStudents } from "@/components/classes/manage-students";
@@ -23,11 +23,29 @@ interface Props {
   searchParams: Promise<{ planId?: string }>;
 }
 
-export default async function ClassMarkbookPage({ params, searchParams }: Props) {
+ export default async function ClassMarkbookPage({ params, searchParams }: Props) {
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
-  
-  const schoolData = await getActiveSchool();
+
+  const auth = await getServerAuthContext();
+  if (!auth || !auth.permissions.has("class:read") || !auth.permissions.has("mark:read")) {
+    notFound();
+  }
+
+  const classGroupMeta = await prisma.classGroup.findUnique({
+    where: { id: resolvedParams.classId },
+    select: { schoolId: true },
+  });
+
+  if (!classGroupMeta) {
+    notFound();
+  }
+
+  if (!auth.isAdmin && !auth.schoolIds.includes(classGroupMeta.schoolId)) {
+    notFound();
+  }
+
+  const schoolId = classGroupMeta.schoolId;
   
   // Parallel data fetching
   const [payload, assignments, timetable] = await Promise.all([
@@ -36,9 +54,9 @@ export default async function ClassMarkbookPage({ params, searchParams }: Props)
         where: { classGroupId: resolvedParams.classId },
         include: { teacher: true },
       }),
-      schoolData ? prisma.timetable.findFirst({
+      prisma.timetable.findFirst({
         where: { 
-            schoolId: schoolData.id,
+            schoolId,
             // status: "Active" // removed status filter for now to ensure we see something
         },
         orderBy: { createdAt: "desc" },
@@ -66,7 +84,7 @@ export default async function ClassMarkbookPage({ params, searchParams }: Props)
                 }
             }
         }
-      }) : null
+      })
   ]);
 
   if (!payload) {
@@ -75,12 +93,10 @@ export default async function ClassMarkbookPage({ params, searchParams }: Props)
 
   const markbook = payload as MarkbookPayload;
   const students = payload.rows.map(row => row.student);
-  const teacherOptions = schoolData
-    ? await prisma.teacher.findMany({
-        where: { schoolId: schoolData.id },
-        orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-      })
-    : [];
+  const teacherOptions = await prisma.teacher.findMany({
+    where: { schoolId },
+    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+  });
   
   const currentPlan = markbook.assessmentPlan;
   const rosterSize = markbook.rows.length;

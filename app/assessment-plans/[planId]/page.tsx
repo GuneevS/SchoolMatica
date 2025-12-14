@@ -9,6 +9,7 @@ import { formatDateReadable } from "@/lib/date-utils";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 import { ClipboardList } from "lucide-react";
 import { calculateAssessmentWeightInsights, type TermWeights } from "@/lib/calculations";
+import { getServerAuthContext } from "@/lib/auth-server";
 
 interface Props {
   params: Promise<{ planId: string }>;
@@ -16,6 +17,12 @@ interface Props {
 
 export default async function PlanDetailPage({ params }: Props) {
   const resolvedParams = await params;
+
+  const auth = await getServerAuthContext();
+  if (!auth || !auth.permissions.has("assessmentPlan:read")) {
+    notFound();
+  }
+
   const plan = await prisma.assessmentPlan.findUnique({
     where: { id: resolvedParams.planId },
     include: {
@@ -33,6 +40,10 @@ export default async function PlanDetailPage({ params }: Props) {
   });
 
   if (!plan) {
+    notFound();
+  }
+
+  if (!auth.isAdmin && !auth.schoolIds.includes(plan.classGroup.schoolId)) {
     notFound();
   }
 

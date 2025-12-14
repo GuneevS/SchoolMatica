@@ -4,6 +4,7 @@ import { TimetableGrid } from "@/components/timetable/timetable-grid";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { getServerAuthContext } from "@/lib/auth-server";
 
 interface Props {
   params: Promise<{ timetableId: string }>;
@@ -11,7 +12,12 @@ interface Props {
 
 export default async function TimetablePage({ params }: Props) {
   const resolvedParams = await params;
-  
+
+  const auth = await getServerAuthContext();
+  if (!auth || !auth.permissions.has("timetable:read")) {
+    notFound();
+  }
+
   const timetable = await prisma.timetable.findUnique({
     where: { id: resolvedParams.timetableId },
     include: {
@@ -41,6 +47,10 @@ export default async function TimetablePage({ params }: Props) {
   });
 
   if (!timetable) {
+    notFound();
+  }
+
+  if (!auth.isAdmin && !auth.schoolIds.includes(timetable.schoolId)) {
     notFound();
   }
 

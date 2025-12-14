@@ -1,13 +1,40 @@
 import { prisma } from "@/lib/prisma";
 import { ReportGeneratorForm } from "@/components/reports/report-generator-form";
 import { AuroraHero } from "@/components/layout/aurora-hero";
+import { getAuthorizedActiveSchool, getServerAuthContext } from "@/lib/auth-server";
 
 export default async function GenerateReportsPage() {
-  const schools = await prisma.school.findMany();
-  const school = schools[0];
+  const [auth, school] = await Promise.all([
+    getServerAuthContext(),
+    getAuthorizedActiveSchool(),
+  ]);
+
+  if (!auth) {
+    return (
+      <div className="p-10 text-center text-muted-foreground">
+        <p>Please sign in to generate reports.</p>
+      </div>
+    );
+  }
+
+  if (!auth.permissions.has("report:generate")) {
+    return (
+      <div className="p-10 text-center text-muted-foreground">
+        <p>Access denied.</p>
+      </div>
+    );
+  }
+
+  if (!school) {
+    return (
+      <div className="p-10 text-center text-muted-foreground">
+        <p>No schools found. Create one from the Schools workspace to get started.</p>
+      </div>
+    );
+  }
 
   const classGroups = await prisma.classGroup.findMany({
-    where: { schoolId: school?.id },
+    where: { schoolId: school.id },
     include: {
       students: {
         orderBy: [{ lastName: "asc" }, { firstName: "asc" }],

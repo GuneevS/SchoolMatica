@@ -6,7 +6,9 @@
     "dev": "prisma generate && cross-env HOST=0.0.0.0 PORT=44777 next dev --hostname 0.0.0.0 --port 44777",
     "build": "prisma generate && next build",
     "start": "cross-env HOST=0.0.0.0 PORT=44777 next start --hostname 0.0.0.0 --port 44777",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --import tsx"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",

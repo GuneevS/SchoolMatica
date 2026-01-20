@@ -23,6 +23,9 @@ const navItems = [
   { label: "Settings", href: "/settings/grading" },
 ];
 
+// Marketing/landing pages that should NOT show the app shell
+const marketingPaths = ["/"];
+
 interface Props {
   children: React.ReactNode;
   initialSchool: {
@@ -34,6 +37,12 @@ interface Props {
 
 export function AppShell({ children, initialSchool }: Props) {
   const pathname = usePathname();
+
+  // For marketing pages, render children directly without the app shell chrome
+  const isMarketingPage = pathname && marketingPaths.includes(pathname);
+  if (isMarketingPage) {
+    return <>{children}</>;
+  }
   return (
     <div className="relative flex min-h-screen bg-canvas text-foreground">
       <div

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { recalculateWeightsForPlan } from "@/lib/assessment-service";
-import { authorizeWithSchool, hasSchoolAccess } from "@/lib/auth";
+import { authorizeWithSchool, hasSchoolAccess, isSystemAdmin } from "@/lib/auth";
 
 interface Params {
   params: Promise<{ assessmentId: string }>;
@@ -27,7 +27,7 @@ async function getAssessmentWithSchool(assessmentId: string) {
     where: { id: assessmentId },
     include: {
       assessmentPlan: {
-        select: { classGroup: { select: { schoolId: true } } },
+        select: { status: true, classGroup: { select: { schoolId: true } } },
       },
     },
   });
@@ -56,6 +56,18 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   // Verify school access
   if (!hasSchoolAccess(auth, existing.assessmentPlan.classGroup.schoolId)) {
     return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+  }
+
+  if (existing.assessmentPlan.status === "PendingApproval" || existing.assessmentPlan.status === "Locked") {
+    if (!isSystemAdmin(auth)) {
+      return NextResponse.json({ error: "Plan is not editable in its current status" }, { status: 409 });
+    }
+  }
+
+  if (existing.assessmentPlan.status === "PendingApproval" || existing.assessmentPlan.status === "Locked") {
+    if (!isSystemAdmin(auth)) {
+      return NextResponse.json({ error: "Plan is not editable in its current status" }, { status: 409 });
+    }
   }
 
   const assessment = await prisma.assessment.update({

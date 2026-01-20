@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "prisma generate && cross-env HOST=0.0.0.0 PORT=44777 next dev --hostname 0.0.0.0 --port 44777",
-    "build": "prisma generate && next build",
+    "dev": "prisma generate && cross-env HOST=0.0.0.0 PORT=44777 next dev --hostname 0.0.0.0 --port 44777 --webpack",
+    "build": "prisma generate && next build --webpack",
     "start": "cross-env HOST=0.0.0.0 PORT=44777 next start --hostname 0.0.0.0 --port 44777",
     "lint": "eslint"
   },
@@ -44,13 +44,16 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@auth/prisma-adapter": "^2.11.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "bcryptjs": "^3.0.3",
     "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.0.3",
+    "next-auth": "^5.0.0-beta.30",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",

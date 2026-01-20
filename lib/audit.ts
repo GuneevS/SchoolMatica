@@ -58,8 +58,8 @@ export async function logAuditEvent(entry: AuditLogEntry): Promise<void> {
         action: entry.action,
         actorRole: entry.actorRole,
         actorName: entry.actorName ?? null,
-        metadata: entry.metadata ?? null,
-        diff: entry.diff ?? null,
+        metadata: (entry.metadata as any) || undefined,
+        diff: (entry.diff as any) || undefined,
       },
     });
   } catch (error) {
@@ -160,10 +160,10 @@ export async function auditAssessmentPlanStatusChange(
   oldStatus: string,
   newStatus: string
 ): Promise<void> {
-  const action: AuditAction = newStatus === "Approved" || newStatus === "Locked" 
-    ? "approve" 
-    : newStatus === "Rejected" 
-      ? "reject" 
+  const action: AuditAction = newStatus === "Approved" || newStatus === "Locked"
+    ? "approve"
+    : newStatus === "Rejected"
+      ? "reject"
       : "advance";
 
   await auditFromAuth(auth, action, "assessment_plan", planId, schoolId, {
@@ -181,10 +181,10 @@ export async function auditRegistrationDecision(
   decision: "Approved" | "Rejected"
 ): Promise<void> {
   await auditFromAuth(
-    auth, 
-    decision === "Approved" ? "approve" : "reject", 
-    "registration", 
-    registrationId, 
+    auth,
+    decision === "Approved" ? "approve" : "reject",
+    "registration",
+    registrationId,
     schoolId
   );
 }

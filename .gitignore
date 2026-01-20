@@ -42,3 +42,6 @@ next-env.d.ts
 
 /lib/generated/prisma
 /node-v*-linux-x64/
+
+# Auto Claude data directory
+.auto-claude/

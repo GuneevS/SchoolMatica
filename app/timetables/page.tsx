@@ -5,23 +5,39 @@ import { Button } from "@/components/ui/button";
 import { Calendar, Clock, Plus } from "lucide-react";
 import Link from "next/link";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
+import { getAuthorizedActiveSchool, getServerAuthContext } from "@/lib/auth-server";
 
 export default async function TimetablesPage() {
-  const schools = await prisma.school.findMany({
+  const [auth, school] = await Promise.all([
+    getServerAuthContext(),
+    getAuthorizedActiveSchool(),
+  ]);
+
+  if (!auth) {
+    return (
+      <div className="p-10 text-center text-muted-foreground">
+        <p>Please sign in to access timetables.</p>
+      </div>
+    );
+  }
+
+  if (!school) {
+    return (
+      <div className="p-10 text-center text-muted-foreground">
+        <p>No accessible schools found. Select or create a school to continue.</p>
+      </div>
+    );
+  }
+
+  const timetables = await prisma.timetable.findMany({
+    where: { schoolId: school.id },
     include: {
-      timetables: {
-        include: {
-          _count: {
-            select: { periods: true, slots: true },
-          },
-        },
-        orderBy: { updatedAt: "desc" },
+      _count: {
+        select: { periods: true, slots: true },
       },
     },
+    orderBy: { updatedAt: "desc" },
   });
-
-  const school = schools[0];
-  const timetables = school?.timetables ?? [];
 
   const stats = {
     total: timetables.length,

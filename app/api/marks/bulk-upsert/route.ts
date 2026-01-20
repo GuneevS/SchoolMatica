@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
       id: true,
       assessmentPlan: {
         select: {
+          status: true,
           classGroup: {
             select: { schoolId: true },
           },
@@ -56,6 +57,16 @@ export async function POST(request: NextRequest) {
   for (const schoolId of schoolIds) {
     if (!hasSchoolAccess(auth, schoolId)) {
       return NextResponse.json({ error: "Access denied to one or more schools" }, { status: 403 });
+    }
+  }
+
+  // Prevent edits on locked or pending plans unless admin
+  if (!isSystemAdmin(auth)) {
+    const lockedPlan = assessmentsWithSchool.find(
+      (a) => a.assessmentPlan.status === "PendingApproval" || a.assessmentPlan.status === "Locked"
+    );
+    if (lockedPlan) {
+      return NextResponse.json({ error: "Parent assessment plan is not editable" }, { status: 409 });
     }
   }
 

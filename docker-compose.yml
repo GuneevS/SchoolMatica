@@ -1,0 +1,40 @@
+# Development docker-compose configuration
+# For production, use docker-compose.prod.yml
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: schoolmatica_db
+    environment:
+      POSTGRES_USER: schoolmatica
+      POSTGRES_PASSWORD: dev_password_only
+      POSTGRES_DB: schoolmatica
+    ports:
+      - "13808:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U schoolmatica" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: schoolmatica_app
+    ports:
+      - "13807:3000"
+    environment:
+      DATABASE_URL: "postgresql://schoolmatica:dev_password_only@postgres:5432/schoolmatica?schema=public"
+      NEXTAUTH_SECRET: "dev_secret_key_123"
+      NEXTAUTH_URL: "http://localhost:13807"
+      AUTH_TRUST_HOST: "true"
+      NODE_ENV: "development"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

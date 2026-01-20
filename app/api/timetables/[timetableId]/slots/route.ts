@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { authorizeWithSchool, hasSchoolAccess } from "@/lib/auth";
 
 interface Params {
   params: Promise<{ timetableId: string }>;
@@ -16,12 +17,68 @@ const createSlotSchema = z.object({
 });
 
 export async function POST(request: NextRequest, { params }: Params) {
+  const authResult = await authorizeWithSchool(request, "timetable:update");
+  if ("error" in authResult) {
+    return authResult.error;
+  }
+  const { auth } = authResult;
+
   const { timetableId } = await params;
   const json = await request.json();
   const parsed = createSlotSchema.safeParse(json);
   
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
+  }
+
+  // Validate timetable and school scope
+  const timetable = await prisma.timetable.findUnique({
+    where: { id: timetableId },
+    select: { schoolId: true },
+  });
+  if (!timetable) {
+    return NextResponse.json({ error: "Timetable not found" }, { status: 404 });
+  }
+  if (!hasSchoolAccess(auth, timetable.schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+  }
+
+  // Ensure period belongs to this timetable
+  const period = await prisma.timetablePeriod.findUnique({
+    where: { id: parsed.data.periodId },
+    select: { timetableId: true },
+  });
+  if (!period || period.timetableId !== timetableId) {
+    return NextResponse.json({ error: "Period not found on this timetable" }, { status: 400 });
+  }
+
+  // Ensure class/teacher/plan belong to same school
+  const classGroup = await prisma.classGroup.findUnique({
+    where: { id: parsed.data.classGroupId },
+    select: { schoolId: true },
+  });
+  if (!classGroup || classGroup.schoolId !== timetable.schoolId) {
+    return NextResponse.json({ error: "Class not found in this school" }, { status: 400 });
+  }
+
+  if (parsed.data.teacherId) {
+    const teacher = await prisma.teacher.findUnique({
+      where: { id: parsed.data.teacherId },
+      select: { schoolId: true },
+    });
+    if (!teacher || teacher.schoolId !== timetable.schoolId) {
+      return NextResponse.json({ error: "Teacher not found in this school" }, { status: 400 });
+    }
+  }
+
+  if (parsed.data.assessmentPlanId) {
+    const plan = await prisma.assessmentPlan.findUnique({
+      where: { id: parsed.data.assessmentPlanId },
+      select: { classGroup: { select: { schoolId: true } } },
+    });
+    if (!plan || plan.classGroup.schoolId !== timetable.schoolId) {
+      return NextResponse.json({ error: "Assessment plan not found in this school" }, { status: 400 });
+    }
   }
 
   const slot = await prisma.timetableSlot.create({
@@ -40,8 +97,25 @@ export async function POST(request: NextRequest, { params }: Params) {
   return NextResponse.json(slot, { status: 201 });
 }
 
-export async function GET(_: NextRequest, { params }: Params) {
+export async function GET(request: NextRequest, { params }: Params) {
   const { timetableId } = await params;
+
+  const authResult = await authorizeWithSchool(request, "timetable:read");
+  if ("error" in authResult) {
+    return authResult.error;
+  }
+  const { auth } = authResult;
+
+  const timetable = await prisma.timetable.findUnique({
+    where: { id: timetableId },
+    select: { schoolId: true },
+  });
+  if (!timetable) {
+    return NextResponse.json({ error: "Timetable not found" }, { status: 404 });
+  }
+  if (!hasSchoolAccess(auth, timetable.schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+  }
   
   const slots = await prisma.timetableSlot.findMany({
     where: { timetableId },

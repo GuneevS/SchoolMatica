@@ -28,13 +28,15 @@ export interface ServerAuthContext {
  */
 export const getServerAuthContext = cache(async (): Promise<ServerAuthContext | null> => {
   try {
-    // Get user email from header or environment
-    const headerStore = await headers();
-    const userEmail = headerStore.get("x-user-email") ?? process.env.DEFAULT_USER_EMAIL;
-    
-    if (!userEmail) {
+    // Use NextAuth session instead of headers
+    const { auth } = await import("@/lib/auth-config");
+    const session = await auth();
+
+    if (!session?.user?.email) {
       return null;
     }
+
+    const userEmail = session.user.email;
 
     const user = await prisma.appUser.findUnique({
       where: { email: userEmail },
@@ -60,7 +62,7 @@ export const getServerAuthContext = cache(async (): Promise<ServerAuthContext | 
     // Collect all permissions from all role assignments
     const permissions = new Set<string>();
     const schoolIds = new Set<string>();
-    
+
     for (const assignment of user.roleAssignments) {
       // Add permissions from this role
       for (const rp of assignment.role.permissions) {
@@ -78,14 +80,16 @@ export const getServerAuthContext = cache(async (): Promise<ServerAuthContext | 
     }
 
     // Check if user is a system admin
-    const isAdmin = user.roleAssignments.some(
-      (ra) => ra.role.key === "system_admin"
-    );
+    const isAdmin =
+      user.roleAssignments.some((ra) => ra.role.key === "system_admin" || ra.role.key === "admin") ||
+      user.roleAssignments.some((ra) =>
+        ra.role.permissions.some((rp) => rp.permission.key === "system:admin")
+      );
 
     return {
       user: {
         id: user.id,
-        email: user.email,
+        email: user.email || "",
         displayName: user.displayName,
         schoolId: user.schoolId,
       },

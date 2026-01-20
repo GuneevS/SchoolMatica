@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { authorizeWithSchool, hasSchoolAccess } from "@/lib/auth";
 
 interface Params {
   params: Promise<{ slotId: string }>;
@@ -15,12 +16,30 @@ const updateSlotSchema = z.object({
 });
 
 export async function PATCH(request: NextRequest, { params }: Params) {
+  const authResult = await authorizeWithSchool(request, "timetable:update");
+  if ("error" in authResult) {
+    return authResult.error;
+  }
+  const { auth } = authResult;
+
   const { slotId } = await params;
   const json = await request.json();
   const parsed = updateSlotSchema.safeParse(json);
   
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
+  }
+
+  // Load slot with timetable + school
+  const existing = await prisma.timetableSlot.findUnique({
+    where: { id: slotId },
+    include: { timetable: true },
+  });
+  if (!existing) {
+    return NextResponse.json({ error: "Slot not found" }, { status: 404 });
+  }
+  if (!hasSchoolAccess(auth, existing.timetable.schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
   }
 
   // Validate class exists if classGroupId is provided
@@ -30,6 +49,29 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     });
     if (!classGroup) {
       return NextResponse.json({ error: "Class not found" }, { status: 404 });
+    }
+    if (classGroup.schoolId !== existing.timetable.schoolId) {
+      return NextResponse.json({ error: "Class not in this school" }, { status: 400 });
+    }
+  }
+
+  if (parsed.data.teacherId) {
+    const teacher = await prisma.teacher.findUnique({
+      where: { id: parsed.data.teacherId },
+      select: { schoolId: true },
+    });
+    if (!teacher || teacher.schoolId !== existing.timetable.schoolId) {
+      return NextResponse.json({ error: "Teacher not in this school" }, { status: 400 });
+    }
+  }
+
+  if (parsed.data.assessmentPlanId) {
+    const plan = await prisma.assessmentPlan.findUnique({
+      where: { id: parsed.data.assessmentPlanId },
+      select: { classGroup: { select: { schoolId: true } } },
+    });
+    if (!plan || plan.classGroup.schoolId !== existing.timetable.schoolId) {
+      return NextResponse.json({ error: "Assessment plan not in this school" }, { status: 400 });
     }
   }
 
@@ -47,8 +89,25 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   return NextResponse.json(slot);
 }
 
-export async function DELETE(_: NextRequest, { params }: Params) {
+export async function DELETE(request: NextRequest, { params }: Params) {
   const { slotId } = await params;
+
+  const authResult = await authorizeWithSchool(request, "timetable:delete");
+  if ("error" in authResult) {
+    return authResult.error;
+  }
+  const { auth } = authResult;
+
+  const existing = await prisma.timetableSlot.findUnique({
+    where: { id: slotId },
+    include: { timetable: true },
+  });
+  if (!existing) {
+    return NextResponse.json({ error: "Slot not found" }, { status: 404 });
+  }
+  if (!hasSchoolAccess(auth, existing.timetable.schoolId)) {
+    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+  }
   
   await prisma.timetableSlot.delete({
     where: { id: slotId },

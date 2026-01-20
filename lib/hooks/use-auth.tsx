@@ -48,11 +48,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await fetch("/api/auth/me", {
         credentials: "include",
       });
-      
+
       if (!response.ok) {
         if (response.status === 401) {
           setUser(null);
@@ -63,17 +63,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         throw new Error("Failed to fetch auth context");
       }
-      
+
       const data = await response.json();
       setUser(data.user);
       setPermissions(data.permissions);
       setIsAdmin(data.isAdmin);
       setSchoolIds(data.schoolIds);
-      
+
       // Set active role from cookie or default to highest priority role
       const savedRole = getCookie(ACTIVE_ROLE_COOKIE);
       const validRoleKeys = data.user.roleAssignments.map((ra: RoleAssignment) => ra.role.key);
-      
+
       if (savedRole && validRoleKeys.includes(savedRole)) {
         setActiveRoleKey(savedRole);
       } else if (data.user.roleAssignments.length > 0) {
@@ -106,22 +106,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
+  // Using AuthContext directly for React 19 compatibility
+  const contextValue = {
+    user,
+    permissions,
+    isAdmin,
+    schoolIds,
+    activeRoleKey,
+    isLoading,
+    error,
+    refetch: fetchAuth,
+    setActiveRole,
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        permissions,
-        isAdmin,
-        schoolIds,
-        activeRoleKey,
-        isLoading,
-        error,
-        refetch: fetchAuth,
-        setActiveRole,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+    <AuthContext value= { contextValue } >
+    { children }
+    </AuthContext>
   );
 }
 

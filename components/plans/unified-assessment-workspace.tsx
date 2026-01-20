@@ -15,12 +15,12 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip, Cell } from "recharts";
-import { 
-  GripVertical, 
-  Plus, 
-  Trash2, 
-  Info, 
-  TrendingUp, 
+import {
+  GripVertical,
+  Plus,
+  Trash2,
+  Info,
+  TrendingUp,
   Calendar,
   CheckCircle2,
   Save,
@@ -32,8 +32,8 @@ import {
   AlertCircle,
   Clock
 } from "lucide-react";
-import { useRoleStore } from "@/lib/stores/role-store";
 import type { AssessmentWeightInsightMap, TermWeights } from "@/lib/calculations";
+import { useAuth, useCurrentRole } from "@/lib/hooks/use-auth";
 
 interface Props {
   plan: AssessmentPlan & { assessments: Assessment[] };
@@ -43,21 +43,40 @@ interface Props {
 
 export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeights, weightInsights }: Props) {
   const router = useRouter();
+  const { user } = useAuth();
+  const currentRole = useCurrentRole();
   const [isPending, startTransition] = useTransition();
   const [mounted, setMounted] = useState(false);
-  const role = useRoleStore((state) => state.role);
-  
+  const { activeRoleKey } = useAuth();
+
+  // Normalize role for UI checks - FIX APPLIED HERE
+  const activeRoleName = currentRole?.role.name ?? "Teacher";
+  const role = activeRoleName === "Head of Department" ? "HOD" :
+    activeRoleName === "System Administrator" ? "SMT" :
+      activeRoleName;
+
+  // Local state for real-time updates
+  const [assessments, setAssessments] = useState(plan.assessments);
+
   // Editing permissions based on status and role
+  // Teachers can edit Draft plans, HOD/SMT can edit Draft and Approved plans
+  // No one can edit Locked or PendingApproval plans
   const canEdit = (() => {
     if (plan.status === "Locked") return false; // No one can edit locked plans
-    if (plan.status === "PendingApproval") return false; // No edits while pending
-    if (plan.status === "Draft") return role !== "Teacher"; // HOD/SMT can edit drafts
+    if (plan.status === "PendingApproval") return false; // No edits while pending approval
+    if (plan.status === "Draft") return true; // Teachers, HODs, and SMT can all edit drafts
     if (plan.status === "Approved") return role === "HOD" || role === "SMT"; // Only HOD/SMT can edit approved
     return false;
   })();
   
-  // Local state for real-time updates
-  const [assessments, setAssessments] = useState(plan.assessments);
+  // Check if user can submit for approval (only plan owner or any role above)
+  const canSubmit = plan.status === "Draft" && assessments.length > 0;
+  
+  // Check if user can approve (HOD or SMT only)
+  const canApprove = (role === "HOD" || role === "SMT") && plan.status === "PendingApproval";
+  
+  // Check if user can lock (SMT only)
+  const canLock = role === "SMT" && plan.status === "Approved";
   const [termWeights, setTermWeights] = useState<Record<string, number>>(() => {
     if (initialTermWeights) return initialTermWeights;
     const equal = 100 / plan.termCount;
@@ -88,7 +107,7 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
 
   // Visualization colors
   const palette = ["#38bdf8", "#a855f7", "#fb7185", "#34d399", "#f97316", "#fbbf24", "#0ea5e9", "#22d3ee"];
-  
+
   // Chart data for term weights
   const termWeightChartData = termStats
     .filter(stat => stat.termWeight > 0)
@@ -100,7 +119,7 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
 
   const updateAssessment = async (id: string, data: Partial<Assessment>) => {
     if (!canEdit) return;
-    
+
     // Optimistic update
     setAssessments(prev => prev.map(a => a.id === id ? { ...a, ...data } : a));
     setHasChanges(true);
@@ -120,7 +139,6 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
     if (!canEdit || !isTermWeightsValid) return;
 
     startTransition(async () => {
-      const { revalidatePath } = await import("next/cache");
       await fetch(`/api/assessment-plans/${plan.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -133,7 +151,7 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
 
   const addAssessment = async (term: string) => {
     if (!canEdit) return;
-    
+
     startTransition(async () => {
       await fetch(`/api/assessments`, {
         method: "POST",
@@ -153,10 +171,10 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
 
   const deleteAssessment = async (id: string) => {
     if (!canEdit) return;
-    
+
     // Optimistic update
     setAssessments(prev => prev.filter(a => a.id !== id));
-    
+
     startTransition(async () => {
       await fetch(`/api/assessments/${id}`, { method: "DELETE" });
       await fetch("/api/revalidate?path=/dashboard", { method: "POST" });
@@ -164,14 +182,42 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
     });
   };
 
+  const updateAssessmentByPercentage = (id: string, newPercent: number, term: string) => {
+    if (!canEdit) return;
+
+    // 1. Get other assessments in this term
+    const termAsms = assessments.filter(a => a.term === term && a.id !== id);
+    const otherRawTotal = termAsms.reduce((sum, a) => sum + (a.rawWeight || 10), 0);
+
+    // 2. Edge Case: If this is the only assessment, it MUST be 100%
+    if (termAsms.length === 0) {
+      if (newPercent !== 100) {
+        // Force 100 or show warning? For simplicity, ignore non-100 logic or reset rawWeight to nice number
+        updateAssessment(id, { rawWeight: 100 });
+      }
+      return;
+    }
+
+    // 3. Edge Case: Prevent 100% if others exist (would imply others are 0, which implies raw=infinity? No, if raw=Infinity, math breaks)
+    // If user wants 100%, others must become 0? 
+    // Let's Cap at 99.9% for safety or handle gracefully.
+    const safePercent = Math.min(Math.max(newPercent, 0), 99.9);
+
+    // 4. Calculate new Raw Weight
+    // formula: Raw = (Target% * OtherTotal) / (100 - Target%)
+    const newRaw = (safePercent * otherRawTotal) / (100 - safePercent);
+
+    updateAssessment(id, { rawWeight: Number(newRaw.toFixed(2)) });
+  };
+
   const updatePlanStatus = async (targetStatus: "Draft" | "PendingApproval" | "Approved" | "Locked") => {
     startTransition(async () => {
       await fetch(`/api/assessment-plans/${plan.id}/workflow`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          targetStatus, 
-          actorRole: role,
+        body: JSON.stringify({
+          targetStatus,
+          actorRole: (["Teacher", "HOD", "SMT"].includes(activeRoleName) ? activeRoleName : "Teacher") as "Teacher" | "HOD" | "SMT",
           actorName: "Current User" // TODO: Get from auth
         }),
       });
@@ -201,7 +247,7 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
                 </span>
               </div>
             </div>
-            
+
             {/* Approval Status Badge */}
             <div className="flex flex-col items-end gap-2">
               {plan.status === "Draft" && (
@@ -228,44 +274,44 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
                   Locked
                 </Badge>
               )}
-              
+
               <div className="flex gap-2">
-                {hasChanges && (
+                {hasChanges && canEdit && (
                   <Button size="sm" onClick={updateTermWeights} disabled={isPending || !isTermWeightsValid}>
                     <Save className="h-4 w-4 mr-1" />
                     Save Weights
                   </Button>
                 )}
-                
+
                 {/* Approval Action Buttons - Contextual based on status and role */}
-                {plan.status === "Draft" && canEdit && (
-                  <Button 
-                    size="sm" 
+                {canSubmit && (
+                  <Button
+                    size="sm"
                     onClick={() => updatePlanStatus("PendingApproval")}
-                    disabled={isPending || assessments.length === 0}
+                    disabled={isPending}
                     className="bg-blue-600 hover:bg-blue-700"
                   >
                     <Send className="h-4 w-4 mr-1" />
                     Submit for Approval
                   </Button>
                 )}
-                
+
                 {plan.status === "PendingApproval" && role === "Teacher" && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => updatePlanStatus("Draft")}
                     disabled={isPending}
                   >
                     Withdraw
                   </Button>
                 )}
-                
-                {plan.status === "PendingApproval" && (role === "HOD" || role === "SMT") && (
+
+                {canApprove && (
                   <>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => updatePlanStatus("Draft")}
                       disabled={isPending}
                       className="border-red-500 text-red-600 hover:bg-red-50"
@@ -273,8 +319,8 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
                       <AlertCircle className="h-4 w-4 mr-1" />
                       Reject
                     </Button>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       onClick={() => updatePlanStatus("Approved")}
                       disabled={isPending}
                       className="bg-emerald-600 hover:bg-emerald-700"
@@ -284,10 +330,10 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
                     </Button>
                   </>
                 )}
-                
-                {plan.status === "Approved" && role === "SMT" && (
-                  <Button 
-                    size="sm" 
+
+                {canLock && (
+                  <Button
+                    size="sm"
                     onClick={() => updatePlanStatus("Locked")}
                     disabled={isPending}
                     className="bg-gray-600 hover:bg-gray-700"
@@ -296,11 +342,11 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
                     Lock Plan
                   </Button>
                 )}
-                
+
                 {plan.status === "Approved" && (role === "HOD" || role === "SMT") && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => updatePlanStatus("Draft")}
                     disabled={isPending}
                   >
@@ -310,7 +356,7 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
               </div>
             </div>
           </div>
-          
+
           {/* Status Help Text */}
           {plan.status === "Draft" && (
             <Alert className="mt-4">
@@ -320,7 +366,7 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
               </AlertDescription>
             </Alert>
           )}
-          
+
           {plan.status === "PendingApproval" && role === "Teacher" && (
             <Alert className="mt-4 bg-blue-50 dark:bg-blue-950/20 border-blue-200">
               <Clock className="h-4 w-4 text-blue-600" />
@@ -329,7 +375,7 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
               </AlertDescription>
             </Alert>
           )}
-          
+
           {plan.status === "PendingApproval" && (role === "HOD" || role === "SMT") && (
             <Alert className="mt-4 bg-blue-50 dark:bg-blue-950/20 border-blue-200">
               <AlertCircle className="h-4 w-4 text-blue-600" />
@@ -338,7 +384,7 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
               </AlertDescription>
             </Alert>
           )}
-          
+
           {plan.status === "Locked" && (
             <Alert className="mt-4 bg-gray-50 dark:bg-gray-900/20 border-gray-200">
               <Lock className="h-4 w-4 text-gray-600" />
@@ -496,7 +542,7 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
               );
             })}
           </TabsList>
-          
+
           {/* Term Weight Quick View */}
           <Card className="px-4 py-2">
             <div className="flex items-center gap-3 text-sm">
@@ -564,9 +610,9 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
                         className="cursor-pointer"
                       />
                     </div>
-                    
+
                     <Separator />
-                    
+
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Assessments in term:</span>
@@ -609,7 +655,7 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
                             </strong>
                           </div>
                         </div>
-                        
+
                         <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200">
                           <Info className="h-4 w-4 text-blue-600" />
                           <AlertDescription className="text-xs">
@@ -625,7 +671,7 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
                         </AlertDescription>
                       </Alert>
                     )}
-                    
+
                     <Button onClick={() => addAssessment(term)} disabled={!canEdit || isPending} size="sm" className="w-full">
                       <Plus className="h-4 w-4 mr-1" />
                       Add Assessment to {term}
@@ -642,75 +688,114 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
                 <CardContent>
                   {termAssessments.length > 0 ? (
                     <div className="space-y-3">
-                      {termAssessments.map((assessment) => (
-                        <Card key={assessment.id} className="border-l-4 border-l-primary/30">
-                          <CardContent className="pt-4">
-                            <div className="grid gap-4 md:grid-cols-4">
-                              <div className="space-y-1 md:col-span-2">
-                                <Label className="text-xs text-muted-foreground">Assessment Name</Label>
-                                <Input
-                                  value={assessment.taskName}
-                                  onChange={(e) => updateAssessment(assessment.id, { taskName: e.target.value })}
-                                  disabled={!canEdit}
-                                  className="font-semibold"
-                                />
-                              </div>
-                              
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">Total Marks</Label>
-                                <Input
-                                  type="number"
-                                  value={assessment.totalMark}
-                                  onChange={(e) => updateAssessment(assessment.id, { totalMark: Number(e.target.value) })}
-                                  disabled={!canEdit}
-                                  min="1"
-                                  className="text-center font-bold"
-                                />
-                              </div>
-                              
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">Raw Weight</Label>
-                                <div className="flex gap-2">
+                      {termAssessments.map((assessment) => {
+                        const termTotalRaw = termAssessments.reduce((sum, a) => sum + a.rawWeight, 0);
+                        const isOnlyOne = termAssessments.length === 1;
+                        const calculatedPercent = termTotalRaw > 0 ? (assessment.rawWeight / termTotalRaw) * 100 : 0;
+
+                        return (
+                          <Card key={assessment.id} className="border-l-4 border-l-primary/30">
+                            <CardContent className="pt-4">
+                              <div className="grid gap-4 md:grid-cols-5">
+                                <div className="space-y-1 md:col-span-2">
+                                  <Label className="text-xs text-muted-foreground">Assessment Name</Label>
+                                  <Input
+                                    value={assessment.taskName}
+                                    onChange={(e) => updateAssessment(assessment.id, { taskName: e.target.value })}
+                                    disabled={!canEdit}
+                                    className="font-semibold"
+                                  />
+                                </div>
+
+                                <div className="space-y-1">
+                                  <Label className="text-xs text-muted-foreground">Total Marks</Label>
                                   <Input
                                     type="number"
-                                    value={assessment.rawWeight}
-                                    onChange={(e) => updateAssessment(assessment.id, { rawWeight: Number(e.target.value) })}
+                                    value={assessment.totalMark}
+                                    onChange={(e) => updateAssessment(assessment.id, { totalMark: Number(e.target.value) })}
                                     disabled={!canEdit}
-                                    min="0"
-                                    step="0.5"
-                                    className="text-center font-bold text-emerald-600"
+                                    min="1"
+                                    className="text-center font-bold"
                                   />
-                                  {canEdit && (
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => deleteAssessment(assessment.id)}
-                                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  )}
+                                </div>
+
+                                <div className="space-y-1">
+                                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                                    Weight %
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <Info className="h-3 w-3 text-muted-foreground" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Percentage of the {term} mark.</p>
+                                          <p className="text-xs opacity-70">Adjusting this updates the Raw Weight automatically.</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </Label>
+                                  <div className="relative">
+                                    <Input
+                                      type="number"
+                                      value={isOnlyOne ? "100" : calculatedPercent.toFixed(1)}
+                                      onChange={(e) => {
+                                        const val = parseFloat(e.target.value);
+                                        if (!isNaN(val)) {
+                                          updateAssessmentByPercentage(assessment.id, val, term);
+                                        }
+                                      }}
+                                      disabled={!canEdit || isOnlyOne}
+                                      min="0"
+                                      max="100"
+                                      step="0.5"
+                                      className="text-center font-bold text-primary pr-6"
+                                    />
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                                  </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                  <Label className="text-xs text-muted-foreground">Raw Points</Label>
+                                  <div className="flex gap-2">
+                                    <Input
+                                      type="number"
+                                      value={assessment.rawWeight.toFixed(2)}
+                                      onChange={(e) => updateAssessment(assessment.id, { rawWeight: Number(e.target.value) })}
+                                      disabled={!canEdit}
+                                      min="0"
+                                      step="0.5"
+                                      className="text-center font-bold text-muted-foreground bg-muted/50"
+                                    />
+                                    {canEdit && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => deleteAssessment(assessment.id)}
+                                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                            
-                            <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                              <span>Contributes:</span>
-                              <Badge variant="secondary">{assessment.weightPercent.toFixed(1)}% to {term}</Badge>
-                              <span>→</span>
-                              <Badge className="bg-primary">{((assessment.weightPercent * (termWeights[term] || 0)) / 100).toFixed(1)}% to final</Badge>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+
+                              <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                                <span>Contribution:</span>
+                                <Badge className="bg-primary">{((assessment.weightPercent * (termWeights[term] || 0)) / 100).toFixed(1)}% to Final Grade</Badge>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       <Info className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">No assessments in {term} yet</p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="mt-3"
                         onClick={() => addAssessment(term)}
                         disabled={!canEdit || isPending}

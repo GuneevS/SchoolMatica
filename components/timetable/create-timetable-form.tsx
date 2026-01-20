@@ -21,7 +21,7 @@ export function CreateTimetableForm({ schoolId, classes, teachers }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const currentYear = new Date().getFullYear();
-  
+
   const [formData, setFormData] = useState({
     name: "",
     year: currentYear,
@@ -29,16 +29,17 @@ export function CreateTimetableForm({ schoolId, classes, teachers }: Props) {
     startDate: "",
     endDate: "",
     cycleType: "Weekly" as "Weekly" | "Rotating" | "Custom",
+    periodsPerDay: 8,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     startTransition(async () => {
       // Convert dates to ISO datetime strings
       const startDateTime = formData.startDate ? new Date(formData.startDate + "T00:00:00").toISOString() : new Date().toISOString();
       const endDateTime = formData.endDate ? new Date(formData.endDate + "T23:59:59").toISOString() : new Date().toISOString();
-      
+
       const res = await fetch("/api/timetables", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -50,6 +51,7 @@ export function CreateTimetableForm({ schoolId, classes, teachers }: Props) {
           startDate: startDateTime,
           endDate: endDateTime,
           cycleType: formData.cycleType,
+          periodsPerDay: formData.periodsPerDay,
         }),
       });
 
@@ -57,9 +59,14 @@ export function CreateTimetableForm({ schoolId, classes, teachers }: Props) {
         const timetable = await res.json();
         router.push(`/timetables/${timetable.id}`);
       } else {
-        const error = await res.json();
-        console.error("Failed to create timetable:", error);
-        alert("Failed to create timetable. Please check all fields.");
+        const errorData = await res.json().catch(() => ({}));
+        console.error("Failed to create timetable:", errorData);
+        const errorMessage = errorData.details 
+          ? Array.isArray(errorData.details) 
+            ? errorData.details.join(", ") 
+            : errorData.details
+          : errorData.error || "Unknown error";
+        alert(`Failed to create timetable: ${errorMessage}`);
       }
     });
   };
@@ -152,23 +159,39 @@ export function CreateTimetableForm({ schoolId, classes, teachers }: Props) {
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="periodsPerDay">Periods per Day</Label>
+              <Input
+                id="periodsPerDay"
+                type="number"
+                value={formData.periodsPerDay}
+                onChange={(e) => setFormData({ ...formData, periodsPerDay: parseInt(e.target.value) || 8 })}
+                min="1"
+                max="20"
+                required
+              />
+              <p className="text-[0.8rem] text-muted-foreground">
+                Default number of periods to generate for each day.
+              </p>
+            </div>
           </div>
 
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.back()}
-              disabled={isPending}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? "Creating..." : "Create Timetable"}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.back()}
+            disabled={isPending}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isPending}>
+            {isPending ? "Creating..." : "Create Timetable"}
+          </Button>
+        </div>
+      </form>
+    </CardContent>
+    </Card >
   );
 }

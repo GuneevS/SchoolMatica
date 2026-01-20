@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { AuroraHero } from "@/components/layout/aurora-hero";
 import { SchoolManager } from "@/components/schools/school-manager";
+import { SchoolSetupWizard } from "@/components/schools/setup-wizard/wizard-shell";
 import { getActiveSchool } from "@/lib/school";
 
 export default async function SchoolsPage() {
@@ -28,6 +29,10 @@ export default async function SchoolsPage() {
           { label: activeSchool ? `Active: ${activeSchool.name}` : "No active school", color: "hsl(var(--accent-mint))" },
         ]}
       />
+
+      <div className="flex justify-end">
+        <SchoolSetupWizard />
+      </div>
 
       <SchoolManager
         schools={schools.map((school) => ({

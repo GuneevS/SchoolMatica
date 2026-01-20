@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { recalculateWeightsForPlan } from "@/lib/assessment-service";
-import { authorizeWithSchool, hasSchoolAccess } from "@/lib/auth";
+import { authorizeWithSchool, hasSchoolAccess, isSystemAdmin } from "@/lib/auth";
 
 const createSchema = z.object({
   assessmentPlanId: z.string(),
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   // Verify school access for the assessment plan
   const plan = await prisma.assessmentPlan.findUnique({
     where: { id: parsed.data.assessmentPlanId },
-    select: { classGroup: { select: { schoolId: true } } },
+    select: { status: true, classGroup: { select: { schoolId: true } } },
   });
   
   if (!plan) {
@@ -43,6 +43,12 @@ export async function POST(request: NextRequest) {
   
   if (!hasSchoolAccess(auth, plan.classGroup.schoolId)) {
     return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+  }
+
+  if (plan.status === "PendingApproval" || plan.status === "Locked") {
+    if (!isSystemAdmin(auth)) {
+      return NextResponse.json({ error: "Plan is not editable in its current status" }, { status: 409 });
+    }
   }
 
   const existingCount = await prisma.assessment.count({

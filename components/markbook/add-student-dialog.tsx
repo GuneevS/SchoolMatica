@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle2, UserPlus } from "lucide-react";
+import { useHasPermission } from "@/lib/hooks/use-auth";
 
 const schema = z.object({
   admissionNumber: z.string().min(1, "Admission number is required"),
@@ -37,11 +38,13 @@ interface Props {
 }
 
 export function AddStudentDialog({ classId, teachers }: Props) {
+  const canCreateStudent = useHasPermission("student:create");
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const router = useRouter();
+  
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -57,6 +60,11 @@ export function AddStudentDialog({ classId, teachers }: Props) {
     },
   });
 
+  // Check permission before returning dialog
+  if (!canCreateStudent) {
+    return null;
+  }
+
   function onSubmit(values: FormValues) {
     setError(null);
     setSuccess(false);
@@ -71,27 +79,27 @@ export function AddStudentDialog({ classId, teachers }: Props) {
             advisorTeacherId: values.advisorTeacherId || undefined,
             parents: values.guardianName
               ? [
-                  {
-                    fullName: values.guardianName,
-                    relationship: values.guardianRelationship || "Guardian",
-                    email: values.guardianEmail || undefined,
-                    phone: values.guardianPhone || undefined,
-                    primary: true,
-                  },
-                ]
+                {
+                  fullName: values.guardianName,
+                  relationship: values.guardianRelationship || "Guardian",
+                  email: values.guardianEmail || undefined,
+                  phone: values.guardianPhone || undefined,
+                  primary: true,
+                },
+              ]
               : undefined,
           }),
         });
-        
+
         if (!response.ok) {
           const data = await response.json();
           throw new Error(data.error || "Failed to add student");
         }
-        
+
         setSuccess(true);
         form.reset();
         router.refresh();
-        
+
         // Close dialog after showing success message
         setTimeout(() => {
           setOpen(false);
@@ -118,29 +126,29 @@ export function AddStudentDialog({ classId, teachers }: Props) {
             Add learner to class
           </DialogTitle>
         </DialogHeader>
-        
+
         {error && (
           <Alert variant="destructive" className="animate-in slide-in-from-top-2">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        
+
         {success && (
           <Alert className="bg-emerald-50 border-emerald-200 text-emerald-800 animate-in slide-in-from-top-2">
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             <AlertDescription>Student added successfully!</AlertDescription>
           </Alert>
         )}
-        
+
         <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
           <div className="space-y-2">
             <Label htmlFor="admissionNumber" className="text-sm font-semibold">
               Admission number <span className="text-destructive">*</span>
             </Label>
-            <Input 
+            <Input
               id="admissionNumber"
-              {...form.register("admissionNumber")} 
+              {...form.register("admissionNumber")}
               className={form.formState.errors.admissionNumber ? "border-destructive" : ""}
               disabled={isPending || success}
             />
@@ -148,15 +156,15 @@ export function AddStudentDialog({ classId, teachers }: Props) {
               <p className="text-sm text-destructive">{form.formState.errors.admissionNumber.message}</p>
             )}
           </div>
-          
+
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="firstName" className="text-sm font-semibold">
                 First name <span className="text-destructive">*</span>
               </Label>
-              <Input 
+              <Input
                 id="firstName"
-                {...form.register("firstName")} 
+                {...form.register("firstName")}
                 className={form.formState.errors.firstName ? "border-destructive" : ""}
                 disabled={isPending || success}
               />
@@ -168,9 +176,9 @@ export function AddStudentDialog({ classId, teachers }: Props) {
               <Label htmlFor="lastName" className="text-sm font-semibold">
                 Last name <span className="text-destructive">*</span>
               </Label>
-              <Input 
+              <Input
                 id="lastName"
-                {...form.register("lastName")} 
+                {...form.register("lastName")}
                 className={form.formState.errors.lastName ? "border-destructive" : ""}
                 disabled={isPending || success}
               />
@@ -179,14 +187,14 @@ export function AddStudentDialog({ classId, teachers }: Props) {
               )}
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="gender" className="text-sm font-semibold">
               Gender <span className="text-muted-foreground text-xs">(optional)</span>
             </Label>
-            <Input 
+            <Input
               id="gender"
-              {...form.register("gender")} 
+              {...form.register("gender")}
               placeholder="e.g., Male, Female, Other"
               disabled={isPending || success}
             />
@@ -245,18 +253,18 @@ export function AddStudentDialog({ classId, teachers }: Props) {
               />
             </div>
           </div>
-          
+
           <DialogFooter className="gap-2">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => setOpen(false)}
               disabled={isPending || success}
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={isPending || success}
               className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
             >

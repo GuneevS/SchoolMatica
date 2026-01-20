@@ -1,0 +1,82 @@
+# Production docker-compose configuration
+# Usage: docker compose -f docker-compose.prod.yml up -d
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: schoolmatica_db_prod
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-schoolmatica}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Database password required}
+      POSTGRES_DB: ${POSTGRES_DB:-schoolmatica}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-schoolmatica}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - schoolmatica_network
+    # Don't expose postgres port in production
+    # Use internal network only
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: schoolmatica_app_prod
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-schoolmatica}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-schoolmatica}?schema=public"
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?NextAuth secret required}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:?NextAuth URL required}
+      AUTH_TRUST_HOST: "true"
+      NODE_ENV: "production"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - schoolmatica_network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # Optional: Nginx reverse proxy for SSL termination
+  nginx:
+    image: nginx:alpine
+    container_name: schoolmatica_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - app
+    restart: always
+    networks:
+      - schoolmatica_network
+    profiles:
+      - with-nginx
+
+volumes:
+  postgres_data_prod:
+    driver: local
+
+networks:
+  schoolmatica_network:
+    driver: bridge

@@ -46,7 +46,15 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const activeSchool = await getActiveSchool();
+  // Attempt to get active school, but gracefully handle database unavailability
+  // This allows marketing pages (like landing page) to render even without DB
+  let activeSchool = null;
+  try {
+    activeSchool = await getActiveSchool();
+  } catch (error) {
+    // Database unavailable - this is fine for marketing pages
+    console.warn("Database unavailable, proceeding without active school context");
+  }
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>

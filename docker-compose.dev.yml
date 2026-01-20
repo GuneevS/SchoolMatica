@@ -1,0 +1,151 @@
+# =============================================================================
+# SchoolMatica Development Docker Compose
+# Full-stack local development environment
+# =============================================================================
+#
+# Usage:
+#   docker compose -f docker-compose.dev.yml up -d
+#   docker compose -f docker-compose.dev.yml down
+#   docker compose -f docker-compose.dev.yml logs -f app
+#
+# Services:
+#   - app: Next.js application (hot-reload enabled)
+#   - postgres: PostgreSQL database
+#   - redis: Redis cache (optional)
+#   - adminer: Database admin UI (optional)
+#
+# =============================================================================
+
+name: schoolmatica-dev
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: schoolmatica_db_dev
+    environment:
+      POSTGRES_USER: schoolmatica
+      POSTGRES_PASSWORD: dev_password_only
+      POSTGRES_DB: schoolmatica
+      TZ: Africa/Johannesburg
+    ports:
+      - "13808:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U schoolmatica -d schoolmatica"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - schoolmatica_dev_network
+
+  # ---------------------------------------------------------------------------
+  # Redis Cache (Optional - for session/cache testing)
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: schoolmatica_redis_dev
+    ports:
+      - "13809:6379"
+    volumes:
+      - redis_dev_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    networks:
+      - schoolmatica_dev_network
+    profiles:
+      - with-redis
+
+  # ---------------------------------------------------------------------------
+  # Next.js Application (Development Mode)
+  # ---------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+      target: deps  # Use deps stage for development with hot reload
+    container_name: schoolmatica_app_dev
+    ports:
+      - "13807:3000"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: "postgresql://schoolmatica:dev_password_only@postgres:5432/schoolmatica?schema=public"
+      NEXTAUTH_SECRET: "dev_secret_key_change_in_production"
+      NEXTAUTH_URL: "http://localhost:13807"
+      AUTH_TRUST_HOST: "true"
+      # Redis (optional)
+      REDIS_URL: "redis://redis:6379"
+      # Debug settings
+      DEBUG: "prisma:query"
+    volumes:
+      # Mount source code for hot-reload
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    working_dir: /app
+    command: ["npm", "run", "dev"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - schoolmatica_dev_network
+
+  # ---------------------------------------------------------------------------
+  # Adminer - Database Management UI (Optional)
+  # ---------------------------------------------------------------------------
+  adminer:
+    image: adminer:latest
+    container_name: schoolmatica_adminer
+    ports:
+      - "13810:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: hydra
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    networks:
+      - schoolmatica_dev_network
+    profiles:
+      - with-adminer
+
+  # ---------------------------------------------------------------------------
+  # MailHog - Email Testing (Optional)
+  # ---------------------------------------------------------------------------
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: schoolmatica_mailhog
+    ports:
+      - "13811:1025"  # SMTP
+      - "13812:8025"  # Web UI
+    restart: unless-stopped
+    networks:
+      - schoolmatica_dev_network
+    profiles:
+      - with-mail
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  schoolmatica_dev_network:
+    driver: bridge

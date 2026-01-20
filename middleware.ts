@@ -3,10 +3,20 @@ import NextAuth from "next-auth";
 import { auth } from "@/lib/auth-config";
 import { NextResponse } from "next/server";
 
+// Marketing/landing pages that should be publicly accessible without authentication
+const publicMarketingPaths = ["/"];
+
 export default auth((req) => {
     const isAuth = !!req.auth;
-    const isAuthPage = req.nextUrl.pathname.startsWith("/login");
-    const isPublicPage = req.nextUrl.pathname.startsWith("/api/auth");
+    const pathname = req.nextUrl.pathname;
+    const isAuthPage = pathname.startsWith("/login");
+    const isPublicPage = pathname.startsWith("/api/auth");
+    const isMarketingPage = publicMarketingPaths.includes(pathname);
+
+    // Allow marketing pages to be publicly accessible
+    if (isMarketingPage) {
+        return null;
+    }
 
     if (isAuthPage) {
         if (isAuth) {
@@ -16,7 +26,7 @@ export default auth((req) => {
     }
 
     if (!isAuth && !isPublicPage) {
-        let callbackUrl = req.nextUrl.pathname;
+        let callbackUrl = pathname;
         if (req.nextUrl.search) {
             callbackUrl += req.nextUrl.search;
         }

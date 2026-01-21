@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { buildMarkSnapshot } from "@/lib/calculations";
-import { authorizeWithSchool, hasSchoolAccess, isSystemAdmin, getUserSchoolIds } from "@/lib/auth";
+import { authorizeWithSchool, hasSchoolAccess, isSystemAdmin, getUserSchoolIds, getPrimaryRoleKey } from "@/lib/auth";
 
 const payloadSchema = z.object({
   entries: z
@@ -43,7 +43,10 @@ export async function POST(request: NextRequest) {
         select: {
           status: true,
           classGroup: {
-            select: { schoolId: true },
+            select: {
+              id: true,
+              schoolId: true,
+            },
           },
         },
       },
@@ -57,6 +60,47 @@ export async function POST(request: NextRequest) {
   for (const schoolId of schoolIds) {
     if (!hasSchoolAccess(auth, schoolId)) {
       return NextResponse.json({ error: "Access denied to one or more schools" }, { status: 403 });
+    }
+  }
+
+  // Verify teacher assignment for non-admin/HOD/SMT users
+  // Teachers should only edit marks for classes they're assigned to
+  const primaryRoleKey = getPrimaryRoleKey(auth);
+  const isTeacherRole = primaryRoleKey === "teacher";
+  const isElevatedRole = ["hod", "smt", "admin"].includes(primaryRoleKey || "");
+
+  if (isTeacherRole && !isElevatedRole && !isSystemAdmin(auth)) {
+    if (!auth.user.teacherId) {
+      return NextResponse.json(
+        { error: "Teacher account not properly linked" },
+        { status: 400 }
+      );
+    }
+
+    // Get unique class IDs from the assessments
+    const classIds = [...new Set(
+      assessmentsWithSchool.map((a) => a.assessmentPlan.classGroup.id)
+    )];
+
+    // Verify teacher is assigned to all classes being modified
+    const teacherAssignments = await prisma.classTeacherAssignment.findMany({
+      where: {
+        teacherId: auth.user.teacherId,
+        classGroupId: { in: classIds },
+      },
+      select: {
+        classGroupId: true,
+      },
+    });
+
+    const assignedClassIds = new Set(teacherAssignments.map((a) => a.classGroupId));
+    const unassignedClasses = classIds.filter((classId) => !assignedClassIds.has(classId));
+
+    if (unassignedClasses.length > 0) {
+      return NextResponse.json(
+        { error: "You are not assigned to one or more of these classes" },
+        { status: 403 }
+      );
     }
   }
 

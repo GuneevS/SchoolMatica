@@ -126,6 +126,9 @@ services:
       DB_RETRY_INTERVAL: "2"
       # Application settings
       TZ: ${TZ:-Africa/Johannesburg}
+    volumes:
+      # Persist user uploads and generated files
+      - app_uploads:/app/public/uploads
     expose:
       - "3000"
     depends_on:
@@ -147,10 +150,10 @@ services:
       resources:
         limits:
           cpus: '2'
-          memory: 1G
+          memory: 2G  # Increased from 1G - Next.js apps need more memory under load
         reservations:
           cpus: '0.5'
-          memory: 512M
+          memory: 1G  # Increased from 512M for better baseline performance
     logging:
       driver: json-file
       options:
@@ -280,7 +283,11 @@ volumes:
   # Redis
   redis_prod_data:
     driver: local
-  
+
+  # App uploads (user-generated content)
+  app_uploads:
+    driver: local
+
   # Nginx
   nginx_cache:
     driver: local

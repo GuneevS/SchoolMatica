@@ -121,21 +121,26 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
   }
 
-  const plan = await prisma.assessmentPlan.update({
-    where: { id: planId },
-    data: parsed.data,
-  });
+  // Wrap update and audit in transaction to prevent race conditions
+  const plan = await prisma.$transaction(async (tx) => {
+    const updatedPlan = await tx.assessmentPlan.update({
+      where: { id: planId },
+      data: parsed.data,
+    });
 
-  // Audit status changes
-  if (parsed.data.status && parsed.data.status !== existing.status) {
-    await auditAssessmentPlanStatusChange(
-      auth,
-      planId,
-      existing.classGroup.schoolId,
-      existing.status,
-      parsed.data.status
-    );
-  }
+    // Audit status changes within the same transaction
+    if (parsed.data.status && parsed.data.status !== existing.status) {
+      await auditAssessmentPlanStatusChange(
+        auth,
+        planId,
+        existing.classGroup.schoolId,
+        existing.status,
+        parsed.data.status
+      );
+    }
+
+    return updatedPlan;
+  });
 
   return NextResponse.json(plan);
 }

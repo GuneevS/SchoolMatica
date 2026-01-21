@@ -72,7 +72,7 @@ services:
     build:
       context: .
       dockerfile: docker/app/Dockerfile
-      target: deps  # Use deps stage for development with hot reload
+      # No target specified - we mount source code and use npm run dev for hot-reload
     container_name: schoolmatica_app_dev
     ports:
       - "13807:3000"

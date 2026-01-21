@@ -367,7 +367,22 @@ function normaliseWeights(seed = assessmentSeed) {
   }));
 }
 
-async function seed() {
+/**
+ * SEED SAFETY MODE
+ * 
+ * Set FORCE_SEED=true to delete all existing data before seeding.
+ * By default, this script will only seed if the database is empty.
+ * This prevents accidental data loss in production environments.
+ * 
+ * Examples:
+ *   - First-time setup: npx prisma db seed
+ *   - Force re-seed: FORCE_SEED=true npx prisma db seed
+ */
+const FORCE_SEED = process.env.FORCE_SEED === "true";
+
+async function clearAllData() {
+  console.log("⚠️  FORCE_SEED is enabled - clearing all existing data...");
+  
   await prisma.documentApproval.deleteMany();
   await prisma.assessmentDocument.deleteMany();
   await prisma.moderationComment.deleteMany();
@@ -384,10 +399,9 @@ async function seed() {
   await prisma.rolePermission.deleteMany();
   await prisma.permissionDefinition.deleteMany();
   await prisma.roleDefinition.deleteMany();
-  await prisma.roleDefinition.deleteMany();
   await prisma.appUser.deleteMany();
-  await prisma.account.deleteMany(); // Clear accounts too
-  await prisma.session.deleteMany(); // Clear sessions too
+  await prisma.account.deleteMany();
+  await prisma.session.deleteMany();
   await prisma.parentContact.deleteMany();
   await prisma.timetableSlot.deleteMany();
   await prisma.timetablePeriod.deleteMany();
@@ -404,6 +418,36 @@ async function seed() {
   await prisma.gradeLevel.deleteMany();
   await prisma.school.deleteMany();
   await prisma.gradingConfig.deleteMany();
+  
+  console.log("✅ All data cleared");
+}
+
+async function checkDatabaseHasData(): Promise<boolean> {
+  const [schoolCount, userCount, roleCount] = await Promise.all([
+    prisma.school.count(),
+    prisma.appUser.count(),
+    prisma.roleDefinition.count(),
+  ]);
+  
+  return schoolCount > 0 || userCount > 0 || roleCount > 0;
+}
+
+async function seed() {
+  // Check if we should run the seed
+  const hasData = await checkDatabaseHasData();
+  
+  if (hasData && !FORCE_SEED) {
+    console.log("📦 Database already contains data. Skipping seed to preserve existing data.");
+    console.log("   To force re-seed (WILL DELETE ALL DATA), run with FORCE_SEED=true");
+    console.log("   Example: FORCE_SEED=true npx prisma db seed");
+    return;
+  }
+  
+  if (FORCE_SEED && hasData) {
+    await clearAllData();
+  }
+  
+  console.log("🌱 Starting database seed...");
 
   const gradingConfig = await prisma.gradingConfig.create({
     data: {
@@ -809,6 +853,11 @@ async function seed() {
       decisionNote: "Placed in Grade 10A English HL.",
     },
   });
+
+  console.log("✅ Database seed completed successfully!");
+  console.log("   - Created demo school: SchoolMatica High");
+  console.log("   - Created admin user: admin@schoolmatica.com (password: admin123)");
+  console.log("   - Created sample teachers, students, and assessments");
 }
 
 seed()

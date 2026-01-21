@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { HelpCircle, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -10,6 +10,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { useInView } from "@/lib/hooks/use-in-view";
 
 interface FAQ {
   question: string;
@@ -90,25 +91,10 @@ const categories = [
 
 export function FAQSection() {
   const [activeCategory, setActiveCategory] = useState("all");
-  const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
+  const { ref: sectionRef, isVisible } = useInView<HTMLElement>({
+    threshold: 0.1,
+    triggerOnce: true,
+  });
 
   const filteredFaqs =
     activeCategory === "all"
@@ -119,6 +105,7 @@ export function FAQSection() {
     <section
       ref={sectionRef}
       id="faq"
+      aria-label="FAQ section"
       className="relative py-24 lg:py-32 overflow-hidden"
     >
       {/* Background */}
@@ -136,7 +123,7 @@ export function FAQSection() {
           )}
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(var(--accent-cobalt))]/10 border border-[hsl(var(--accent-cobalt))]/20 text-[hsl(var(--accent-cobalt))] text-sm font-medium mb-6">
-            <HelpCircle className="h-4 w-4" />
+            <HelpCircle className="h-4 w-4" aria-hidden="true" />
             FAQ
           </div>
 
@@ -181,11 +168,12 @@ export function FAQSection() {
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           )}
         >
-          <Accordion type="single" collapsible className="space-y-4">
+          <Accordion type="single" collapsible className="space-y-4" role="list">
             {filteredFaqs.map((faq, index) => (
               <AccordionItem
                 key={index}
                 value={`item-${index}`}
+                role="listitem"
                 className={cn(
                   "aurora-panel rounded-xl px-6 border-none",
                   "data-[state=open]:shadow-ambient"
@@ -211,7 +199,7 @@ export function FAQSection() {
         >
           <div className="aurora-panel rounded-2xl p-8 lg:p-10 max-w-2xl mx-auto">
             <div className="w-14 h-14 rounded-full bg-[hsl(var(--accent-iris))]/10 flex items-center justify-center mx-auto mb-4">
-              <MessageCircle className="w-7 h-7 text-[hsl(var(--accent-iris))]" />
+              <MessageCircle className="w-7 h-7 text-[hsl(var(--accent-iris))]" aria-hidden="true" />
             </div>
             <h3 className="text-xl font-semibold mb-2">
               Still have questions?
@@ -221,10 +209,10 @@ export function FAQSection() {
               as possible.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button>
+              <Button aria-label="Contact support team">
                 Contact Support
               </Button>
-              <Button variant="outline">
+              <Button variant="outline" aria-label="Schedule a demo with our team">
                 Schedule a Demo
               </Button>
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
   Check,
   X,
@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useInView } from "@/lib/hooks/use-in-view";
 
 interface PricingPlan {
   id: string;
@@ -93,25 +94,10 @@ const plans: PricingPlan[] = [
 
 export function PricingSection() {
   const [isAnnual, setIsAnnual] = useState(true);
-  const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
+  const { ref: sectionRef, isVisible } = useInView<HTMLElement>({
+    threshold: 0.1,
+    triggerOnce: true,
+  });
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-ZA", {
@@ -126,6 +112,7 @@ export function PricingSection() {
     <section
       ref={sectionRef}
       id="pricing"
+      aria-label="Pricing section"
       className="relative py-24 lg:py-32 overflow-hidden"
     >
       {/* Background */}
@@ -147,7 +134,7 @@ export function PricingSection() {
           )}
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(var(--accent-mint))]/10 border border-[hsl(var(--accent-mint))]/20 text-[hsl(var(--accent-mint))] text-sm font-medium mb-6">
-            <Sparkles className="h-4 w-4" />
+            <Sparkles className="h-4 w-4" aria-hidden="true" />
             Simple Pricing
           </div>
 
@@ -179,6 +166,7 @@ export function PricingSection() {
           </span>
           <button
             onClick={() => setIsAnnual(!isAnnual)}
+            aria-label={`Switch to ${isAnnual ? "monthly" : "annual"} billing`}
             className={cn(
               "relative w-14 h-7 rounded-full transition-colors duration-200",
               isAnnual
@@ -245,7 +233,7 @@ export function PricingSection() {
                         : "bg-[hsl(var(--muted))] text-muted-foreground"
                     )}
                   >
-                    <plan.icon className="w-6 h-6" />
+                    <plan.icon className="w-6 h-6" aria-hidden="true" />
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold">{plan.name}</h3>
@@ -280,21 +268,23 @@ export function PricingSection() {
                       : "bg-background border border-[hsl(var(--border-strong))] text-foreground hover:bg-[hsl(var(--surface-soft))]"
                   )}
                   variant={plan.popular ? "default" : "outline"}
+                  aria-label={`${plan.cta} for ${plan.name} plan`}
                 >
                   {plan.cta}
                 </Button>
 
                 {/* Features */}
-                <div className="space-y-3">
+                <div className="space-y-3" role="list">
                   {plan.features.map((feature) => (
                     <div
                       key={feature.text}
+                      role="listitem"
                       className="flex items-start gap-3"
                     >
                       {feature.included ? (
-                        <Check className="w-5 h-5 text-[hsl(var(--accent-mint))] flex-shrink-0 mt-0.5" />
+                        <Check className="w-5 h-5 text-[hsl(var(--accent-mint))] flex-shrink-0 mt-0.5" aria-hidden="true" />
                       ) : (
-                        <X className="w-5 h-5 text-muted-foreground/40 flex-shrink-0 mt-0.5" />
+                        <X className="w-5 h-5 text-muted-foreground/40 flex-shrink-0 mt-0.5" aria-hidden="true" />
                       )}
                       <span
                         className={cn(
@@ -326,15 +316,15 @@ export function PricingSection() {
           </p>
           <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
             <span className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-[hsl(var(--accent-mint))]" />
+              <Check className="w-4 h-4 text-[hsl(var(--accent-mint))]" aria-hidden="true" />
               Free setup & onboarding
             </span>
             <span className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-[hsl(var(--accent-mint))]" />
+              <Check className="w-4 h-4 text-[hsl(var(--accent-mint))]" aria-hidden="true" />
               Staff training included
             </span>
             <span className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-[hsl(var(--accent-mint))]" />
+              <Check className="w-4 h-4 text-[hsl(var(--accent-mint))]" aria-hidden="true" />
               Cancel anytime
             </span>
           </div>

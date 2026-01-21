@@ -10,7 +10,18 @@ const createSchema = z.object({
   message: z.string().min(3),
   title: z.string().optional(),
   kind: z.enum(["plan", "assessment", "moderation"]).optional(),
-});
+}).refine(
+  (data) => {
+    // Exactly one of assessmentPlanId OR assessmentId must be provided (XOR)
+    const hasAssessmentPlan = !!data.assessmentPlanId;
+    const hasAssessment = !!data.assessmentId;
+    return hasAssessmentPlan !== hasAssessment; // XOR: true if exactly one is true
+  },
+  {
+    message: "Thread must target exactly ONE of: assessmentPlanId OR assessmentId (not both, not neither)",
+    path: ["assessmentPlanId"], // Shows error on this field
+  }
+);
 
 export async function GET(request: NextRequest) {
   // Authorize the request
@@ -79,9 +90,7 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
   }
-  if (!parsed.data.assessmentPlanId && !parsed.data.assessmentId) {
-    return NextResponse.json({ error: "Thread must target a plan or assessment" }, { status: 400 });
-  }
+  // XOR validation is now handled by the schema refine, no need for separate check
 
   // Validate school access for the target
   let schoolId: string | null = null;

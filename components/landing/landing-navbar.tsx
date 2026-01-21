@@ -46,6 +46,15 @@ export function LandingNavbar() {
 
   return (
     <>
+      {/* Skip to main content link for accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-background focus:text-foreground focus:rounded-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-[hsl(var(--accent-iris))] focus:ring-offset-2"
+        aria-label="Skip to main content"
+      >
+        Skip to main content
+      </a>
+
       <header
         className={cn(
           "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
@@ -55,7 +64,7 @@ export function LandingNavbar() {
         )}
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex items-center justify-between">
+          <nav className="flex items-center justify-between" aria-label="Main navigation">
             {/* Logo */}
             <Link href="/" className="relative z-10">
               <Logo

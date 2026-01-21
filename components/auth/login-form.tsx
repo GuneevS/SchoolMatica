@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,7 @@ import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
     email: z.string().email(),
-    password: z.string().min(6),
+    password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 export function LoginForm() {
@@ -77,7 +78,15 @@ export function LoginForm() {
                             )}
                         </div>
                         <div className="flex flex-col space-y-1.5">
-                            <Label htmlFor="password">Password</Label>
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="password">Password</Label>
+                                <Link
+                                    href="/forgot-password"
+                                    className="text-xs text-muted-foreground hover:text-primary"
+                                >
+                                    Forgot password?
+                                </Link>
+                            </div>
                             <Input
                                 id="password"
                                 type="password"
@@ -100,6 +109,14 @@ export function LoginForm() {
                     </Button>
                 </form>
             </CardContent>
+            <CardFooter className="flex justify-center border-t pt-4">
+                <p className="text-sm text-muted-foreground">
+                    Don&apos;t have an account?{" "}
+                    <Link href="/register" className="text-primary hover:underline font-medium">
+                        Register your school
+                    </Link>
+                </p>
+            </CardFooter>
         </Card>
     );
 }

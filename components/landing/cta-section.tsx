@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { ArrowRight, CheckCircle, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useInView } from "@/lib/hooks/use-in-view";
 
 const benefits = [
   "30-day free trial",
@@ -13,30 +13,16 @@ const benefits = [
 ];
 
 export function CTASection() {
-  const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.2 }
-    );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
+  const { ref: sectionRef, isVisible } = useInView<HTMLElement>({
+    threshold: 0.2,
+    triggerOnce: true,
+  });
 
   return (
     <section
       ref={sectionRef}
       id="cta"
+      aria-label="Call to action section"
       className="relative py-24 lg:py-32 overflow-hidden"
     >
       {/* Background */}
@@ -87,10 +73,10 @@ export function CTASection() {
           <div className="aurora-panel rounded-3xl p-8 lg:p-16 text-center relative overflow-hidden">
             {/* Decorative sparkles */}
             <div className="absolute top-6 left-6 lg:top-10 lg:left-10">
-              <Sparkles className="w-8 h-8 text-[hsl(var(--accent-iris))]/30" />
+              <Sparkles className="w-8 h-8 text-[hsl(var(--accent-iris))]/30" aria-hidden="true" />
             </div>
             <div className="absolute bottom-6 right-6 lg:bottom-10 lg:right-10">
-              <Sparkles className="w-6 h-6 text-[hsl(var(--accent-violet))]/30" />
+              <Sparkles className="w-6 h-6 text-[hsl(var(--accent-violet))]/30" aria-hidden="true" />
             </div>
 
             {/* Content */}
@@ -115,13 +101,15 @@ export function CTASection() {
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 translate-y-6"
                 )}
+                role="list"
               >
                 {benefits.map((benefit) => (
                   <span
                     key={benefit}
+                    role="listitem"
                     className="flex items-center gap-2 text-sm text-muted-foreground"
                   >
-                    <CheckCircle className="w-4 h-4 text-[hsl(var(--accent-mint))]" />
+                    <CheckCircle className="w-4 h-4 text-[hsl(var(--accent-mint))]" aria-hidden="true" />
                     {benefit}
                   </span>
                 ))}
@@ -136,14 +124,15 @@ export function CTASection() {
                     : "opacity-0 translate-y-6"
                 )}
               >
-                <Button size="lg" className="text-base px-8">
+                <Button size="lg" className="text-base px-8" aria-label="Start your free 30-day trial">
                   Start Free Trial
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                  <ArrowRight className="w-5 h-5 ml-2" aria-hidden="true" />
                 </Button>
                 <Button
                   size="lg"
                   variant="outline"
                   className="text-base px-8"
+                  aria-label="Schedule a demo with our team"
                 >
                   Schedule Demo
                 </Button>

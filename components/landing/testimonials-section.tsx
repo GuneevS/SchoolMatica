@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Quote, Star, ChevronLeft, ChevronRight, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useInView } from "@/lib/hooks/use-in-view";
 
 interface Testimonial {
   id: number;
@@ -83,10 +84,12 @@ const stats = [
 
 export function TestimonialsSection() {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const sectionRef = useRef<HTMLElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const { ref: sectionRef, isVisible } = useInView<HTMLElement>({
+    threshold: 0.2,
+    triggerOnce: true,
+  });
 
   const goToNext = useCallback(() => {
     setActiveIndex((prev) => (prev + 1) % testimonials.length);
@@ -110,21 +113,6 @@ export function TestimonialsSection() {
     };
   }, [isAutoPlaying, isVisible, goToNext]);
 
-  // Intersection observer for visibility
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsVisible(entry.isIntersecting);
-      },
-      { threshold: 0.2 }
-    );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
 
   const handleManualNavigation = (direction: "prev" | "next") => {
     setIsAutoPlaying(false);
@@ -141,6 +129,7 @@ export function TestimonialsSection() {
     <section
       ref={sectionRef}
       id="testimonials"
+      aria-label="Testimonials section"
       className="relative py-24 lg:py-32 overflow-hidden"
     >
       {/* Background */}
@@ -157,7 +146,7 @@ export function TestimonialsSection() {
           )}
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(var(--accent-flamingo))]/10 border border-[hsl(var(--accent-flamingo))]/20 text-[hsl(var(--accent-flamingo))] text-sm font-medium mb-6">
-            <Quote className="h-4 w-4" />
+            <Quote className="h-4 w-4" aria-hidden="true" />
             What Educators Say
           </div>
 
@@ -178,10 +167,12 @@ export function TestimonialsSection() {
             "grid grid-cols-2 lg:grid-cols-4 gap-4 mb-16 transition-all duration-700 delay-200",
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           )}
+          role="list"
         >
           {stats.map((stat, index) => (
             <div
               key={stat.label}
+              role="listitem"
               className="text-center p-6 rounded-2xl aurora-panel"
             >
               <div className="text-3xl lg:text-4xl font-bold gradient-text mb-2">
@@ -203,7 +194,7 @@ export function TestimonialsSection() {
           <div className="aurora-panel rounded-3xl p-8 lg:p-12 relative overflow-hidden">
             {/* Decorative quote */}
             <div className="absolute top-6 right-6 lg:top-8 lg:right-8">
-              <Quote className="h-16 w-16 lg:h-24 lg:w-24 text-[hsl(var(--accent-iris))]/10" />
+              <Quote className="h-16 w-16 lg:h-24 lg:w-24 text-[hsl(var(--accent-iris))]/10" aria-hidden="true" />
             </div>
 
             {/* Content */}
@@ -240,7 +231,7 @@ export function TestimonialsSection() {
                     {testimonials[activeIndex].role}
                   </div>
                   <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5">
-                    <Building2 className="h-3.5 w-3.5" />
+                    <Building2 className="h-3.5 w-3.5" aria-hidden="true" />
                     {testimonials[activeIndex].school},{" "}
                     {testimonials[activeIndex].location}
                   </div>
@@ -256,6 +247,7 @@ export function TestimonialsSection() {
               size="icon"
               onClick={() => handleManualNavigation("prev")}
               className="h-10 w-10 rounded-full"
+              aria-label="Previous testimonial"
             >
               <ChevronLeft className="h-5 w-5" />
               <span className="sr-only">Previous testimonial</span>
@@ -287,6 +279,7 @@ export function TestimonialsSection() {
               size="icon"
               onClick={() => handleManualNavigation("next")}
               className="h-10 w-10 rounded-full"
+              aria-label="Next testimonial"
             >
               <ChevronRight className="h-5 w-5" />
               <span className="sr-only">Next testimonial</span>

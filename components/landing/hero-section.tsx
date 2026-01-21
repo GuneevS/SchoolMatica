@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { ArrowRight, Play, Shield, CheckCircle2, School, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useInView } from "@/lib/hooks/use-in-view";
 
 // Trust badges data
 const trustBadges = [
@@ -21,19 +21,16 @@ const metrics = [
 ];
 
 export function HeroSection() {
-  const [isVisible, setIsVisible] = useState(false);
-  const heroRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    // Trigger animations on mount
-    const timer = setTimeout(() => setIsVisible(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
+  const { ref: heroRef, isVisible } = useInView<HTMLElement>({
+    threshold: 0.1,
+    triggerOnce: true,
+  });
 
   return (
     <section
       ref={heroRef}
       className="relative min-h-screen flex items-center overflow-hidden pt-24 pb-16 lg:pt-32 lg:pb-24"
+      aria-label="Hero section"
     >
       {/* Animated background gradients */}
       <div className="absolute inset-0 overflow-hidden">
@@ -132,10 +129,20 @@ export function HeroSection() {
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
               )}
             >
-              <Button size="lg" className="w-full sm:w-auto group" asChild>
-                <Link href="/register">
+              <Button
+                size="lg"
+                className="w-full sm:w-auto group"
+                asChild
+              >
+                <Link
+                  href="/register"
+                  aria-label="Start your free 14-day trial of SchoolMatica"
+                >
                   Start Free Trial
-                  <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  <ArrowRight
+                    className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1"
+                    aria-hidden="true"
+                  />
                 </Link>
               </Button>
               <Button
@@ -144,8 +151,14 @@ export function HeroSection() {
                 className="w-full sm:w-auto group"
                 asChild
               >
-                <Link href="#demo">
-                  <Play className="mr-2 h-4 w-4 fill-current" />
+                <Link
+                  href="#demo"
+                  aria-label="Watch SchoolMatica product demonstration video"
+                >
+                  <Play
+                    className="mr-2 h-4 w-4 fill-current"
+                    aria-hidden="true"
+                  />
                   Watch Demo
                 </Link>
               </Button>
@@ -158,14 +171,21 @@ export function HeroSection() {
                 "transition-all duration-700 delay-400",
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
               )}
+              role="list"
+              aria-label="Platform trust badges and certifications"
             >
               {trustBadges.map((badge, index) => (
                 <div
                   key={badge.label}
                   className="flex items-center gap-2 text-sm text-muted-foreground"
                   style={{ transitionDelay: `${500 + index * 100}ms` }}
+                  role="listitem"
+                  aria-label={`${badge.label}: ${badge.description}`}
                 >
-                  <badge.icon className="h-5 w-5 text-[hsl(var(--accent-mint))]" />
+                  <badge.icon
+                    className="h-5 w-5 text-[hsl(var(--accent-mint))]"
+                    aria-hidden="true"
+                  />
                   <span>{badge.label}</span>
                 </div>
               ))}
@@ -299,12 +319,16 @@ export function HeroSection() {
             "transition-all duration-700 delay-500",
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
           )}
+          role="list"
+          aria-label="Platform usage statistics"
         >
           {metrics.map((metric, index) => (
             <div
               key={metric.label}
               className="text-center"
               style={{ transitionDelay: `${600 + index * 100}ms` }}
+              role="listitem"
+              aria-label={`${metric.value} ${metric.label}`}
             >
               <p className="text-3xl sm:text-4xl font-bold gradient-text">
                 {metric.value}

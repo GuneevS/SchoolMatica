@@ -100,6 +100,10 @@ export const PERMISSION_KEYS = [
   "gradeLevel:update",
   "gradeLevel:delete",
 
+  // Grading Configuration
+  "gradingConfig:read",
+  "gradingConfig:update",
+
   // User Management
   "user:read",
   "user:create",
@@ -191,6 +195,14 @@ export function getPrimaryRoleName(auth: AuthContext): string | null {
   }
   const [highest] = [...auth.user.roleAssignments].sort((a, b) => b.role.priority - a.role.priority);
   return highest?.role.name ?? null;
+}
+
+export function getPrimaryRoleKey(auth: AuthContext): string | null {
+  if (!auth.user.roleAssignments.length) {
+    return null;
+  }
+  const [highest] = [...auth.user.roleAssignments].sort((a, b) => b.role.priority - a.role.priority);
+  return highest?.role.key ?? null;
 }
 
 /**

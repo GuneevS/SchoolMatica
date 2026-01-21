@@ -6,10 +6,13 @@ import { NextResponse } from "next/server";
 // Marketing/landing pages that should be publicly accessible without authentication
 const publicMarketingPaths = ["/"];
 
+// Auth-related pages that should be accessible without authentication
+const publicAuthPaths = ["/login", "/register", "/forgot-password", "/reset-password"];
+
 export default auth((req) => {
     const isAuth = !!req.auth;
     const pathname = req.nextUrl.pathname;
-    const isAuthPage = pathname.startsWith("/login");
+    const isAuthPage = publicAuthPaths.some(p => pathname.startsWith(p));
     const isPublicPage = pathname.startsWith("/api/auth");
     const isMarketingPage = publicMarketingPaths.includes(pathname);
 
@@ -42,5 +45,5 @@ export default auth((req) => {
 });
 
 export const config = {
-    matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
+    matcher: ["/((?!api/auth|api/health|_next/static|_next/image|favicon.ico).*)"],
 };

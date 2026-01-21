@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -59,21 +60,44 @@ export function TeacherManager({ teachers, classes, subjects, schoolId }: Teache
 
   function createTeacher() {
     startTransition(async () => {
-      await fetch("/api/teachers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, schoolId }),
-      });
-      setOpen(false);
-      setForm({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        role: "Teacher",
-        bio: "",
-      });
-      router.refresh();
+      try {
+        const response = await fetch("/api/teachers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...form, schoolId }),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          const errorMessage = errorData.error 
+            ? (Array.isArray(errorData.error) 
+              ? errorData.error.map((e: { message?: string }) => e.message).join(", ")
+              : errorData.error)
+            : `Failed to create teacher (${response.status})`;
+          toast.error("Error creating teacher", { description: errorMessage });
+          return;
+        }
+        
+        const teacher = await response.json();
+        setOpen(false);
+        setForm({
+          firstName: "",
+          lastName: "",
+          email: "",
+          phone: "",
+          role: "Teacher",
+          bio: "",
+        });
+        toast.success("Teacher created", { 
+          description: `${teacher.firstName} ${teacher.lastName} has been added successfully.` 
+        });
+        router.refresh();
+      } catch (error) {
+        console.error("Error creating teacher:", error);
+        toast.error("Error creating teacher", { 
+          description: "An unexpected error occurred. Please try again." 
+        });
+      }
     });
   }
 
@@ -198,15 +222,32 @@ function AssignToClassButton({
   function assign() {
     if (!classId) return;
     startTransition(async () => {
-      await fetch("/api/teacher-class-assignments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teacherId, classGroupId: classId, role, primary }),
-      });
-      setOpen(false);
-      setPrimary(false);
-      setRole("Support");
-      onSuccess();
+      try {
+        const response = await fetch("/api/teacher-class-assignments", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ teacherId, classGroupId: classId, role, primary }),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          toast.error("Error assigning class", { 
+            description: errorData.error || `Failed to assign class (${response.status})` 
+          });
+          return;
+        }
+        
+        setOpen(false);
+        setPrimary(false);
+        setRole("Support");
+        toast.success("Class assigned", { description: "Teacher has been assigned to the class." });
+        onSuccess();
+      } catch (error) {
+        console.error("Error assigning class:", error);
+        toast.error("Error assigning class", { 
+          description: "An unexpected error occurred. Please try again." 
+        });
+      }
     });
   }
 
@@ -288,14 +329,31 @@ function TagSubjectButton({
   function tag() {
     if (!subjectId) return;
     startTransition(async () => {
-      await fetch("/api/teacher-subject-assignments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teacherId, subjectId, grade }),
-      });
-      setOpen(false);
-      setGrade(undefined);
-      onSuccess();
+      try {
+        const response = await fetch("/api/teacher-subject-assignments", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ teacherId, subjectId, grade }),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          toast.error("Error tagging subject", { 
+            description: errorData.error || `Failed to tag subject (${response.status})` 
+          });
+          return;
+        }
+        
+        setOpen(false);
+        setGrade(undefined);
+        toast.success("Subject tagged", { description: "Subject focus has been assigned." });
+        onSuccess();
+      } catch (error) {
+        console.error("Error tagging subject:", error);
+        toast.error("Error tagging subject", { 
+          description: "An unexpected error occurred. Please try again." 
+        });
+      }
     });
   }
 

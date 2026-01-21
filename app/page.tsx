@@ -36,7 +36,7 @@ export default function LandingPage() {
         <LandingNavbar />
 
         {/* Main Content Sections */}
-        <main>
+        <main id="main-content">
           {/* Hero - Primary value proposition with animated background */}
           <HeroSection />
 

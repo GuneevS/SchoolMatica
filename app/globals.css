@@ -296,3 +296,52 @@ html {
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary) / 0.5);
 }
+
+/* ============================================
+   Accessibility: Prefers Reduced Motion
+   ============================================
+   Respects user's motion preferences (WCAG 2.1 AA)
+   When user enables "reduce motion" in OS settings,
+   all animations are minimized or removed entirely.
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Disable floating animations */
+  .animate-float {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  /* Disable gradient animations */
+  .animate-gradient,
+  .gradient-text {
+    animation: none !important;
+    background-position: 0% 50% !important;
+  }
+
+  /* Disable glow animations */
+  .animate-glow {
+    animation: none !important;
+  }
+
+  /* Disable shimmer animations */
+  .animate-shimmer {
+    animation: none !important;
+    background: transparent !important;
+  }
+
+  /* Simplify glass effects (keep blur for readability) */
+  .glass,
+  .glass-panel {
+    /* Keep backdrop-filter for text readability */
+    transition: none !important;
+  }
+}

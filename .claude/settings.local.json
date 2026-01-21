@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run build:*)",
+      "Bash(docker compose:*)",
+      "Bash(npx prisma generate)",
+      "Bash(npm run dev:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(npx prisma:*)",
+      "Bash(npm install:*)",
+      "Bash(tasklist:*)"
+    ]
+  }
+}

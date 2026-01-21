@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import {
   LayoutGrid,
   Calculator,
@@ -16,6 +15,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useInView } from "@/lib/hooks/use-in-view";
 
 interface Feature {
   icon: React.ElementType;
@@ -119,51 +119,18 @@ const colorClasses = {
 };
 
 export function FeaturesSection() {
-  const [visibleItems, setVisibleItems] = useState<Set<number>>(new Set());
-  const [headerVisible, setHeaderVisible] = useState(false);
-  const headerRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-
-  useEffect(() => {
-    // Header animation
-    const headerObserver = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setHeaderVisible(true);
-        }
-      },
-      { threshold: 0.2 }
-    );
-
-    if (headerRef.current) {
-      headerObserver.observe(headerRef.current);
-    }
-
-    // Items animation
-    const observers: IntersectionObserver[] = [];
-    itemRefs.current.forEach((ref, index) => {
-      if (ref) {
-        const observer = new IntersectionObserver(
-          ([entry]) => {
-            if (entry.isIntersecting) {
-              setVisibleItems((prev) => new Set([...prev, index]));
-            }
-          },
-          { threshold: 0.15, rootMargin: "0px 0px -50px 0px" }
-        );
-        observer.observe(ref);
-        observers.push(observer);
-      }
-    });
-
-    return () => {
-      headerObserver.disconnect();
-      observers.forEach((obs) => obs.disconnect());
-    };
-  }, []);
+  const { ref: sectionRef, isVisible } = useInView<HTMLElement>({
+    threshold: 0.2,
+    triggerOnce: true,
+  });
 
   return (
-    <section id="features" className="relative py-24 lg:py-32 overflow-hidden">
+    <section
+      ref={sectionRef}
+      id="features"
+      aria-label="Features section"
+      className="relative py-24 lg:py-32 overflow-hidden"
+    >
       {/* Background gradient */}
       <div className="absolute inset-0">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-[hsl(var(--accent-iris))] opacity-[0.03] rounded-full blur-3xl" />
@@ -173,16 +140,13 @@ export function FeaturesSection() {
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <div
-          ref={headerRef}
           className={cn(
             "text-center max-w-3xl mx-auto mb-16 lg:mb-20 transition-all duration-700",
-            headerVisible
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-8"
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           )}
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(var(--accent-iris))]/10 border border-[hsl(var(--accent-iris))]/20 text-[hsl(var(--accent-iris))] text-sm font-medium mb-6">
-            <LayoutGrid className="h-4 w-4" />
+            <LayoutGrid className="h-4 w-4" aria-hidden="true" />
             Features
           </div>
 
@@ -198,20 +162,20 @@ export function FeaturesSection() {
         </div>
 
         {/* Main features grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-16">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-16" role="list">
           {features.map((feature, index) => {
             const colors = colorClasses[feature.color];
             return (
               <div
                 key={feature.title}
-                ref={(el) => { itemRefs.current[index] = el; }}
+                role="listitem"
                 className={cn(
                   "group relative p-6 lg:p-8 rounded-2xl transition-all duration-500",
                   "bg-background/50 backdrop-blur-sm",
                   "border border-[hsl(var(--border-strong))/0.3]",
                   "hover:shadow-ambient hover:border-[hsl(var(--border-strong))/0.5]",
                   "hover:-translate-y-1",
-                  visibleItems.has(index)
+                  isVisible
                     ? "opacity-100 translate-y-0"
                     : "opacity-0 translate-y-8"
                 )}
@@ -235,7 +199,7 @@ export function FeaturesSection() {
                       "group-hover:scale-110 transition-transform duration-300"
                     )}
                   >
-                    <feature.icon className={cn("w-7 h-7", colors.text)} />
+                    <feature.icon className={cn("w-7 h-7", colors.text)} aria-hidden="true" />
                   </div>
 
                   {/* Title */}
@@ -260,7 +224,7 @@ export function FeaturesSection() {
                             colors.text
                           )}
                         >
-                          <CheckCircle2 className="w-3 h-3" />
+                          <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
                           {highlight}
                         </span>
                       ))}
@@ -294,7 +258,7 @@ export function FeaturesSection() {
                     "transition-all duration-200"
                   )}
                 >
-                  <item.icon className="w-4 h-4 text-[hsl(var(--accent-iris))]" />
+                  <item.icon className="w-4 h-4 text-[hsl(var(--accent-iris))]" aria-hidden="true" />
                   {item.label}
                 </div>
               ))}

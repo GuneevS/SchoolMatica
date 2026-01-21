@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import {
   FileSpreadsheet,
   Clock,
@@ -11,6 +10,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useInView } from "@/lib/hooks/use-in-view";
 
 interface PainPoint {
   icon: React.ElementType;
@@ -72,37 +72,16 @@ const painPoints: PainPoint[] = [
 ];
 
 export function ProblemSection() {
-  const [visibleItems, setVisibleItems] = useState<Set<number>>(new Set());
-  const sectionRef = useRef<HTMLElement>(null);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-
-  useEffect(() => {
-    const observers: IntersectionObserver[] = [];
-
-    itemRefs.current.forEach((ref, index) => {
-      if (ref) {
-        const observer = new IntersectionObserver(
-          (entries) => {
-            entries.forEach((entry) => {
-              if (entry.isIntersecting) {
-                setVisibleItems((prev) => new Set([...prev, index]));
-              }
-            });
-          },
-          { threshold: 0.2, rootMargin: "0px 0px -50px 0px" }
-        );
-        observer.observe(ref);
-        observers.push(observer);
-      }
-    });
-
-    return () => observers.forEach((obs) => obs.disconnect());
-  }, []);
+  const { ref: sectionRef, isVisible } = useInView<HTMLElement>({
+    threshold: 0.2,
+    triggerOnce: true,
+  });
 
   return (
     <section
       ref={sectionRef}
       id="problem"
+      aria-label="Problem section"
       className="relative py-24 lg:py-32 overflow-hidden"
     >
       {/* Background */}
@@ -117,9 +96,14 @@ export function ProblemSection() {
 
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
-        <div className="text-center max-w-3xl mx-auto mb-16 lg:mb-20">
+        <div
+          className={cn(
+            "text-center max-w-3xl mx-auto mb-16 lg:mb-20 transition-all duration-700",
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+          )}
+        >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm font-medium mb-6">
-            <AlertTriangle className="h-4 w-4" />
+            <AlertTriangle className="h-4 w-4" aria-hidden="true" />
             The Problem
           </div>
 
@@ -136,17 +120,17 @@ export function ProblemSection() {
         </div>
 
         {/* Pain points grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-16">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-16" role="list">
           {painPoints.map((point, index) => (
             <div
               key={point.title}
-              ref={(el) => { itemRefs.current[index] = el; }}
+              role="listitem"
               className={cn(
                 "group relative p-6 rounded-2xl transition-all duration-500",
                 "bg-background border border-[hsl(var(--border-strong))/0.3]",
                 "hover:shadow-ambient hover:border-[hsl(var(--border-strong))/0.5]",
                 "hover:-translate-y-1",
-                visibleItems.has(index)
+                isVisible
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 translate-y-8"
               )}
@@ -161,7 +145,7 @@ export function ProblemSection() {
                     "group-hover:scale-110 transition-transform duration-300"
                   )}
                 >
-                  <point.icon className="w-6 h-6" />
+                  <point.icon className="w-6 h-6" aria-hidden="true" />
                 </div>
               </div>
 
@@ -207,10 +191,11 @@ export function ProblemSection() {
                 </p>
                 <a
                   href="#features"
+                  aria-label="Navigate to features section to see how SchoolMatica solves this"
                   className="inline-flex items-center gap-2 text-[hsl(var(--accent-iris))] font-medium hover:underline group"
                 >
                   See how SchoolMatica solves this
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                 </a>
               </div>
 

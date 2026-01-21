@@ -1,9 +1,36 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Play, ChevronRight, GraduationCap, Building2, Shield } from "lucide-react";
+import { lazy, Suspense, useState } from "react";
+import { Play, ChevronRight, BarChart3, ClipboardList, MessageSquare, Grid3x3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useInView } from "@/lib/hooks/use-in-view";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Lazy load demo components for performance
+const InteractiveMarkbookDemo = lazy(() =>
+  import("./interactive-demos/interactive-markbook-demo").then((mod) => ({
+    default: mod.InteractiveMarkbookDemo,
+  }))
+);
+
+const InteractiveAssessmentPlannerDemo = lazy(() =>
+  import("./interactive-demos/interactive-assessment-planner-demo").then((mod) => ({
+    default: mod.InteractiveAssessmentPlannerDemo,
+  }))
+);
+
+const InteractiveModerationDemo = lazy(() =>
+  import("./interactive-demos/interactive-moderation-demo").then((mod) => ({
+    default: mod.InteractiveModerationDemo,
+  }))
+);
+
+const InteractiveDashboardDemo = lazy(() =>
+  import("./interactive-demos/interactive-dashboard-demo").then((mod) => ({
+    default: mod.InteractiveDashboardDemo,
+  }))
+);
 
 interface DemoTab {
   id: string;
@@ -16,69 +43,85 @@ interface DemoTab {
 
 const demoTabs: DemoTab[] = [
   {
-    id: "teacher",
-    label: "Teacher View",
-    role: "Teacher",
-    icon: GraduationCap,
-    description: "Manage your classes with spreadsheet-speed efficiency",
+    id: "markbook",
+    label: "Smart Markbook",
+    role: "Teacher Experience",
+    icon: Grid3x3,
+    description: "Experience spreadsheet-speed mark entry with intelligent calculations",
     features: [
-      "Multi-cell selection & bulk entry",
-      "Drag-fill for quick data entry",
-      "Auto-calculating totals & averages",
-      "Assessment plan templates",
+      "Click any cell to edit marks instantly",
+      "Toggle heat map for visual performance insights",
+      "Filter by term to focus on specific periods",
+      "Automatic weighted average calculations",
     ],
   },
   {
-    id: "hod",
-    label: "HOD Dashboard",
-    role: "Head of Department",
-    icon: Building2,
-    description: "Oversee your department with complete visibility",
+    id: "planner",
+    label: "Assessment Planner",
+    role: "CAPS Compliance",
+    icon: ClipboardList,
+    description: "Plan assessments with real-time CAPS compliance validation",
     features: [
-      "Department-wide progress tracking",
-      "Moderation workflow management",
-      "Cross-teacher analytics",
-      "Policy compliance monitoring",
+      "Adjust term weights with interactive sliders",
+      "Real-time pie chart visualization",
+      "CAPS compliance indicators (must sum to 100%)",
+      "Switch between terms to plan all 4 terms",
     ],
   },
   {
-    id: "admin",
-    label: "Admin Panel",
-    role: "School Administrator",
-    icon: Shield,
-    description: "Full school oversight with powerful reporting",
+    id: "moderation",
+    label: "Moderation Workflow",
+    role: "Multi-Role Collaboration",
+    icon: MessageSquare,
+    description: "Collaborate seamlessly across Teacher → HOD → SMT workflow",
     features: [
-      "School-wide dashboards",
-      "Mark schedule generation",
-      "User management & permissions",
-      "SA-SAMS export integration",
+      "Switch between Teacher, HOD, and SMT perspectives",
+      "Add comments and request changes",
+      "Approve or reject assessment plans",
+      "Track workflow timeline and history",
+    ],
+  },
+  {
+    id: "dashboard",
+    label: "Analytics Dashboard",
+    role: "Performance Insights",
+    icon: BarChart3,
+    description: "Monitor class performance with interactive charts and insights",
+    features: [
+      "Class performance bar charts with tooltips",
+      "Real-time stats cards (excellent, at-risk, averages)",
+      "Detailed breakdown table with pass rates",
+      "Filter by class to drill down into data",
     ],
   },
 ];
 
+// Loading skeleton for demos
+function DemoSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-8 w-48" />
+        <div className="flex gap-2">
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-8 w-24" />
+        </div>
+      </div>
+      <Skeleton className="h-96 w-full rounded-xl" />
+    </div>
+  );
+}
+
 export function DemoSection() {
   const [activeTab, setActiveTab] = useState(demoTabs[0].id);
-  const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.2 }
-    );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const { ref: sectionRef, isVisible } = useInView<HTMLElement>({ threshold: 0.2, triggerOnce: true });
 
   const activeTabData = demoTabs.find((tab) => tab.id === activeTab)!;
+
+  const handleInteraction = () => {
+    setHasInteracted(true);
+  };
 
   return (
     <section
@@ -153,10 +196,10 @@ export function DemoSection() {
           </div>
 
           {/* Demo content */}
-          <div className="grid lg:grid-cols-5 gap-8 items-center">
+          <div className="grid lg:grid-cols-5 gap-8 items-start">
             {/* Info panel */}
             <div className="lg:col-span-2 order-2 lg:order-1">
-              <div className="space-y-6">
+              <div className="space-y-6 lg:sticky lg:top-8">
                 <div>
                   <span className="text-sm text-[hsl(var(--accent-violet))] font-medium">
                     {activeTabData.role}
@@ -169,7 +212,7 @@ export function DemoSection() {
                   </p>
                 </div>
 
-                <ul className="space-y-3">
+                <ul className="space-y-3" role="list" aria-label="Demo features">
                   {activeTabData.features.map((feature, index) => (
                     <li
                       key={feature}
@@ -189,26 +232,52 @@ export function DemoSection() {
                   ))}
                 </ul>
 
+                {hasInteracted && (
+                  <div
+                    className="p-4 rounded-lg bg-[hsl(var(--accent-mint))]/10 border border-[hsl(var(--accent-mint))]/20 animate-in fade-in slide-in-from-bottom-2 duration-500"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-[hsl(var(--accent-mint))] flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Play className="w-3 h-3 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-[hsl(var(--accent-mint))]">
+                          Great! You&apos;re exploring the demo
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          All interactions are running real production code with demo data
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                  <Button className="group">
-                    Try Interactive Demo
-                    <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  <Button className="group" asChild>
+                    <a href="/register" aria-label="Start your free trial of SchoolMatica">
+                      Start Free Trial
+                      <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                    </a>
                   </Button>
-                  <Button variant="outline">
-                    Watch Video Tour
-                    <Play className="ml-1 h-4 w-4" />
+                  <Button variant="outline" asChild>
+                    <a href="/login" aria-label="Log in to SchoolMatica">
+                      Go to Login
+                      <ChevronRight className="ml-1 h-4 w-4" />
+                    </a>
                   </Button>
                 </div>
               </div>
             </div>
 
-            {/* Visual mockup */}
+            {/* Interactive Demo Area */}
             <div className="lg:col-span-3 order-1 lg:order-2">
               <div className="relative">
                 {/* Glow effect */}
                 <div className="absolute -inset-4 bg-gradient-to-r from-[hsl(var(--accent-iris))] via-[hsl(var(--accent-violet))] to-[hsl(var(--accent-flamingo))] rounded-3xl opacity-15 blur-2xl" />
 
-                {/* Browser mockup */}
+                {/* Interactive Demo Container */}
                 <div className="relative rounded-2xl overflow-hidden shadow-ambient aurora-panel">
                   {/* Browser chrome */}
                   <div className="flex items-center gap-2 px-4 py-3 bg-[hsl(var(--surface-soft))] border-b border-[hsl(var(--border-strong))/0.3]">
@@ -220,18 +289,28 @@ export function DemoSection() {
                     <div className="flex-1 mx-4">
                       <div className="h-6 bg-[hsl(var(--surface-strong))] rounded-lg flex items-center px-3">
                         <span className="text-xs text-muted-foreground">
-                          app.schoolmatica.co.za/{activeTab}
+                          app.schoolmatica.co.za/demo/{activeTab}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* App content - role-specific mockup */}
-                  <div className="aspect-[16/10] bg-gradient-to-br from-[hsl(var(--canvas))] to-[hsl(var(--surface-soft))] p-4">
-                    {/* Dynamic content based on active tab */}
-                    {activeTab === "teacher" && <TeacherViewMockup />}
-                    {activeTab === "hod" && <HODViewMockup />}
-                    {activeTab === "admin" && <AdminViewMockup />}
+                  {/* App content - actual interactive demos */}
+                  <div className="bg-gradient-to-br from-[hsl(var(--canvas))] to-[hsl(var(--surface-soft))] min-h-[600px]">
+                    <Suspense fallback={<DemoSkeleton />}>
+                      {activeTab === "markbook" && (
+                        <InteractiveMarkbookDemo onInteraction={handleInteraction} />
+                      )}
+                      {activeTab === "planner" && (
+                        <InteractiveAssessmentPlannerDemo onInteraction={handleInteraction} />
+                      )}
+                      {activeTab === "moderation" && (
+                        <InteractiveModerationDemo onInteraction={handleInteraction} />
+                      )}
+                      {activeTab === "dashboard" && (
+                        <InteractiveDashboardDemo onInteraction={handleInteraction} />
+                      )}
+                    </Suspense>
                   </div>
                 </div>
               </div>
@@ -240,173 +319,6 @@ export function DemoSection() {
         </div>
       </div>
     </section>
-  );
-}
-
-// Teacher view mockup component
-function TeacherViewMockup() {
-  return (
-    <div className="h-full flex flex-col gap-3">
-      {/* Top bar */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="h-4 w-24 bg-[hsl(var(--muted))] rounded" />
-          <div className="h-4 w-16 bg-[hsl(var(--muted))]/50 rounded" />
-        </div>
-        <div className="flex gap-2">
-          <div className="h-8 w-20 bg-[hsl(var(--accent-iris))]/20 rounded-lg" />
-          <div className="h-8 w-8 bg-[hsl(var(--muted))] rounded-lg" />
-        </div>
-      </div>
-
-      {/* Markbook grid */}
-      <div className="flex-1 glass-panel rounded-xl p-3 overflow-hidden">
-        <div className="h-full flex flex-col">
-          {/* Header row */}
-          <div className="grid grid-cols-6 gap-2 mb-2">
-            <div className="h-6 bg-[hsl(var(--muted))] rounded" />
-            <div className="h-6 bg-[hsl(var(--accent-iris))]/20 rounded" />
-            <div className="h-6 bg-[hsl(var(--accent-iris))]/20 rounded" />
-            <div className="h-6 bg-[hsl(var(--accent-iris))]/20 rounded" />
-            <div className="h-6 bg-[hsl(var(--accent-violet))]/20 rounded" />
-            <div className="h-6 bg-[hsl(var(--accent-mint))]/30 rounded" />
-          </div>
-          {/* Data rows */}
-          {[1, 2, 3, 4, 5].map((row) => (
-            <div key={row} className="grid grid-cols-6 gap-2 mb-1.5">
-              <div className="h-5 bg-[hsl(var(--muted))]/60 rounded" />
-              <div className={cn(
-                "h-5 rounded",
-                row === 2 ? "bg-[hsl(var(--accent-iris))]/30 ring-2 ring-[hsl(var(--accent-iris))]" : "bg-[hsl(var(--muted))]/30"
-              )} />
-              <div className="h-5 bg-[hsl(var(--muted))]/30 rounded" />
-              <div className="h-5 bg-[hsl(var(--muted))]/30 rounded" />
-              <div className="h-5 bg-[hsl(var(--muted))]/30 rounded" />
-              <div className="h-5 bg-[hsl(var(--accent-mint))]/20 rounded" />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// HOD view mockup component
-function HODViewMockup() {
-  return (
-    <div className="h-full flex flex-col gap-3">
-      {/* Top bar */}
-      <div className="flex items-center justify-between">
-        <div className="h-4 w-32 bg-[hsl(var(--muted))] rounded" />
-        <div className="flex gap-2">
-          <div className="h-6 w-6 bg-[hsl(var(--accent-flamingo))]/30 rounded-full" />
-          <div className="h-6 w-6 bg-[hsl(var(--accent-mint))]/30 rounded-full" />
-        </div>
-      </div>
-
-      {/* Dashboard grid */}
-      <div className="flex-1 grid grid-cols-3 gap-3">
-        {/* Stats panel */}
-        <div className="col-span-2 glass-panel rounded-xl p-3">
-          <div className="h-3 w-20 bg-[hsl(var(--muted))] rounded mb-3" />
-          <div className="grid grid-cols-3 gap-2 mb-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-[hsl(var(--surface-strong))] rounded-lg p-2">
-                <div className="h-6 w-8 bg-gradient-to-r from-[hsl(var(--accent-iris))] to-[hsl(var(--accent-violet))] rounded mb-1" />
-                <div className="h-2 w-12 bg-[hsl(var(--muted))]/50 rounded" />
-              </div>
-            ))}
-          </div>
-          {/* Chart placeholder */}
-          <div className="h-20 flex items-end gap-1">
-            {[40, 65, 55, 80, 70, 90, 75].map((h, i) => (
-              <div
-                key={i}
-                className="flex-1 bg-gradient-to-t from-[hsl(var(--accent-iris))] to-[hsl(var(--accent-violet))] rounded-t opacity-70"
-                style={{ height: `${h}%` }}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Moderation queue */}
-        <div className="glass-panel rounded-xl p-3">
-          <div className="h-3 w-16 bg-[hsl(var(--muted))] rounded mb-3" />
-          <div className="space-y-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-2 p-2 bg-[hsl(var(--surface-strong))] rounded-lg">
-                <div className="w-2 h-2 rounded-full bg-[hsl(var(--warning))]" />
-                <div className="flex-1 h-2 bg-[hsl(var(--muted))]/50 rounded" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Admin view mockup component
-function AdminViewMockup() {
-  return (
-    <div className="h-full flex flex-col gap-3">
-      {/* Top bar */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="h-4 w-28 bg-[hsl(var(--muted))] rounded" />
-        </div>
-        <div className="flex gap-2">
-          <div className="h-8 w-24 bg-[hsl(var(--accent-mint))]/20 rounded-lg" />
-          <div className="h-8 w-24 bg-[hsl(var(--accent-iris))]/20 rounded-lg" />
-        </div>
-      </div>
-
-      {/* Admin panels */}
-      <div className="flex-1 grid grid-cols-4 gap-3">
-        {/* Sidebar */}
-        <div className="glass-panel rounded-xl p-3">
-          <div className="space-y-2">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div
-                key={i}
-                className={cn(
-                  "h-6 rounded-lg flex items-center px-2 gap-2",
-                  i === 1 ? "bg-[hsl(var(--accent-iris))]/20" : "bg-transparent"
-                )}
-              >
-                <div className={cn(
-                  "w-3 h-3 rounded",
-                  i === 1 ? "bg-[hsl(var(--accent-iris))]" : "bg-[hsl(var(--muted))]"
-                )} />
-                <div className="h-2 flex-1 bg-[hsl(var(--muted))]/50 rounded" />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Main content */}
-        <div className="col-span-3 glass-panel rounded-xl p-3">
-          <div className="h-3 w-32 bg-[hsl(var(--muted))] rounded mb-3" />
-          {/* Table */}
-          <div className="space-y-1.5">
-            <div className="grid grid-cols-5 gap-2">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="h-5 bg-[hsl(var(--muted))] rounded" />
-              ))}
-            </div>
-            {[1, 2, 3, 4].map((row) => (
-              <div key={row} className="grid grid-cols-5 gap-2">
-                <div className="h-5 bg-[hsl(var(--muted))]/40 rounded" />
-                <div className="h-5 bg-[hsl(var(--muted))]/30 rounded" />
-                <div className="h-5 bg-[hsl(var(--muted))]/30 rounded" />
-                <div className="h-5 bg-[hsl(var(--accent-mint))]/20 rounded" />
-                <div className="h-5 bg-[hsl(var(--muted))]/20 rounded" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }
 

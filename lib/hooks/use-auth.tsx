@@ -168,5 +168,6 @@ function setCookie(name: string, value: string, days = 30): void {
   if (typeof document === "undefined") return;
   const expires = new Date();
   expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+  const secure = process.env.NODE_ENV === "production" ? ";Secure" : "";
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax${secure}`;
 }

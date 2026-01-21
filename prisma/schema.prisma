@@ -53,6 +53,15 @@ model AppUser {
   displayName   String // Kept for backward compatibility, sync with name
   passwordHash  String? // For credentials auth if needed
   
+  // Password reset fields
+  resetToken       String?   // Hashed reset token
+  resetTokenExpiry DateTime? // Token expiration timestamp
+
+  // Account lockout fields (brute force protection)
+  failedLoginAttempts  Int       @default(0)
+  lastFailedAttempt    DateTime?
+  accountLockedUntil   DateTime?
+
   accounts      Account[]
   sessions      Session[]
   
@@ -118,7 +127,7 @@ model UserRoleAssignment {
 model School {
   id              String          @id @default(cuid())
   name            String
-  shortCode       String?
+  shortCode       String?         @unique
   gradingConfig   GradingConfig?  @relation("SchoolGradingConfig", fields: [gradingConfigId], references: [id])
   gradingConfigId String? @unique
   classes         ClassGroup[]

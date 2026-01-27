@@ -10,6 +10,9 @@ import { HelpPanel } from "@/components/help/help-panel";
 import { assessmentPlansHelp } from "@/lib/help-content";
 import { getAuthorizedActiveSchool, getServerAuthContext } from "@/lib/auth-server";
 
+// Force dynamic rendering - requires auth and database
+export const dynamic = "force-dynamic";
+
 export default async function AssessmentPlansPage() {
   const [auth, school] = await Promise.all([
     getServerAuthContext(),

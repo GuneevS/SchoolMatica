@@ -115,6 +115,14 @@ export const PERMISSION_KEYS = [
 
   // System Admin - cross-school access
   "system:admin",
+
+  // Super Admin - platform-level management
+  "superadmin:access",         // Access super admin dashboard
+  "superadmin:schools",        // Create, configure, and manage all schools
+  "superadmin:users",          // Manage all users across all schools
+  "superadmin:provision",      // Provision new schools with initial admin
+  "superadmin:impersonate",    // Impersonate any user (for debugging)
+  "superadmin:settings",       // Platform-wide settings
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -210,6 +218,14 @@ export function getPrimaryRoleKey(auth: AuthContext): string | null {
  */
 export function isSystemAdmin(auth: AuthContext): boolean {
   return auth.permissions.has("system:admin");
+}
+
+/**
+ * Check if user is a super admin with full platform access
+ * Super admins have unrestricted access to all functionality
+ */
+export function isSuperAdmin(auth: AuthContext): boolean {
+  return auth.permissions.has("superadmin:access");
 }
 
 /**
@@ -315,4 +331,44 @@ export function hasAnyPermission(auth: AuthContext, permissions: PermissionKey[]
  */
 export function hasAllPermissions(auth: AuthContext, permissions: PermissionKey[]): boolean {
   return permissions.every(p => auth.permissions.has(p));
+}
+
+/**
+ * Authorization for super admin only routes
+ * Returns error if user is not a super admin
+ */
+export async function authorizeSuperAdmin(
+  request: NextRequest
+): Promise<{ auth: AuthContext } | { error: NextResponse }> {
+  const authContext = await getAuthContext(request);
+
+  if (!authContext) {
+    return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
+  }
+
+  if (!isSuperAdmin(authContext)) {
+    return { error: NextResponse.json({ error: "Super admin access required" }, { status: 403 }) };
+  }
+
+  return { auth: authContext };
+}
+
+/**
+ * Get the current school context for the user
+ * Super admins can switch between schools using a cookie
+ * Regular users are bound to their assigned schools
+ */
+export function getCurrentSchoolContext(auth: AuthContext, request: NextRequest): string | null {
+  // Super admins can have a selected school context from cookie
+  if (isSuperAdmin(auth)) {
+    const schoolCookie = request.cookies.get("sm-school-id");
+    if (schoolCookie?.value) {
+      return schoolCookie.value;
+    }
+    // Super admin without selected school - return null (all schools view)
+    return null;
+  }
+
+  // Regular users use their primary school
+  return auth.user.schoolId ?? null;
 }

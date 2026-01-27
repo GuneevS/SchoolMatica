@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authorizeWithSchool, isSystemAdmin, hasSchoolAccess, getUserSchoolIds } from "@/lib/auth";
 
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Build where clause
-  let whereClause: any = {};
+  let whereClause: Prisma.AppUserWhereInput = {};
   if (isSystemAdmin(auth)) {
     if (schoolId) {
       whereClause = { schoolId };
@@ -54,7 +55,15 @@ export async function GET(request: NextRequest) {
 
   const users = await prisma.appUser.findMany({
     where: whereClause,
-    include: {
+    select: {
+      id: true,
+      email: true,
+      displayName: true,
+      schoolId: true,
+      teacherId: true,
+      createdAt: true,
+      updatedAt: true,
+      // Explicitly exclude: passwordHash, lastLogin, and other sensitive fields
       roleAssignments: {
         include: {
           role: true,

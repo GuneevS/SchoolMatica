@@ -6,6 +6,9 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { getServerAuthContext, hasServerSchoolAccess } from "@/lib/auth-server";
 
+// Force dynamic rendering - requires auth and database
+export const dynamic = "force-dynamic";
+
 interface Props {
   params: Promise<{ timetableId: string }>;
 }

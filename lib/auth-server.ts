@@ -11,6 +11,7 @@ export interface ServerAuthContext {
   };
   permissions: Set<string>;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   schoolIds: string[];
   roleAssignments: Array<{
     role: {
@@ -86,6 +87,11 @@ export const getServerAuthContext = cache(async (): Promise<ServerAuthContext | 
         ra.role.permissions.some((rp) => rp.permission.key === "system:admin")
       );
 
+    // Check if user is a super admin (platform-level access)
+    const isSuperAdmin =
+      user.roleAssignments.some((ra) => ra.role.key === "super_admin") ||
+      permissions.has("superadmin:access");
+
     return {
       user: {
         id: user.id,
@@ -95,6 +101,7 @@ export const getServerAuthContext = cache(async (): Promise<ServerAuthContext | 
       },
       permissions,
       isAdmin,
+      isSuperAdmin,
       schoolIds: Array.from(schoolIds),
       roleAssignments: user.roleAssignments.map((ra) => ({
         role: {
@@ -202,8 +209,27 @@ export async function requirePermission(permission: string): Promise<ServerAuthC
  */
 export async function requireSchoolAccess(schoolId: string): Promise<ServerAuthContext> {
   const auth = await requireAuth();
-  if (!auth.isAdmin && !auth.schoolIds.includes(schoolId)) {
+  if (!auth.isAdmin && !auth.isSuperAdmin && !auth.schoolIds.includes(schoolId)) {
     throw new Error("Access denied to this school");
   }
   return auth;
+}
+
+/**
+ * Require super admin access. Throws if not a super admin.
+ */
+export async function requireSuperAdmin(): Promise<ServerAuthContext> {
+  const auth = await requireAuth();
+  if (!auth.isSuperAdmin) {
+    throw new Error("Super admin access required");
+  }
+  return auth;
+}
+
+/**
+ * Check if current user is a super admin
+ */
+export async function isSuperAdminUser(): Promise<boolean> {
+  const auth = await getServerAuthContext();
+  return auth?.isSuperAdmin ?? false;
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authorizeWithSchool, hasSchoolAccess, getUserSchoolIds, isSystemAdmin } from "@/lib/auth";
 
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
   const assessmentId = searchParams.get("assessmentId");
 
   // Build where clause with school scoping
-  let whereClause: any = {
+  let whereClause: Prisma.ModerationThreadWhereInput = {
     assessmentPlanId: assessmentPlanId ?? undefined,
     assessmentId: assessmentId ?? undefined,
   };

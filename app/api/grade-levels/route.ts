@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authorizeWithSchool, hasSchoolAccess, getUserSchoolIds, isSystemAdmin } from "@/lib/auth";
 
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Build where clause with school scoping for non-admins
-  let whereClause: any = schoolId ? { schoolId } : undefined;
+  let whereClause: Prisma.GradeLevelWhereInput | undefined = schoolId ? { schoolId } : undefined;
   if (!schoolId && !isSystemAdmin(auth)) {
     const userSchoolIds = getUserSchoolIds(auth);
     whereClause = { schoolId: { in: userSchoolIds } };

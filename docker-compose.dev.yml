@@ -89,10 +89,12 @@ services:
     volumes:
       # Mount source code for hot-reload
       - .:/app
-      - /app/node_modules
+      - app_node_modules:/app/node_modules
       - /app/.next
     working_dir: /app
-    command: ["npm", "run", "dev"]
+    # Override entrypoint from Dockerfile since we mount source directly
+    entrypoint: [""]
+    command: ["sh", "-c", "npm install && npx prisma generate && npx prisma db push --skip-generate && npm run dev"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -141,6 +143,8 @@ volumes:
   postgres_dev_data:
     driver: local
   redis_dev_data:
+    driver: local
+  app_node_modules:
     driver: local
 
 # =============================================================================

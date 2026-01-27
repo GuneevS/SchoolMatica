@@ -4,6 +4,9 @@ import { GraduationCap } from "lucide-react";
 import { TeacherManager } from "@/components/teachers/teacher-manager";
 import { getAuthorizedActiveSchool, getServerAuthContext } from "@/lib/auth-server";
 
+// Force dynamic rendering - requires auth and database
+export const dynamic = "force-dynamic";
+
 export default async function TeachersPage() {
   const [auth, school] = await Promise.all([
     getServerAuthContext(),

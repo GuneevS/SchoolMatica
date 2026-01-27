@@ -11,7 +11,16 @@
       "Bash(npx prisma migrate:*)",
       "Bash(npx prisma:*)",
       "Bash(npm install:*)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npx eslint:*)",
+      "Bash(dir:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker stop:*)",
+      "Bash(docker rm:*)",
+      "Bash(DATABASE_URL=\"postgresql://schoolmatica:dev_password_only@localhost:13808/schoolmatica?schema=public\" npx prisma db push:*)",
+      "Bash(DATABASE_URL=\"postgresql://schoolmatica:dev_password_only@localhost:13808/schoolmatica?schema=public\" npx prisma db seed:*)",
+      "Bash(curl:*)"
     ]
   }
 }

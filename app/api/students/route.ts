@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   const classId = searchParams.get("classId");
   
   // Build where clause based on user permissions
-  let whereClause: any = {};
+  let whereClause: Prisma.StudentWhereInput = {};
   
   if (classId) {
     // Verify the class belongs to an accessible school

@@ -4,6 +4,9 @@ import { SchoolManager } from "@/components/schools/school-manager";
 import { SchoolSetupWizard } from "@/components/schools/setup-wizard/wizard-shell";
 import { getActiveSchool } from "@/lib/school";
 
+// Force dynamic rendering - requires database
+export const dynamic = "force-dynamic";
+
 export default async function SchoolsPage() {
   const activeSchool = await getActiveSchool();
   const schools = await prisma.school.findMany({

@@ -134,13 +134,22 @@ const permissionSeeds = [
 
   // System Admin
   { key: "system:admin", resource: "system", action: "admin", description: "Full system access across all schools" },
+
+  // Super Admin - Platform-level management
+  { key: "superadmin:access", resource: "superadmin", action: "access", description: "Access super admin dashboard" },
+  { key: "superadmin:schools", resource: "superadmin", action: "schools", description: "Create, configure, and manage all schools" },
+  { key: "superadmin:users", resource: "superadmin", action: "users", description: "Manage all users across all schools" },
+  { key: "superadmin:provision", resource: "superadmin", action: "provision", description: "Provision new schools with initial admin" },
+  { key: "superadmin:impersonate", resource: "superadmin", action: "impersonate", description: "Impersonate any user (for debugging)" },
+  { key: "superadmin:settings", resource: "superadmin", action: "settings", description: "Platform-wide settings" },
 ];
 
 const roleSeeds = [
   { key: "teacher", name: "Teacher", priority: 10, description: "Class educator" },
   { key: "hod", name: "Head of Department", priority: 20, description: "Department approver" },
   { key: "smt", name: "SMT", priority: 30, description: "School management team" },
-  { key: "admin", name: "System Administrator", priority: 100, description: "Full system access across all schools" },
+  { key: "admin", name: "School Administrator", priority: 100, description: "Full access within a specific school" },
+  { key: "super_admin", name: "Super Administrator", priority: 1000, description: "Platform-level access with full control across all schools" },
 ];
 
 const rolePermissionMatrix: Record<string, string[]> = {
@@ -336,7 +345,7 @@ const rolePermissionMatrix: Record<string, string[]> = {
     "role:assign",
   ],
   admin: [
-    "system:admin", // This grants everything
+    "system:admin", // This grants everything within scope
     // Explicit user management for completeness
     "user:read",
     "user:create",
@@ -345,6 +354,37 @@ const rolePermissionMatrix: Record<string, string[]> = {
     "role:read",
     "role:assign",
     "role:remove",
+    // School management (within their assigned school)
+    "school:read",
+    "school:update",
+    "school:manage",
+  ],
+  super_admin: [
+    // Super admin has ALL permissions including system-wide access
+    "system:admin",
+    // Super admin specific permissions
+    "superadmin:access",
+    "superadmin:schools",
+    "superadmin:users",
+    "superadmin:provision",
+    "superadmin:impersonate",
+    "superadmin:settings",
+    // All school management
+    "school:read",
+    "school:create",
+    "school:update",
+    "school:delete",
+    "school:manage",
+    // All user management
+    "user:read",
+    "user:create",
+    "user:update",
+    "user:delete",
+    "role:read",
+    "role:assign",
+    "role:remove",
+    // Full audit access
+    "audit:read",
   ],
 };
 
@@ -632,12 +672,22 @@ async function seed() {
     },
   });
 
-  // Create system administrator with cross-school access
+  // Create school administrator (for specific school)
   const adminUser = await prisma.appUser.create({
     data: {
       email: "admin@schoolmatica.com",
-      displayName: "System Administrator",
-      schoolId: school.id, // Primary school (can access all schools)
+      displayName: "School Administrator",
+      schoolId: school.id,
+      passwordHash,
+    },
+  });
+
+  // Create super administrator (platform-level, no specific school)
+  const superAdminUser = await prisma.appUser.create({
+    data: {
+      email: "super@schoolmatica.com",
+      displayName: "Super Administrator",
+      schoolId: null, // No specific school - platform-level
       passwordHash,
     },
   });
@@ -662,7 +712,12 @@ async function seed() {
       {
         userId: adminUser.id,
         roleId: roleByKey.get("admin")!.id,
-        scopeSchoolId: null, // null means cross-school access
+        scopeSchoolId: school.id, // Admin is scoped to their school
+      },
+      {
+        userId: superAdminUser.id,
+        roleId: roleByKey.get("super_admin")!.id,
+        scopeSchoolId: null, // Super admin has platform-level access
       },
     ],
   });
@@ -856,7 +911,8 @@ async function seed() {
 
   console.log("✅ Database seed completed successfully!");
   console.log("   - Created demo school: SchoolMatica High");
-  console.log("   - Created admin user: admin@schoolmatica.com (password: admin123)");
+  console.log("   - Created super admin: super@schoolmatica.com (password: password123)");
+  console.log("   - Created school admin: admin@schoolmatica.com (password: password123)");
   console.log("   - Created sample teachers, students, and assessments");
 }
 

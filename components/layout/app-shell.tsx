@@ -2,18 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MenuSquareIcon } from "lucide-react";
+import { MenuSquareIcon, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RoleSwitcher } from "@/components/role-switcher";
 import { HelpButton } from "@/components/help/help-button";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { SchoolSwitcher } from "@/components/school-switcher";
+import { SuperAdminOverlay } from "@/components/super-admin/super-admin-overlay";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Classes", href: "/classes" },
   { label: "Assessment Plans", href: "/assessment-plans" },
   { label: "Markbook", href: "/markbook" },
+  { label: "Behaviour", href: "/behavior" },
   { label: "Timetables", href: "/timetables" },
   { label: "Reports", href: "/reports" },
   { label: "Registrations", href: "/registrations" },
@@ -26,6 +28,15 @@ const navItems = [
 // Marketing/landing pages that should NOT show the app shell
 const marketingPaths = ["/"];
 
+// Auth pages that should NOT show the app shell
+const authPaths = ["/login", "/register", "/forgot-password", "/reset-password"];
+
+// Super admin pages have their own shell
+const superAdminPaths = ["/super-admin"];
+
+// Parent portal has its own shell
+const parentPortalPaths = ["/parent"];
+
 interface Props {
   children: React.ReactNode;
   initialSchool: {
@@ -33,14 +44,38 @@ interface Props {
     name: string;
     shortCode?: string;
   } | null;
+  isSuperAdmin?: boolean;
+  user?: {
+    id: string;
+    email: string;
+    displayName: string | null;
+  } | null;
 }
 
-export function AppShell({ children, initialSchool }: Props) {
+export function AppShell({ children, initialSchool, isSuperAdmin = false, user }: Props) {
   const pathname = usePathname();
 
   // For marketing pages, render children directly without the app shell chrome
   const isMarketingPage = pathname && marketingPaths.includes(pathname);
   if (isMarketingPage) {
+    return <>{children}</>;
+  }
+
+  // Auth pages (login, register, etc.) have their own layout
+  const isAuthPage = pathname && authPaths.some(p => pathname.startsWith(p));
+  if (isAuthPage) {
+    return <>{children}</>;
+  }
+
+  // Super admin pages have their own dedicated shell
+  const isSuperAdminPage = pathname && superAdminPaths.some(p => pathname.startsWith(p));
+  if (isSuperAdminPage) {
+    return <>{children}</>;
+  }
+
+  // Parent portal pages have their own shell
+  const isParentPortal = pathname && parentPortalPaths.some(p => pathname.startsWith(p));
+  if (isParentPortal) {
     return <>{children}</>;
   }
   return (
@@ -82,6 +117,19 @@ export function AppShell({ children, initialSchool }: Props) {
             );
           })}
         </nav>
+
+        {/* Super Admin Link */}
+        {isSuperAdmin && (
+          <div className="mt-auto pt-4 border-t border-[hsl(var(--border))/0.5]">
+            <Link
+              href="/super-admin"
+              className="flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-medium text-[hsl(var(--accent-violet))] transition-all duration-200 hover:bg-[hsl(var(--accent-violet))/0.12]"
+            >
+              <Shield className="h-4 w-4" />
+              Super Admin
+            </Link>
+          </div>
+        )}
       </aside>
       <div className="relative z-10 flex flex-1 flex-col">
         <header className="sticky top-0 z-20 border-b border-[hsl(var(--border))/0.5] bg-[hsl(var(--surface-strong))/0.85] px-6 py-4 backdrop-blur-xl">
@@ -109,6 +157,21 @@ export function AppShell({ children, initialSchool }: Props) {
         data-tour="help-button"
         className="border border-[hsl(var(--border-strong))/0.55] bg-[hsl(var(--surface-strong))/0.95] text-foreground shadow-ambient-sm backdrop-blur hover:shadow-ambient"
       />
+
+      {/* Super Admin Overlay - only visible to super admins */}
+      {isSuperAdmin && user && (
+        <SuperAdminOverlay
+          user={user}
+          activeSchoolId={initialSchool?.id}
+          environment={
+            process.env.NODE_ENV === "production"
+              ? "production"
+              : process.env.NODE_ENV === "development"
+              ? "development"
+              : "staging"
+          }
+        />
+      )}
     </div>
   );
 }

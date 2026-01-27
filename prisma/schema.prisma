@@ -45,45 +45,62 @@ model VerificationToken {
 
 // Application User (Extended for Auth)
 model AppUser {
-  id            String               @id @default(cuid())
+  id            String    @id @default(cuid())
   name          String?
-  email         String?              @unique
+  email         String?   @unique
   emailVerified DateTime?
   image         String?
   displayName   String // Kept for backward compatibility, sync with name
   passwordHash  String? // For credentials auth if needed
-  
+
   // Password reset fields
-  resetToken       String?   // Hashed reset token
+  resetToken       String? // Hashed reset token
   resetTokenExpiry DateTime? // Token expiration timestamp
 
   // Account lockout fields (brute force protection)
-  failedLoginAttempts  Int       @default(0)
-  lastFailedAttempt    DateTime?
-  accountLockedUntil   DateTime?
+  failedLoginAttempts Int       @default(0)
+  lastFailedAttempt   DateTime?
+  accountLockedUntil  DateTime?
 
-  accounts      Account[]
-  sessions      Session[]
-  
-  school        School?               @relation(fields: [schoolId], references: [id])
-  schoolId      String?
-  teacher       Teacher?             @relation("TeacherAccount", fields: [teacherId], references: [id])
-  teacherId     String?              @unique
+  accounts Account[]
+  sessions Session[]
+
+  school          School?              @relation(fields: [schoolId], references: [id])
+  schoolId        String?
+  teacher         Teacher?             @relation("TeacherAccount", fields: [teacherId], references: [id])
+  teacherId       String?              @unique
   roleAssignments UserRoleAssignment[]
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
+
+  // Parent and Student user links
+  parentUser  ParentUser?
+  studentUser StudentUser?
+
+  // Behavior incidents issued by this user
+  behaviorIncidents BehaviorIncident[]
+
+  // Messages sent by this user
+  messages Message[]
+
+  // Notifications for this user
+  notifications Notification[]
+
+  // Announcements created by this user
+  announcements Announcement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model RoleDefinition {
-  id          String             @id @default(cuid())
-  key         String             @unique
+  id          String               @id @default(cuid())
+  key         String               @unique
   name        String
   description String?
-  priority    Int                @default(0)
+  priority    Int                  @default(0)
   assignments UserRoleAssignment[]
   permissions RolePermission[]
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
 }
 
 model PermissionDefinition {
@@ -100,12 +117,12 @@ model PermissionDefinition {
 }
 
 model RolePermission {
-  id            String               @id @default(cuid())
-  role          RoleDefinition       @relation(fields: [roleId], references: [id])
-  roleId        String
-  permission    PermissionDefinition @relation(fields: [permissionId], references: [id])
-  permissionId  String
-  createdAt     DateTime             @default(now())
+  id           String               @id @default(cuid())
+  role         RoleDefinition       @relation(fields: [roleId], references: [id])
+  roleId       String
+  permission   PermissionDefinition @relation(fields: [permissionId], references: [id])
+  permissionId String
+  createdAt    DateTime             @default(now())
 
   @@unique([roleId, permissionId])
 }
@@ -123,82 +140,104 @@ model UserRoleAssignment {
   @@index([userId, roleId])
 }
 
-
 model School {
-  id              String          @id @default(cuid())
-  name            String
-  shortCode       String?         @unique
-  gradingConfig   GradingConfig?  @relation("SchoolGradingConfig", fields: [gradingConfigId], references: [id])
-  gradingConfigId String? @unique
-  classes         ClassGroup[]
-  subjects        Subject[]
-  curriculumTemplates CurriculumTemplate[]
-  teachers        Teacher[]
-  gradeLevels     GradeLevel[]
-  auditLogs       AuditLog[]
+  id        String  @id @default(cuid())
+  name      String
+  shortCode String? @unique
+
+  // Extended school metadata
+  emisNumber  String? // DBE EMIS number
+  schoolType  String? // public, independent, special, remedial
+  schoolPhase String? // primary, secondary, combined, intermediate
+  province    String? // SA province code
+  district    String? // Education district
+
+  gradingConfig        GradingConfig?        @relation("SchoolGradingConfig", fields: [gradingConfigId], references: [id])
+  gradingConfigId      String?               @unique
+  classes              ClassGroup[]
+  subjects             Subject[]
+  curriculumTemplates  CurriculumTemplate[]
+  teachers             Teacher[]
+  gradeLevels          GradeLevel[]
+  auditLogs            AuditLog[]
   learnerRegistrations LearnerRegistration[]
-  users           AppUser[]
-  timetables      Timetable[]
-  teacherInvitations TeacherInvitation[]
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  users                AppUser[]
+  timetables           Timetable[]
+  teacherInvitations   TeacherInvitation[]
+
+  // Parent and student invitations
+  parentInvitations  ParentInvitation[]
+  studentInvitations StudentInvitation[]
+
+  // Behavior system
+  behaviorIncidents BehaviorIncident[]
+  behaviorPolicies  BehaviorPolicy[]
+  behaviorTriggers  BehaviorThresholdTrigger[]
+
+  // Communications
+  messageThreads MessageThread[]
+  notifications  Notification[]
+  announcements  Announcement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model GradingConfig {
-  id        String    @id @default(cuid())
-  name      String
+  id         String  @id @default(cuid())
+  name       String
   phasesJson Json
-  school     School?  @relation("SchoolGradingConfig")
+  school     School? @relation("SchoolGradingConfig")
 }
 
 model Subject {
-  id        String       @id @default(cuid())
-  name      String
-  code      String
-  phase     String
-  school    School       @relation(fields: [schoolId], references: [id])
-  schoolId  String
-  classes   ClassGroup[]
+  id                 String                     @id @default(cuid())
+  name               String
+  code               String
+  phase              String
+  school             School                     @relation(fields: [schoolId], references: [id])
+  schoolId           String
+  classes            ClassGroup[]
   teacherAssignments ClassTeacherAssignment[]
   teacherSubjects    TeacherSubjectAssignment[]
 }
 
 model ClassGroup {
-  id              String           @id @default(cuid())
-  name            String
-  grade           Int
-  year            Int
-  classType       ClassType        @default(Subject)
-  subject         Subject?         @relation(fields: [subjectId], references: [id])
-  subjectId       String?
-  school          School           @relation(fields: [schoolId], references: [id])
-  schoolId        String
-  curriculumTemplate CurriculumTemplate? @relation(fields: [curriculumTemplateId], references: [id])
+  id                   String                   @id @default(cuid())
+  name                 String
+  grade                Int
+  year                 Int
+  classType            ClassType                @default(Subject)
+  subject              Subject?                 @relation(fields: [subjectId], references: [id])
+  subjectId            String?
+  school               School                   @relation(fields: [schoolId], references: [id])
+  schoolId             String
+  curriculumTemplate   CurriculumTemplate?      @relation(fields: [curriculumTemplateId], references: [id])
   curriculumTemplateId String?
-  gradeLevel      GradeLevel?      @relation(fields: [gradeLevelId], references: [id])
-  gradeLevelId    String?
-  primaryTeacher  Teacher?         @relation("PrimaryClassTeacher", fields: [primaryTeacherId], references: [id])
-  primaryTeacherId String?
-  students        Student[]
-  assessmentPlans AssessmentPlan[]
+  gradeLevel           GradeLevel?              @relation(fields: [gradeLevelId], references: [id])
+  gradeLevelId         String?
+  primaryTeacher       Teacher?                 @relation("PrimaryClassTeacher", fields: [primaryTeacherId], references: [id])
+  primaryTeacherId     String?
+  students             Student[]
+  assessmentPlans      AssessmentPlan[]
   learnerRegistrations LearnerRegistration[]
-  teacherAssignments ClassTeacherAssignment[]
-  timetableSlots  TimetableSlot[]
-  learnerComments LearnerComment[]
-  reportCards     ReportCard[]
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  teacherAssignments   ClassTeacherAssignment[]
+  timetableSlots       TimetableSlot[]
+  learnerComments      LearnerComment[]
+  reportCards          ReportCard[]
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
 }
 
 model Student {
-  id               String     @id @default(cuid())
+  id               String                @id @default(cuid())
   admissionNumber  String
   firstName        String
   lastName         String
   gender           String
-  classGroup       ClassGroup @relation(fields: [classGroupId], references: [id])
+  classGroup       ClassGroup            @relation(fields: [classGroupId], references: [id])
   classGroupId     String
-  advisor          Teacher?   @relation("AdvisorTeacher", fields: [advisorTeacherId], references: [id])
+  advisor          Teacher?              @relation("AdvisorTeacher", fields: [advisorTeacherId], references: [id])
   advisorTeacherId String?
   marks            Mark[]
   registrations    LearnerRegistration[]
@@ -206,41 +245,51 @@ model Student {
   parents          ParentContact[]
   comments         LearnerComment[]
   reportCards      ReportCard[]
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
+
+  // Student user account link
+  studentUser       StudentUser?
+  studentInvitation StudentInvitation[]
+
+  // Behavior tracking
+  behaviorIncidents BehaviorIncident[]
+  behaviorBalance   BehaviorBalance?
+  behaviorTriggers  BehaviorThresholdTrigger[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Teacher {
-  id          String                     @id @default(cuid())
-  firstName   String
-  lastName    String
-  email       String                     @unique
-  phone       String?
-  role        String                     @default("Teacher")
-  bio         String?
-  school      School                     @relation(fields: [schoolId], references: [id])
-  schoolId    String
-  primaryClasses ClassGroup[]            @relation("PrimaryClassTeacher")
-  classAssignments ClassTeacherAssignment[]
+  id                 String                     @id @default(cuid())
+  firstName          String
+  lastName           String
+  email              String                     @unique
+  phone              String?
+  role               String                     @default("Teacher")
+  bio                String?
+  school             School                     @relation(fields: [schoolId], references: [id])
+  schoolId           String
+  primaryClasses     ClassGroup[]               @relation("PrimaryClassTeacher")
+  classAssignments   ClassTeacherAssignment[]
   subjectAssignments TeacherSubjectAssignment[]
-  advisees    Student[]                  @relation("AdvisorTeacher")
-  account     AppUser?                   @relation("TeacherAccount")
-  timetableSlots TimetableSlot[]
-  invitations TeacherInvitation[]
-  createdAt   DateTime                   @default(now())
-  updatedAt   DateTime                   @updatedAt
+  advisees           Student[]                  @relation("AdvisorTeacher")
+  account            AppUser?                   @relation("TeacherAccount")
+  timetableSlots     TimetableSlot[]
+  invitations        TeacherInvitation[]
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
 }
 
 model ClassTeacherAssignment {
-  id            String     @id @default(cuid())
-  classGroup    ClassGroup @relation(fields: [classGroupId], references: [id])
-  classGroupId  String
-  teacher       Teacher    @relation(fields: [teacherId], references: [id])
-  teacherId     String
-  role          String     @default("Support")
-  subject       Subject?   @relation(fields: [subjectId], references: [id])
-  subjectId     String?
-  createdAt     DateTime   @default(now())
+  id           String     @id @default(cuid())
+  classGroup   ClassGroup @relation(fields: [classGroupId], references: [id])
+  classGroupId String
+  teacher      Teacher    @relation(fields: [teacherId], references: [id])
+  teacherId    String
+  role         String     @default("Support")
+  subject      Subject?   @relation(fields: [subjectId], references: [id])
+  subjectId    String?
+  createdAt    DateTime   @default(now())
 
   @@unique([classGroupId, teacherId])
 }
@@ -261,75 +310,83 @@ model TeacherSubjectAssignment {
 }
 
 model ParentContact {
-  id          String   @id @default(cuid())
-  student     Student  @relation(fields: [studentId], references: [id])
-  studentId   String
-  fullName    String
+  id           String  @id @default(cuid())
+  student      Student @relation(fields: [studentId], references: [id])
+  studentId    String
+  fullName     String
   relationship String
-  email       String?
-  phone       String?
-  primary     Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  email        String?
+  phone        String?
+  primary      Boolean @default(true)
+
+  // Link to parent user account
+  parentUser   ParentUser? @relation("ParentUserContacts", fields: [parentUserId], references: [id])
+  parentUserId String?
+
+  // Invitation for account creation
+  invitation ParentInvitation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model GradeLevel {
-  id        String      @id @default(cuid())
+  id        String       @id @default(cuid())
   name      String
   order     Int
-  school    School      @relation(fields: [schoolId], references: [id])
+  school    School       @relation(fields: [schoolId], references: [id])
   schoolId  String
   classes   ClassGroup[]
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 }
 
 model AssessmentPlan {
-  id                 String             @id @default(cuid())
-  name               String
-  year               Int
-  termCount          Int
-  status             String
-  submittedAt        DateTime?
-  approvedAt         DateTime?
-  lockedAt           DateTime?
-  submittedByRole    String?
-  approvedByRole     String?
-  termWeights        Json?
-  template           CurriculumTemplate? @relation(fields: [templateId], references: [id])
-  templateId         String?
-  classGroup         ClassGroup         @relation(fields: [classGroupId], references: [id])
-  classGroupId       String
-  assessments        Assessment[]
-  moderationThreads  ModerationThread[]
-  documents          AssessmentDocument[]
-  snapshots          MarkSnapshot[]
-  timetableSlots     TimetableSlot[]
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  id                String               @id @default(cuid())
+  name              String
+  year              Int
+  termCount         Int
+  status            String
+  submittedAt       DateTime?
+  approvedAt        DateTime?
+  lockedAt          DateTime?
+  submittedByRole   String?
+  approvedByRole    String?
+  termWeights       Json?
+  template          CurriculumTemplate?  @relation(fields: [templateId], references: [id])
+  templateId        String?
+  classGroup        ClassGroup           @relation(fields: [classGroupId], references: [id])
+  classGroupId      String
+  assessments       Assessment[]
+  moderationThreads ModerationThread[]
+  documents         AssessmentDocument[]
+  snapshots         MarkSnapshot[]
+  timetableSlots    TimetableSlot[]
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
 }
 
 model Assessment {
-  id               String          @id @default(cuid())
-  assessmentPlan   AssessmentPlan  @relation(fields: [assessmentPlanId], references: [id])
-  assessmentPlanId String
-  taskName         String
-  term             String
-  totalMark        Int
-  rawWeight        Float
-  weightPercent    Float
-  sequence         Int
-  type             String?
-  status           String
-  dueDate          DateTime?
-  isPatComponent   Boolean         @default(false)
+  id                 String               @id @default(cuid())
+  assessmentPlan     AssessmentPlan       @relation(fields: [assessmentPlanId], references: [id])
+  assessmentPlanId   String
+  taskName           String
+  term               String
+  totalMark          Int
+  rawWeight          Float
+  weightPercent      Float
+  sequence           Int
+  type               String?
+  status             String
+  dueDate            DateTime?
+  isPatComponent     Boolean              @default(false)
   termWeightOverride Float?
-  category         String?
-  marks            Mark[]
-  moderationThreads ModerationThread[]
-  documents        AssessmentDocument[]
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  category           String?
+  marks              Mark[]
+  moderationThreads  ModerationThread[]
+  documents          AssessmentDocument[]
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
 }
 
 model Mark {
@@ -350,47 +407,47 @@ model Mark {
 }
 
 model ModerationThread {
-  id               String            @id @default(cuid())
+  id               String               @id @default(cuid())
   title            String?
-  kind             String?           // plan | assessment | moderation
-  assessmentPlan   AssessmentPlan?   @relation(fields: [assessmentPlanId], references: [id])
+  kind             String? // plan | assessment | moderation
+  assessmentPlan   AssessmentPlan?      @relation(fields: [assessmentPlanId], references: [id])
   assessmentPlanId String?
-  assessment       Assessment?       @relation(fields: [assessmentId], references: [id])
+  assessment       Assessment?          @relation(fields: [assessmentId], references: [id])
   assessmentId     String?
   status           String
   createdByRole    String
   comments         ModerationComment[]
   documents        AssessmentDocument[]
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
 }
 
 model ModerationComment {
-  id          String           @id @default(cuid())
-  thread      ModerationThread @relation(fields: [threadId], references: [id])
-  threadId    String
-  authorRole  String
-  message     String
+  id            String           @id @default(cuid())
+  thread        ModerationThread @relation(fields: [threadId], references: [id])
+  threadId      String
+  authorRole    String
+  message       String
   attachmentUrl String?
-  createdAt   DateTime         @default(now())
+  createdAt     DateTime         @default(now())
 }
 
 model CurriculumTemplate {
-  id               String              @id @default(cuid())
-  name             String
-  subjectName      String
-  subjectCode      String
-  phase            String
-  grade            Int
-  defaultTermCount Int
-  school           School?             @relation(fields: [schoolId], references: [id])
-  schoolId         String?
-  createdByRole    String
+  id                  String               @id @default(cuid())
+  name                String
+  subjectName         String
+  subjectCode         String
+  phase               String
+  grade               Int
+  defaultTermCount    Int
+  school              School?              @relation(fields: [schoolId], references: [id])
+  schoolId            String?
+  createdByRole       String
   assessmentTemplates AssessmentTemplate[]
-  assessmentPlans  AssessmentPlan[]
-  classGroups      ClassGroup[]
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
+  assessmentPlans     AssessmentPlan[]
+  classGroups         ClassGroup[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 }
 
 model AssessmentTemplate {
@@ -430,16 +487,16 @@ model AssessmentDocument {
 }
 
 model DocumentApproval {
-  id            String            @id @default(cuid())
-  document      AssessmentDocument @relation(fields: [documentId], references: [id])
-  documentId    String
-  reviewerRole  String
-  reviewerName  String?
-  status        String            @default("Pending")
-  notes         String?
-  decidedAt     DateTime?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  id           String             @id @default(cuid())
+  document     AssessmentDocument @relation(fields: [documentId], references: [id])
+  documentId   String
+  reviewerRole String
+  reviewerName String?
+  status       String             @default("Pending")
+  notes        String?
+  decidedAt    DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 }
 
 model AuditLog {
@@ -459,62 +516,62 @@ model AuditLog {
 }
 
 model LearnerRegistration {
-  id            String      @id @default(cuid())
-  school        School      @relation(fields: [schoolId], references: [id])
-  schoolId      String
-  classGroup    ClassGroup? @relation(fields: [classGroupId], references: [id])
-  classGroupId  String?
-  status        String      @default("Draft")
-  learnerData   Json
-  guardianData  Json
+  id             String      @id @default(cuid())
+  school         School      @relation(fields: [schoolId], references: [id])
+  schoolId       String
+  classGroup     ClassGroup? @relation(fields: [classGroupId], references: [id])
+  classGroupId   String?
+  status         String      @default("Draft")
+  learnerData    Json
+  guardianData   Json
   supportingDocs Json?
-  student       Student?    @relation(fields: [studentId], references: [id])
-  studentId     String?     @unique
-  submittedAt   DateTime?
-  decidedAt     DateTime?
-  decisionNote  String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  student        Student?    @relation(fields: [studentId], references: [id])
+  studentId      String?     @unique
+  submittedAt    DateTime?
+  decidedAt      DateTime?
+  decisionNote   String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 }
 
 model MarkSnapshot {
-  id               String        @id @default(cuid())
+  id               String         @id @default(cuid())
   assessmentPlan   AssessmentPlan @relation(fields: [assessmentPlanId], references: [id])
   assessmentPlanId String
-  student          Student       @relation(fields: [studentId], references: [id])
+  student          Student        @relation(fields: [studentId], references: [id])
   studentId        String
   term             String
   sbaPercent       Float
   termPercent      Float
   level            Int
-  capturedAt       DateTime      @default(now())
+  capturedAt       DateTime       @default(now())
 
-  @@index([assessmentPlanId, term])
   @@unique([assessmentPlanId, studentId, term])
+  @@index([assessmentPlanId, term])
 }
 
 model Timetable {
-  id          String           @id @default(cuid())
-  name        String
-  school      School           @relation(fields: [schoolId], references: [id])
-  schoolId    String
-  year        Int
-  term        String
-  startDate   DateTime
-  endDate     DateTime
-  status      String           @default("Draft")
-  cycleType   String           @default("Weekly")
-  periods     TimetablePeriod[]
-  slots       TimetableSlot[]
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id        String            @id @default(cuid())
+  name      String
+  school    School            @relation(fields: [schoolId], references: [id])
+  schoolId  String
+  year      Int
+  term      String
+  startDate DateTime
+  endDate   DateTime
+  status    String            @default("Draft")
+  cycleType String            @default("Weekly")
+  periods   TimetablePeriod[]
+  slots     TimetableSlot[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
 
   @@index([schoolId, year, term])
 }
 
 model TimetablePeriod {
-  id           String        @id @default(cuid())
-  timetable    Timetable     @relation(fields: [timetableId], references: [id], onDelete: Cascade)
+  id           String          @id @default(cuid())
+  timetable    Timetable       @relation(fields: [timetableId], references: [id], onDelete: Cascade)
   timetableId  String
   name         String
   periodNumber Int
@@ -522,27 +579,27 @@ model TimetablePeriod {
   endTime      String
   dayOfWeek    Int
   slots        TimetableSlot[]
-  createdAt    DateTime      @default(now())
+  createdAt    DateTime        @default(now())
 
   @@index([timetableId, dayOfWeek, periodNumber])
 }
 
 model TimetableSlot {
-  id              String           @id @default(cuid())
-  timetable       Timetable        @relation(fields: [timetableId], references: [id], onDelete: Cascade)
-  timetableId     String
-  period          TimetablePeriod  @relation(fields: [periodId], references: [id], onDelete: Cascade)
-  periodId        String
-  classGroup      ClassGroup       @relation(fields: [classGroupId], references: [id])
-  classGroupId    String
-  teacher         Teacher?         @relation(fields: [teacherId], references: [id])
-  teacherId       String?
-  room            String?
-  notes           String?
-  assessmentPlan  AssessmentPlan?  @relation(fields: [assessmentPlanId], references: [id])
+  id               String          @id @default(cuid())
+  timetable        Timetable       @relation(fields: [timetableId], references: [id], onDelete: Cascade)
+  timetableId      String
+  period           TimetablePeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  periodId         String
+  classGroup       ClassGroup      @relation(fields: [classGroupId], references: [id])
+  classGroupId     String
+  teacher          Teacher?        @relation(fields: [teacherId], references: [id])
+  teacherId        String?
+  room             String?
+  notes            String?
+  assessmentPlan   AssessmentPlan? @relation(fields: [assessmentPlanId], references: [id])
   assessmentPlanId String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
   @@index([timetableId, periodId])
   @@index([classGroupId])
@@ -569,27 +626,27 @@ model LearnerComment {
 }
 
 model ReportCard {
-  id               String     @id @default(cuid())
-  student          Student    @relation(fields: [studentId], references: [id])
-  studentId        String
-  classGroup       ClassGroup @relation(fields: [classGroupId], references: [id])
-  classGroupId     String
-  term             String
-  year             Int
-  status           String     @default("Draft") // Draft, Published, Finalized
-  overallGrade     String?
+  id                String     @id @default(cuid())
+  student           Student    @relation(fields: [studentId], references: [id])
+  studentId         String
+  classGroup        ClassGroup @relation(fields: [classGroupId], references: [id])
+  classGroupId      String
+  term              String
+  year              Int
+  status            String     @default("Draft") // Draft, Published, Finalized
+  overallGrade      String?
   overallPercentage Float?
-  achievementLevel Int?
-  teacherComment   String?
-  hodComment       String?
-  principalComment String?
-  attendanceData   Json?
-  conductGrade     String?
-  effortGrade      String?
-  generatedAt      DateTime?
-  publishedAt      DateTime?
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
+  achievementLevel  Int?
+  teacherComment    String?
+  hodComment        String?
+  principalComment  String?
+  attendanceData    Json?
+  conductGrade      String?
+  effortGrade       String?
+  generatedAt       DateTime?
+  publishedAt       DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 
   @@unique([studentId, term, year])
   @@index([classGroupId, term, year])
@@ -598,23 +655,262 @@ model ReportCard {
 
 // Teacher invitation for account linking
 model TeacherInvitation {
-  id          String   @id @default(cuid())
-  teacher     Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  teacherId   String
-  school      School   @relation(fields: [schoolId], references: [id])
-  schoolId    String
-  email       String   // Email to send invitation to
-  token       String   @unique // Secure token for accepting invitation
-  roleKey     String   @default("teacher") // Role to assign upon acceptance
-  status      String   @default("Pending") // Pending, Accepted, Expired, Revoked
-  invitedBy   String?  // User ID who sent the invitation
-  expiresAt   DateTime
-  acceptedAt  DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String    @id @default(cuid())
+  teacher    Teacher   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId  String
+  school     School    @relation(fields: [schoolId], references: [id])
+  schoolId   String
+  email      String // Email to send invitation to
+  token      String    @unique // Secure token for accepting invitation
+  roleKey    String    @default("teacher") // Role to assign upon acceptance
+  status     String    @default("Pending") // Pending, Accepted, Expired, Revoked
+  invitedBy  String? // User ID who sent the invitation
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@unique([teacherId, email])
   @@index([token])
   @@index([email])
   @@index([status])
+}
+
+// ============================================
+// Parent & Student User Authentication Models
+// ============================================
+
+// Links an AppUser to multiple ParentContacts (children)
+model ParentUser {
+  id        String          @id @default(cuid())
+  user      AppUser         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String          @unique
+  contacts  ParentContact[] @relation("ParentUserContacts")
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+// Links an AppUser to a Student record for student portal access
+model StudentUser {
+  id        String   @id @default(cuid())
+  user      AppUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String   @unique
+  student   Student  @relation(fields: [studentId], references: [id])
+  studentId String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Parent invitation for account creation
+model ParentInvitation {
+  id              String        @id @default(cuid())
+  parentContact   ParentContact @relation(fields: [parentContactId], references: [id], onDelete: Cascade)
+  parentContactId String
+  school          School        @relation(fields: [schoolId], references: [id])
+  schoolId        String
+  email           String
+  token           String        @unique
+  status          String        @default("Pending") // Pending, Accepted, Expired, Revoked
+  invitedBy       String? // User ID who sent the invitation
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([token])
+  @@index([email])
+  @@index([status])
+}
+
+// Student invitation for account creation (controlled by school)
+model StudentInvitation {
+  id         String    @id @default(cuid())
+  student    Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId  String
+  school     School    @relation(fields: [schoolId], references: [id])
+  schoolId   String
+  email      String
+  token      String    @unique
+  status     String    @default("Pending") // Pending, Accepted, Expired, Revoked
+  invitedBy  String? // User ID who sent the invitation
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([token])
+  @@index([email])
+  @@index([status])
+}
+
+// ============================================
+// Merit/Demerit Behavior Tracking System
+// ============================================
+
+// Individual behavior incident (merit or demerit)
+model BehaviorIncident {
+  id           String    @id @default(cuid())
+  student      Student   @relation(fields: [studentId], references: [id])
+  studentId    String
+  school       School    @relation(fields: [schoolId], references: [id])
+  schoolId     String
+  type         String // "Merit" | "Demerit"
+  points       Int
+  category     String // "Academic", "Conduct", "Service", "Sports", "Leadership", etc.
+  description  String
+  issuedBy     AppUser   @relation(fields: [issuedById], references: [id])
+  issuedById   String
+  date         DateTime  @default(now())
+  term         String
+  year         Int
+  attachments  Json? // Optional attachments/evidence
+  status       String    @default("Active") // Active, Revoked, Expired
+  revokedAt    DateTime?
+  revokedBy    String?
+  revokeReason String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([studentId, term, year])
+  @@index([schoolId, date])
+  @@index([category])
+}
+
+// School-specific behavior policies and thresholds
+model BehaviorPolicy {
+  id            String   @id @default(cuid())
+  school        School   @relation(fields: [schoolId], references: [id])
+  schoolId      String
+  name          String
+  type          String // "Merit" | "Demerit"
+  category      String
+  description   String?
+  defaultPoints Int
+  thresholds    Json // Array of threshold rules with actions
+  rewards       Json? // Rewards at merit thresholds
+  consequences  Json? // Consequences at demerit thresholds
+  isActive      Boolean  @default(true)
+  createdBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([schoolId, type])
+  @@index([category])
+}
+
+// Running balance of merits/demerits per student
+model BehaviorBalance {
+  id           String    @id @default(cuid())
+  student      Student   @relation(fields: [studentId], references: [id])
+  studentId    String    @unique
+  meritTotal   Int       @default(0)
+  demeritTotal Int       @default(0)
+  netBalance   Int       @default(0)
+  lastResetAt  DateTime?
+  resetHistory Json? // Array of reset records
+  updatedAt    DateTime  @updatedAt
+}
+
+// Threshold trigger records (when student crosses a threshold)
+model BehaviorThresholdTrigger {
+  id             String    @id @default(cuid())
+  student        Student   @relation(fields: [studentId], references: [id])
+  studentId      String
+  school         School    @relation(fields: [schoolId], references: [id])
+  schoolId       String
+  type           String // "Merit" | "Demerit"
+  thresholdValue Int
+  thresholdName  String
+  action         String // What action was triggered
+  status         String    @default("Pending") // Pending, Actioned, Dismissed
+  actionedBy     String?
+  actionedAt     DateTime?
+  notes          String?
+  createdAt      DateTime  @default(now())
+
+  @@index([studentId, type])
+  @@index([schoolId, status])
+}
+
+// ============================================
+// Communications & Messaging System
+// ============================================
+
+// Message thread (conversation)
+model MessageThread {
+  id            String    @id @default(cuid())
+  school        School    @relation(fields: [schoolId], references: [id])
+  schoolId      String
+  type          String // "Direct", "Class", "School", "Announcement"
+  subject       String?
+  participants  Json // Array of participant IDs and types
+  lastMessageAt DateTime?
+  isArchived    Boolean   @default(false)
+  messages      Message[]
+  createdBy     String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([schoolId, type])
+  @@index([lastMessageAt])
+}
+
+// Individual message in a thread
+model Message {
+  id          String        @id @default(cuid())
+  thread      MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  threadId    String
+  sender      AppUser       @relation(fields: [senderId], references: [id])
+  senderId    String
+  content     String        @db.Text
+  attachments Json? // Array of attachment URLs
+  readBy      Json          @default("[]") // Array of user IDs who have read
+  isEdited    Boolean       @default(false)
+  editedAt    DateTime?
+  createdAt   DateTime      @default(now())
+
+  @@index([threadId, createdAt])
+}
+
+// User notifications
+model Notification {
+  id        String    @id @default(cuid())
+  user      AppUser   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  school    School?   @relation(fields: [schoolId], references: [id])
+  schoolId  String?
+  type      String // "behavior", "grade", "message", "announcement", "report", "system"
+  title     String
+  body      String
+  data      Json? // Additional data for the notification
+  actionUrl String? // URL to navigate to when clicked
+  read      Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
+}
+
+// School announcements
+model Announcement {
+  id          String    @id @default(cuid())
+  school      School    @relation(fields: [schoolId], references: [id])
+  schoolId    String
+  title       String
+  content     String    @db.Text
+  audience    Json // Who should see this (roles, grades, classes)
+  priority    String    @default("Normal") // Low, Normal, High, Urgent
+  publishAt   DateTime?
+  expiresAt   DateTime?
+  isPinned    Boolean   @default(false)
+  attachments Json?
+  createdBy   AppUser   @relation(fields: [createdById], references: [id])
+  createdById String
+  status      String    @default("Draft") // Draft, Published, Archived
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([schoolId, status])
+  @@index([publishAt])
 }

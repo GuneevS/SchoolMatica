@@ -1,23 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Play, Shield, CheckCircle2, School, Users } from "lucide-react";
+import { ArrowRight, Play, Shield, CheckCircle2, School, Users, Award, BookOpen, MessageSquare, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useInView } from "@/lib/hooks/use-in-view";
 
-// Trust badges data
+// Trust badges data - South African focused
 const trustBadges = [
-  { icon: Shield, label: "CAPS Aligned", description: "Fully compliant" },
+  { icon: Shield, label: "CAPS Aligned", description: "DBE curriculum compliant" },
   { icon: School, label: "SA Schools", description: "Built for local educators" },
-  { icon: CheckCircle2, label: "POPIA Secure", description: "Data protection" },
+  { icon: CheckCircle2, label: "POPIA Secure", description: "Data protection assured" },
 ];
 
-// Key metrics
+// Key metrics - Updated for comprehensive platform
 const metrics = [
-  { value: "500+", label: "Schools" },
+  { value: "500+", label: "SA Schools" },
   { value: "25K+", label: "Educators" },
-  { value: "1M+", label: "Assessments" },
+  { value: "100K+", label: "Learners" },
+];
+
+// Platform features showcase
+const platformFeatures = [
+  { icon: BookOpen, label: "Academics", color: "text-blue-500" },
+  { icon: Users, label: "Administration", color: "text-violet-500" },
+  { icon: Award, label: "Behaviour", color: "text-emerald-500" },
+  { icon: MessageSquare, label: "Communication", color: "text-amber-500" },
 ];
 
 export function HeroSection() {
@@ -92,10 +100,10 @@ export function HeroSection() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[hsl(var(--accent-iris))] opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-[hsl(var(--accent-iris))]" />
               </span>
-              Now serving 500+ South African schools
+              Trusted by 500+ South African Schools
             </div>
 
-            {/* Main headline */}
+            {/* Main headline - Updated messaging */}
             <h1
               className={cn(
                 "text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1] mb-6",
@@ -103,12 +111,12 @@ export function HeroSection() {
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
               )}
             >
-              Replace Spreadsheet Chaos with{" "}
-              <span className="gradient-text">Policy-Smart</span>{" "}
-              Assessment Management
+              The Complete{" "}
+              <span className="gradient-text">School Management</span>{" "}
+              Platform for South Africa
             </h1>
 
-            {/* Subtitle */}
+            {/* Subtitle - Updated for comprehensive platform */}
             <p
               className={cn(
                 "text-lg sm:text-xl text-muted-foreground leading-relaxed mb-8",
@@ -116,10 +124,32 @@ export function HeroSection() {
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
               )}
             >
-              SchoolMatica gives South African educators spreadsheet-speed workflows 
-              with built-in CAPS compliance, automatic calculations, and complete 
-              moderation oversight—all in one beautiful platform.
+              Academics, administration, behaviour tracking, and parent communication—all 
+              in one powerful platform. Built for South African schools with CAPS alignment, 
+              DBE compliance, and world-class design.
             </p>
+
+            {/* Platform Features Pills */}
+            <div
+              className={cn(
+                "flex flex-wrap justify-center lg:justify-start gap-2 mb-8",
+                "transition-all duration-700 delay-250",
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+              )}
+            >
+              {platformFeatures.map((feature) => {
+                const Icon = feature.icon;
+                return (
+                  <div
+                    key={feature.label}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/50 dark:bg-white/5 border border-white/20 text-sm"
+                  >
+                    <Icon className={cn("h-4 w-4", feature.color)} />
+                    <span className="font-medium">{feature.label}</span>
+                  </div>
+                );
+              })}
+            </div>
 
             {/* CTA Buttons */}
             <div
@@ -131,7 +161,7 @@ export function HeroSection() {
             >
               <Button
                 size="lg"
-                className="w-full sm:w-auto group"
+                className="w-full sm:w-auto group bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white shadow-lg shadow-violet-500/30"
                 asChild
               >
                 <Link
@@ -192,7 +222,7 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Visual Column - App Mockup */}
+          {/* Visual Column - Enhanced App Mockup */}
           <div
             className={cn(
               "relative lg:pl-8",
@@ -221,9 +251,9 @@ export function HeroSection() {
                   </div>
                 </div>
 
-                {/* App preview content */}
+                {/* App preview content - Dashboard mockup */}
                 <div className="aspect-[16/10] bg-gradient-to-br from-[hsl(var(--canvas))] to-[hsl(var(--surface-soft))] p-4">
-                  {/* Simplified dashboard mockup */}
+                  {/* Dashboard mockup */}
                   <div className="h-full flex flex-col gap-3">
                     {/* Top bar */}
                     <div className="flex items-center justify-between">
@@ -239,41 +269,49 @@ export function HeroSection() {
 
                     {/* Content area */}
                     <div className="flex-1 grid grid-cols-3 gap-3">
-                      {/* Stats cards */}
-                      <div className="col-span-3 grid grid-cols-3 gap-3">
-                        {[1, 2, 3].map((i) => (
+                      {/* Stats cards - representing different modules */}
+                      <div className="col-span-3 grid grid-cols-4 gap-2">
+                        {[
+                          { label: "Classes", color: "from-blue-500 to-cyan-500" },
+                          { label: "Students", color: "from-violet-500 to-purple-500" },
+                          { label: "Merits", color: "from-emerald-500 to-green-500" },
+                          { label: "Messages", color: "from-amber-500 to-orange-500" },
+                        ].map((stat, i) => (
                           <div
-                            key={i}
-                            className="glass-panel rounded-xl p-3 flex flex-col"
+                            key={stat.label}
+                            className="glass-panel rounded-xl p-2 flex flex-col"
                           >
-                            <div className="h-3 w-16 bg-[hsl(var(--muted))] rounded mb-2" />
-                            <div className="h-6 w-12 bg-gradient-to-r from-[hsl(var(--accent-iris))] to-[hsl(var(--accent-violet))] rounded" />
+                            <div className="h-2 w-12 bg-[hsl(var(--muted))] rounded mb-1.5" />
+                            <div className={cn("h-5 w-10 rounded bg-gradient-to-r", stat.color)} />
                           </div>
                         ))}
                       </div>
 
-                      {/* Main content area - Table mockup */}
+                      {/* Main content area - Performance chart */}
                       <div className="col-span-2 glass-panel rounded-xl p-3">
                         <div className="h-3 w-24 bg-[hsl(var(--muted))] rounded mb-3" />
-                        <div className="space-y-2">
-                          {[1, 2, 3, 4].map((i) => (
-                            <div key={i} className="flex gap-2">
-                              <div className="h-6 w-1/4 bg-[hsl(var(--muted))]/50 rounded" />
-                              <div className="h-6 w-1/4 bg-[hsl(var(--muted))]/30 rounded" />
-                              <div className="h-6 w-1/4 bg-[hsl(var(--accent-mint))]/20 rounded" />
-                              <div className="h-6 w-1/4 bg-[hsl(var(--muted))]/30 rounded" />
-                            </div>
+                        <div className="flex items-end gap-1 h-16">
+                          {[65, 80, 55, 90, 70, 85, 75].map((h, i) => (
+                            <div
+                              key={i}
+                              className="flex-1 bg-gradient-to-t from-[hsl(var(--accent-iris))] to-[hsl(var(--accent-violet))] rounded-t opacity-70"
+                              style={{ height: `${h}%` }}
+                            />
                           ))}
                         </div>
                       </div>
 
-                      {/* Side panel */}
+                      {/* Side panel - Recent activity */}
                       <div className="glass-panel rounded-xl p-3">
                         <div className="h-3 w-16 bg-[hsl(var(--muted))] rounded mb-3" />
                         <div className="space-y-2">
-                          {[1, 2, 3].map((i) => (
+                          {[
+                            { color: "bg-emerald-500" },
+                            { color: "bg-amber-500" },
+                            { color: "bg-blue-500" },
+                          ].map((item, i) => (
                             <div key={i} className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-[hsl(var(--accent-mint))]" />
+                              <div className={cn("w-2 h-2 rounded-full", item.color)} />
                               <div className="h-3 flex-1 bg-[hsl(var(--muted))]/50 rounded" />
                             </div>
                           ))}
@@ -284,15 +322,15 @@ export function HeroSection() {
                 </div>
               </div>
 
-              {/* Floating metric cards */}
+              {/* Floating metric cards - Updated for comprehensive platform */}
               <div className="absolute -left-4 top-1/4 glass-panel rounded-xl p-3 shadow-ambient-sm animate-float hidden lg:block">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-[hsl(var(--accent-mint))]/20 flex items-center justify-center">
-                    <CheckCircle2 className="w-4 h-4 text-[hsl(var(--accent-mint))]" />
+                    <BarChart3 className="w-4 h-4 text-[hsl(var(--accent-mint))]" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Assessments</p>
-                    <p className="text-sm font-semibold">Auto-calculated</p>
+                    <p className="text-xs text-muted-foreground">Analytics</p>
+                    <p className="text-sm font-semibold">Real-time insights</p>
                   </div>
                 </div>
               </div>
@@ -300,11 +338,23 @@ export function HeroSection() {
               <div className="absolute -right-4 bottom-1/4 glass-panel rounded-xl p-3 shadow-ambient-sm animate-float [animation-delay:1.5s] hidden lg:block">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-[hsl(var(--accent-iris))]/20 flex items-center justify-center">
-                    <Users className="w-4 h-4 text-[hsl(var(--accent-iris))]" />
+                    <MessageSquare className="w-4 h-4 text-[hsl(var(--accent-iris))]" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Collaboration</p>
-                    <p className="text-sm font-semibold">Real-time sync</p>
+                    <p className="text-xs text-muted-foreground">Communication</p>
+                    <p className="text-sm font-semibold">Parent portal</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="absolute -left-2 bottom-1/3 glass-panel rounded-xl p-3 shadow-ambient-sm animate-float [animation-delay:3s] hidden lg:block">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-[hsl(var(--accent-violet))]/20 flex items-center justify-center">
+                    <Award className="w-4 h-4 text-[hsl(var(--accent-violet))]" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Behaviour</p>
+                    <p className="text-sm font-semibold">Merit tracking</p>
                   </div>
                 </div>
               </div>

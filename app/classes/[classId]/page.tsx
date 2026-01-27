@@ -13,6 +13,9 @@ import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 import { BookOpenCheck } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getActiveSchool } from "@/lib/school";
+
+// Force dynamic rendering - requires database
+export const dynamic = "force-dynamic";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ManageTeachers } from "@/components/classes/manage-teachers";
 import { ManageStudents } from "@/components/classes/manage-students";

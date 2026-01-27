@@ -14,6 +14,9 @@ import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 import { getAuthorizedActiveSchool, getServerAuthContext } from "@/lib/auth-server";
 import { RolePersonalizedHighlights } from "@/components/dashboard/role-personalized-highlights";
 
+// Force dynamic rendering - requires auth and database
+export const dynamic = "force-dynamic";
+
 const heroHighlights = [
   { label: "Live SBA pulse", color: "hsl(var(--accent-iris))" },
   { label: "Moderation guardrails", color: "hsl(var(--accent-mint))" },

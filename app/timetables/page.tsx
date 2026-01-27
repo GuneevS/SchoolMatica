@@ -7,6 +7,9 @@ import Link from "next/link";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 import { getAuthorizedActiveSchool, getServerAuthContext } from "@/lib/auth-server";
 
+// Force dynamic rendering - requires auth and database
+export const dynamic = "force-dynamic";
+
 export default async function TimetablesPage() {
   const [auth, school] = await Promise.all([
     getServerAuthContext(),

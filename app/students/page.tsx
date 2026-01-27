@@ -2,6 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { StudentDirectory } from "@/components/students/student-directory";
 import { getActiveSchool } from "@/lib/school";
 
+// Force dynamic rendering - requires database
+export const dynamic = "force-dynamic";
+
 export default async function StudentsPage() {
   const school = await getActiveSchool();
   if (!school) {

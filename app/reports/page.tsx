@@ -6,6 +6,9 @@ import { FileText, Download, Eye, Plus } from "lucide-react";
 import Link from "next/link";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 
+// Force dynamic rendering - requires database
+export const dynamic = "force-dynamic";
+
 export default async function ReportsPage() {
   const schools = await prisma.school.findMany();
   const school = schools[0];

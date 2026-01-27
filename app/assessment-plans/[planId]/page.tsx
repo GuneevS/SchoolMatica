@@ -11,6 +11,9 @@ import { ClipboardList } from "lucide-react";
 import { calculateAssessmentWeightInsights, type TermWeights } from "@/lib/calculations";
 import { getServerAuthContext, hasServerSchoolAccess } from "@/lib/auth-server";
 
+// Force dynamic rendering - requires auth and database
+export const dynamic = "force-dynamic";
+
 interface Props {
   params: Promise<{ planId: string }>;
 }

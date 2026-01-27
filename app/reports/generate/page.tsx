@@ -2,6 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { ReportGeneratorForm } from "@/components/reports/report-generator-form";
 import { AuroraHero } from "@/components/layout/aurora-hero";
 
+// Force dynamic rendering - this page makes database calls
+export const dynamic = "force-dynamic";
+
 export default async function GenerateReportsPage() {
   const schools = await prisma.school.findMany();
   const school = schools[0];

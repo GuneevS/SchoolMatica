@@ -6,6 +6,9 @@ import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 import { ShieldCheck } from "lucide-react";
 import { getActiveSchool } from "@/lib/school";
 
+// Force dynamic rendering - requires database
+export const dynamic = "force-dynamic";
+
 export default async function RegistrationsPage() {
   const school = await getActiveSchool();
   if (!school) {

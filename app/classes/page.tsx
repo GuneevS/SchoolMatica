@@ -8,6 +8,9 @@ import { Users } from "lucide-react";
 import { getAuthorizedActiveSchool, getServerAuthContext } from "@/lib/auth-server";
 import { AssignTeacherDialog } from "@/components/classes/assign-teacher-dialog";
 
+// Force dynamic rendering - requires auth and database
+export const dynamic = "force-dynamic";
+
 export default async function ClassesPage() {
   const [auth, school] = await Promise.all([
     getServerAuthContext(),

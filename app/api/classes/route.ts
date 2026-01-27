@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authorizeWithSchool, getUserSchoolIds, isSystemAdmin, hasSchoolAccess } from "@/lib/auth";
 
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
   }
   
   // Build where clause based on user permissions
-  let whereClause: any = {};
+  let whereClause: Prisma.ClassGroupWhereInput = {};
   if (isSystemAdmin(auth)) {
     // Admin can see all classes, optionally filtered by schoolId
     if (schoolId) {

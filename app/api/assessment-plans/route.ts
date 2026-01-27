@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { cloneTemplateToPlan } from "@/lib/assessment-service";
 import { authorizeWithSchool, hasSchoolAccess, getUserSchoolIds, isSystemAdmin } from "@/lib/auth";
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
   const classId = searchParams.get("classId");
   
   // Build where clause based on user permissions
-  let whereClause: any = {};
+  let whereClause: Prisma.AssessmentPlanWhereInput = {};
   
   if (classId) {
     // Verify the class belongs to an accessible school

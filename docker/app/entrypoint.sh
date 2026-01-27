@@ -39,17 +39,24 @@ RETRY_INTERVAL=${DB_RETRY_INTERVAL:-2}
 RETRY_COUNT=0
 
 wait_for_database() {
+    # Extract host and port from DATABASE_URL
+    # Format: postgresql://user:pass@host:port/database
+    DB_HOST=$(echo "$DATABASE_URL" | sed -E 's|.*@([^:]+):([0-9]+)/.*|\1|')
+    DB_PORT=$(echo "$DATABASE_URL" | sed -E 's|.*@([^:]+):([0-9]+)/.*|\2|')
+
+    echo "   Waiting for database at ${DB_HOST}:${DB_PORT}..."
+
     while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-        # Try to run a simple Prisma command to check connectivity
-        if npx prisma db execute --stdin <<< "SELECT 1;" 2>/dev/null; then
+        # Use node to check TCP connectivity (nc might not be available)
+        if node -e "const net = require('net'); const s = new net.Socket(); s.setTimeout(2000); s.connect(${DB_PORT}, '${DB_HOST}', () => { s.destroy(); process.exit(0); }); s.on('error', () => process.exit(1)); s.on('timeout', () => { s.destroy(); process.exit(1); });" 2>/dev/null; then
             return 0
         fi
-        
+
         RETRY_COUNT=$((RETRY_COUNT + 1))
         echo "   ⏳ Database not ready, retrying in ${RETRY_INTERVAL}s... ($RETRY_COUNT/$MAX_RETRIES)"
         sleep $RETRY_INTERVAL
     done
-    
+
     return 1
 }
 
@@ -61,32 +68,29 @@ fi
 echo "✅ Database connection established"
 
 # -----------------------------------------------------------------------------
-# Database migrations
+# Database migrations (optional - can be run separately)
 # -----------------------------------------------------------------------------
 echo ""
-echo "📦 Running database operations..."
+echo "📦 Checking database schema..."
 
-if [ "$NODE_ENV" = "production" ]; then
-    echo "   Running production migrations..."
-    
-    # Try migrate deploy first (preferred for production)
-    if npx prisma migrate deploy 2>&1; then
-        echo "   ✅ Migrations applied successfully"
-    else
-        echo "   ⚠️ Migration deploy failed, attempting schema push..."
-        if npx prisma db push --skip-generate --accept-data-loss=false 2>&1; then
-            echo "   ✅ Schema push completed"
-        else
-            echo "   ❌ Database schema sync failed"
-            exit 1
-        fi
-    fi
+# In production, we expect migrations to be handled externally
+# This is safer and allows for controlled schema updates
+if [ "$SKIP_MIGRATIONS" = "true" ]; then
+    echo "   ⏭️ Skipping migrations (SKIP_MIGRATIONS=true)"
+elif [ "$NODE_ENV" = "production" ]; then
+    echo "   ℹ️ Production mode: Migrations should be run separately"
+    echo "   Run: docker exec <container> npx prisma migrate deploy"
+    echo "   Or use a migration job before deploying"
 else
     echo "   Running development schema sync..."
-    npx prisma db push --skip-generate 2>&1 || {
-        echo "   ⚠️ Schema push failed, database may need manual intervention"
-    }
-    echo "   ✅ Development schema synced"
+    if command -v npx >/dev/null 2>&1; then
+        npx prisma db push --skip-generate 2>&1 || {
+            echo "   ⚠️ Schema push failed, continuing anyway..."
+        }
+        echo "   ✅ Development schema synced"
+    else
+        echo "   ⚠️ npx not available, skipping schema sync"
+    fi
 fi
 
 # -----------------------------------------------------------------------------

@@ -53,12 +53,11 @@ export async function GET(request: NextRequest) {
         };
     }
 
-    // 3. Application info
+    // 3. Application info (limited exposure for security)
     const appInfo = {
         name: "SchoolMatica",
         version: process.env.npm_package_version || "1.0.0",
-        environment: process.env.NODE_ENV || "development",
-        uptime: process.uptime(),
+        // Note: NODE_ENV and uptime intentionally excluded from public health endpoint
     };
 
     const response = {

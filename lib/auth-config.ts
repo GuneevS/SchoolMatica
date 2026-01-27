@@ -6,8 +6,10 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 
-// CRITICAL: Validate NEXTAUTH_SECRET is set
-if (!process.env.NEXTAUTH_SECRET) {
+// CRITICAL: Validate NEXTAUTH_SECRET is set at runtime (not during build)
+// During Next.js build, this file is analyzed but we use a placeholder secret
+const isBuildTime = process.env.NODE_ENV === "production" && !process.env.NEXTAUTH_URL;
+if (!isBuildTime && !process.env.NEXTAUTH_SECRET) {
     throw new Error(
         "NEXTAUTH_SECRET environment variable is required but not set. " +
         "Generate one with: openssl rand -base64 32"

@@ -5,6 +5,9 @@ import { CreateTimetableForm } from "@/components/timetable/create-timetable-for
 import { AuroraHero } from "@/components/layout/aurora-hero";
 import { Calendar } from "lucide-react";
 
+// Force dynamic rendering - requires auth and database
+export const dynamic = "force-dynamic";
+
 export default async function CreateTimetablePage() {
   const school = await getActiveSchool();
   if (!school) {

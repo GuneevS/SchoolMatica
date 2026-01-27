@@ -4,6 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 import { Ruler } from "lucide-react";
 
+// Force dynamic rendering - requires database
+export const dynamic = "force-dynamic";
+
 export default async function GradingSettingsPage() {
   const config = await prisma.gradingConfig.findFirst();
   const phases = (config?.phasesJson as Record<string, { minPercent: number; level: number; descriptor: string }[]>) ?? {};

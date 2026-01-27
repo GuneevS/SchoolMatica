@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authorizeWithSchool, hasSchoolAccess, getUserSchoolIds, isSystemAdmin } from "@/lib/auth";
 
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
   const entityId = searchParams.get("entityId") ?? undefined;
   
   // Build where clause based on user permissions
-  let whereClause: any = {
+  let whereClause: Prisma.AuditLogWhereInput = {
     entityType,
     entityId,
   };

@@ -9,6 +9,9 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
+// Force dynamic rendering - requires database
+export const dynamic = "force-dynamic";
+
 interface Props {
   params: Promise<{ studentId: string }>;
 }

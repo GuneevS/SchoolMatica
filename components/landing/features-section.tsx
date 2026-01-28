@@ -13,6 +13,11 @@ import {
   MessageSquare,
   Download,
   CheckCircle2,
+  CreditCard,
+  Calendar,
+  BookOpen,
+  Award,
+  Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useInView } from "@/lib/hooks/use-in-view";
@@ -35,54 +40,54 @@ const features: Feature[] = [
     highlights: ["Multi-select editing", "Drag-fill values", "Keyboard shortcuts"],
   },
   {
-    icon: Calculator,
-    title: "Auto Calculations",
+    icon: MessageSquare,
+    title: "Parent Communications",
     description:
-      "Automatic weighted averages, term totals, and promotion calculations. Built-in formulas that respect CAPS requirements—no more broken Excel formulas.",
-    color: "cobalt",
-    highlights: ["Weighted averages", "Term totals", "Promotion logic"],
-  },
-  {
-    icon: Shield,
-    title: "CAPS Policy Engine",
-    description:
-      "Assessment types, weightings, and structures automatically comply with CAPS requirements. Policy violations are flagged before they become problems.",
-    color: "mint",
-    highlights: ["Auto compliance", "Policy alerts", "Audit-ready"],
-  },
-  {
-    icon: GitBranch,
-    title: "Moderation Workflows",
-    description:
-      "Structured moderation threads with version tracking. HODs can review, comment, and approve assessments with complete visibility.",
+      "Real-time messaging with parents, bulk personalized communications, and automated notifications. Keep everyone informed with chatbot-like workflows.",
     color: "violet",
-    highlights: ["Threaded comments", "Version history", "Approval flows"],
+    highlights: ["Real-time chat", "Bulk messaging", "Auto-notifications"],
   },
   {
-    icon: Users,
-    title: "Role-Based Access",
+    icon: CreditCard,
+    title: "Fees & Accounting",
     description:
-      "Teachers see their classes, HODs see their departments, Admin sees everything. Granular permissions that match your school's hierarchy.",
+      "Complete fee management with invoicing, payment tracking, and reconciliation. Supports EFT, card, Apple Pay, Google Pay, and SA payment gateways.",
+    color: "mint",
+    highlights: ["Multi-payment support", "Auto-invoicing", "Account recons"],
+  },
+  {
+    icon: Award,
+    title: "Merit/Demerit System",
+    description:
+      "Track student behavior with running totals, automatic parent notifications, and comprehensive audit trails. Reward excellence, address concerns.",
     color: "flamingo",
-    highlights: ["Teacher view", "HOD dashboards", "Admin oversight"],
+    highlights: ["Running totals", "Parent alerts", "Full audit trail"],
   },
   {
-    icon: FileBarChart,
-    title: "Instant Reports",
+    icon: Calendar,
+    title: "Events Calendar",
     description:
-      "Generate mark schedules, learner progress reports, and analysis at the click of a button. Export to PDF or integrate with SA-SAMS.",
+      "School-wide events with smart filtering by grade, class, or role. Sync to personal calendars and never miss an important date.",
+    color: "cobalt",
+    highlights: ["Smart filtering", "Calendar sync", "Role-based views"],
+  },
+  {
+    icon: BookOpen,
+    title: "Homework Tracking",
+    description:
+      "Assign homework, track submissions, and automatically notify parents when assignments are missing. Streamlined workflow for busy teachers.",
     color: "iris",
-    highlights: ["PDF exports", "SA-SAMS ready", "Custom templates"],
+    highlights: ["Easy assignment", "Submission tracking", "Parent alerts"],
   },
 ];
 
 const additionalFeatures = [
   { icon: Zap, label: "Real-time Sync" },
   { icon: Lock, label: "Data Security" },
-  { icon: Settings2, label: "Custom Config" },
-  { icon: MessageSquare, label: "In-app Support" },
-  { icon: Download, label: "Bulk Import" },
-  { icon: CheckCircle2, label: "Backup & Recovery" },
+  { icon: Shield, label: "CAPS Compliance" },
+  { icon: FileBarChart, label: "SA-SAMS Ready" },
+  { icon: Users, label: "Role-Based Access" },
+  { icon: Bell, label: "Smart Notifications" },
 ];
 
 const colorClasses = {

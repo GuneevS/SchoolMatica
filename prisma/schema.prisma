@@ -179,6 +179,15 @@ model School {
   notifications  Notification[]
   announcements  Announcement[]
 
+  // Fees & Accounting
+  feeStructures FeeStructure[]
+  invoices      Invoice[]
+  ledgerEntries AccountLedger[]
+
+  // Homework & Events
+  homework     Homework[]
+  schoolEvents SchoolEvent[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -225,6 +234,7 @@ model ClassGroup {
   timetableSlots       TimetableSlot[]
   learnerComments      LearnerComment[]
   reportCards          ReportCard[]
+  homework             Homework[]
   createdAt            DateTime                 @default(now())
   updatedAt            DateTime                 @updatedAt
 }
@@ -255,6 +265,14 @@ model Student {
   behaviorBalance   BehaviorBalance?
   behaviorTriggers  BehaviorThresholdTrigger[]
 
+  // Fees & Accounting
+  discounts     StudentDiscount[]
+  invoices      Invoice[]
+  ledgerEntries AccountLedger[]
+
+  // Homework
+  homeworkSubmissions HomeworkSubmission[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -276,6 +294,7 @@ model Teacher {
   account            AppUser?                   @relation("TeacherAccount")
   timetableSlots     TimetableSlot[]
   invitations        TeacherInvitation[]
+  homework           Homework[]
   createdAt          DateTime                   @default(now())
   updatedAt          DateTime                   @updatedAt
 }
@@ -325,6 +344,9 @@ model ParentContact {
 
   // Invitation for account creation
   invitation ParentInvitation[]
+
+  // Invoices associated with this parent
+  invoices Invoice[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -913,4 +935,231 @@ model Announcement {
 
   @@index([schoolId, status])
   @@index([publishAt])
+}
+
+// ============================================
+// Fees, Invoicing & Accounting System
+// ============================================
+
+// Fee structure definitions for the school
+model FeeStructure {
+  id          String        @id @default(cuid())
+  school      School        @relation(fields: [schoolId], references: [id])
+  schoolId    String
+  name        String // e.g., "Grade 10 Annual Fees 2024"
+  description String?
+  grade       Int? // Optional: specific grade
+  year        Int
+  term        String? // Optional: specific term or "Annual"
+  baseAmount  Float // Base fee amount in ZAR
+  isActive    Boolean       @default(true)
+  components  Json // Array of fee components: [{name, amount, optional, description}]
+  discounts   FeeDiscount[]
+  invoices    Invoice[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([schoolId, year])
+  @@index([grade])
+}
+
+// Discount/Bursary definitions
+model FeeDiscount {
+  id            String       @id @default(cuid())
+  feeStructure  FeeStructure @relation(fields: [feeStructureId], references: [id])
+  feeStructureId String
+  name          String // e.g., "Sibling Discount", "Merit Bursary"
+  type          String // "Percentage" | "FixedAmount"
+  value         Float // Percentage (e.g., 10) or fixed amount in ZAR
+  criteria      Json? // Eligibility criteria
+  maxUsage      Int? // Maximum number of students this can apply to
+  currentUsage  Int          @default(0)
+  validFrom     DateTime?
+  validUntil    DateTime?
+  isActive      Boolean      @default(true)
+  applications  StudentDiscount[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+// Student-specific discount applications
+model StudentDiscount {
+  id          String      @id @default(cuid())
+  student     Student     @relation(fields: [studentId], references: [id])
+  studentId   String
+  discount    FeeDiscount @relation(fields: [discountId], references: [id])
+  discountId  String
+  approvedBy  String? // User ID who approved
+  approvedAt  DateTime?
+  notes       String?
+  status      String      @default("Pending") // Pending, Approved, Rejected, Expired
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([studentId, discountId])
+}
+
+// Invoice generation
+model Invoice {
+  id              String          @id @default(cuid())
+  invoiceNumber   String          @unique // Auto-generated: INV-2024-001
+  school          School          @relation(fields: [schoolId], references: [id])
+  schoolId        String
+  student         Student         @relation(fields: [studentId], references: [id])
+  studentId       String
+  feeStructure    FeeStructure?   @relation(fields: [feeStructureId], references: [id])
+  feeStructureId  String?
+  parentContact   ParentContact?  @relation(fields: [parentContactId], references: [id])
+  parentContactId String?
+  term            String
+  year            Int
+  subtotal        Float // Total before discounts
+  discountAmount  Float           @default(0)
+  taxAmount       Float           @default(0)
+  totalAmount     Float // Final amount due
+  paidAmount      Float           @default(0)
+  balanceDue      Float // totalAmount - paidAmount
+  status          String          @default("Draft") // Draft, Sent, Partially Paid, Paid, Overdue, Cancelled
+  dueDate         DateTime
+  sentAt          DateTime?
+  lineItems       Json // Array of line items with amounts
+  appliedDiscounts Json? // Discounts applied to this invoice
+  notes           String?
+  payments        Payment[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([schoolId, status])
+  @@index([studentId])
+  @@index([dueDate])
+}
+
+// Payment records
+model Payment {
+  id              String    @id @default(cuid())
+  paymentRef      String    @unique // Auto-generated: PAY-2024-001
+  invoice         Invoice   @relation(fields: [invoiceId], references: [id])
+  invoiceId       String
+  amount          Float
+  method          String // "EFT", "Card", "Cash", "ApplePay", "GooglePay", "PayFast", "Snapscan"
+  gateway         String? // Payment gateway used
+  gatewayRef      String? // External payment reference
+  status          String    @default("Pending") // Pending, Processing, Completed, Failed, Refunded
+  paidBy          String? // Name of person who made payment
+  paidByContact   String? // Email or phone
+  processedAt     DateTime?
+  failureReason   String?
+  metadata        Json? // Additional payment metadata
+  receiptUrl      String? // URL to payment receipt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([invoiceId])
+  @@index([status])
+}
+
+// Account statement/ledger for reconciliation
+model AccountLedger {
+  id          String   @id @default(cuid())
+  school      School   @relation(fields: [schoolId], references: [id])
+  schoolId    String
+  student     Student  @relation(fields: [studentId], references: [id])
+  studentId   String
+  type        String // "Invoice", "Payment", "Credit", "Adjustment", "WriteOff"
+  description String
+  debit       Float    @default(0)
+  credit      Float    @default(0)
+  balance     Float // Running balance
+  reference   String? // Related invoice/payment ID
+  createdBy   String?
+  createdAt   DateTime @default(now())
+
+  @@index([schoolId, studentId])
+  @@index([createdAt])
+}
+
+// ============================================
+// Homework/Assignment System
+// ============================================
+
+// Homework assignments (separate from assessments)
+model Homework {
+  id           String             @id @default(cuid())
+  school       School             @relation(fields: [schoolId], references: [id])
+  schoolId     String
+  classGroup   ClassGroup         @relation(fields: [classGroupId], references: [id])
+  classGroupId String
+  teacher      Teacher            @relation(fields: [teacherId], references: [id])
+  teacherId    String
+  title        String
+  description  String?            @db.Text
+  subject      String
+  dueDate      DateTime
+  assignedDate DateTime           @default(now())
+  attachments  Json? // Array of file URLs
+  points       Int? // Optional points value
+  status       String             @default("Active") // Active, Completed, Cancelled
+  submissions  HomeworkSubmission[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([schoolId, dueDate])
+  @@index([classGroupId])
+  @@index([teacherId])
+}
+
+// Student homework submissions
+model HomeworkSubmission {
+  id           String    @id @default(cuid())
+  homework     Homework  @relation(fields: [homeworkId], references: [id])
+  homeworkId   String
+  student      Student   @relation(fields: [studentId], references: [id])
+  studentId    String
+  status       String    @default("Pending") // Pending, Submitted, Late, Missing, Excused
+  submittedAt  DateTime?
+  attachments  Json? // Submitted files
+  grade        String? // Optional grade: "Complete", "Incomplete", or numeric
+  feedback     String?
+  checkedBy    String? // Teacher who checked
+  checkedAt    DateTime?
+  parentNotified Boolean  @default(false) // Was parent notified if missing?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([homeworkId, studentId])
+  @@index([homeworkId])
+  @@index([studentId, status])
+}
+
+// ============================================
+// Events Calendar System
+// ============================================
+
+// School events
+model SchoolEvent {
+  id           String    @id @default(cuid())
+  school       School    @relation(fields: [schoolId], references: [id])
+  schoolId     String
+  title        String
+  description  String?   @db.Text
+  eventType    String // "Academic", "Sports", "Cultural", "Meeting", "Holiday", "Exam", "Other"
+  startDate    DateTime
+  endDate      DateTime?
+  startTime    String? // HH:MM format
+  endTime      String?
+  location     String?
+  isAllDay     Boolean   @default(false)
+  isRecurring  Boolean   @default(false)
+  recurrence   Json? // Recurrence rules
+  audience     Json // Who can see: ["all"] or specific grades/classes
+  color        String? // Calendar display color
+  attachments  Json?
+  reminders    Json? // Array of reminder configs
+  createdBy    String
+  status       String    @default("Active") // Active, Cancelled, Completed
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([schoolId, startDate])
+  @@index([eventType])
 }

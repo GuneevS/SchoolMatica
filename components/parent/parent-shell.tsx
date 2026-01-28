@@ -11,18 +11,22 @@ import {
   Bell,
   Settings,
   LogOut,
-  ChevronRight,
+  CreditCard,
+  Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { signOut } from "next-auth/react";
+import { UnifiedLogo } from "@/components/brand/unified-logo";
 
 const navItems = [
   { label: "Dashboard", href: "/parent", icon: Home },
   { label: "My Children", href: "/parent/children", icon: Users },
   { label: "Messages", href: "/parent/messages", icon: MessageSquare, badge: 3 },
+  { label: "Fees & Payments", href: "/parent/fees", icon: CreditCard },
+  { label: "Events", href: "/parent/events", icon: Calendar },
   { label: "Reports", href: "/parent/reports", icon: FileText },
   { label: "Behaviour", href: "/parent/behavior", icon: Award },
 ];
@@ -54,15 +58,10 @@ export function ParentShell({ children, user }: Props) {
       {/* Sidebar */}
       <aside className="relative z-10 hidden w-64 flex-col border-r border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))/0.9] px-6 py-8 shadow-ambient-sm backdrop-blur lg:flex xl:w-72">
         {/* Logo */}
-        <div className="mb-10 flex items-center gap-3 text-lg font-semibold">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[hsl(var(--accent-mint))]/15 text-[hsl(var(--accent-mint))]">
-            <Users className="h-5 w-5" />
-          </div>
-          <div>
-            <p>SchoolMatica</p>
-            <p className="text-xs font-normal text-muted-foreground">Parent Portal</p>
-          </div>
-        </div>
+        <Link href="/parent" className="mb-10 block hover:opacity-90 transition-opacity">
+          <UnifiedLogo variant="full" size="sm" colorScheme="gradient" />
+          <p className="text-xs font-normal text-muted-foreground mt-1 ml-[52px]">Parent Portal</p>
+        </Link>
 
         {/* Navigation */}
         <nav className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">

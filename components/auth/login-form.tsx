@@ -20,10 +20,10 @@ import {
   ArrowRight,
   Mail,
   Lock,
-  Sparkles,
   Shield,
   AlertCircle,
 } from "lucide-react";
+import { UnifiedLogo } from "@/components/brand/unified-logo";
 import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
@@ -98,8 +98,8 @@ export function LoginForm() {
     <div className="w-full max-w-md mx-auto">
       {/* Logo and Title */}
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/25 mb-4">
-          <Sparkles className="h-8 w-8 text-white" />
+        <div className="flex justify-center mb-4">
+          <UnifiedLogo variant="icon" size="lg" />
         </div>
         <h1 className="text-2xl font-bold text-white dark:text-white">
           Welcome to SchoolMatica

@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { RegisterForm } from "@/components/auth/register-form";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
+import { UnifiedLogo } from "@/components/brand/unified-logo";
 
 export const metadata = {
   title: "Register Your School | SchoolMatica",
@@ -55,12 +56,9 @@ export default function RegisterPage() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link 
             href="/" 
-            className="flex items-center gap-2 text-xl font-bold text-white hover:opacity-80 transition-opacity"
+            className="hover:opacity-80 transition-opacity"
           >
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/25">
-              <span className="text-white text-sm font-bold">SM</span>
-            </div>
-            SchoolMatica
+            <UnifiedLogo variant="full" size="sm" colorScheme="light" />
           </Link>
           <div className="flex items-center gap-4">
             <Link

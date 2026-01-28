@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Mail, Phone, MapPin, Twitter, Linkedin, Facebook, Youtube } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Logo } from "./logo";
+import { UnifiedLogo } from "@/components/brand/unified-logo";
 import { Button } from "@/components/ui/button";
 
 const footerLinks = {
@@ -65,7 +65,7 @@ export function LandingFooter() {
         <div className="py-16 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 lg:gap-12">
           {/* Brand column */}
           <div className="col-span-2 md:col-span-3 lg:col-span-2">
-            <Logo variant="full" className="mb-6" />
+            <UnifiedLogo variant="full" size="md" colorScheme="gradient" className="mb-6" />
             <p className="text-sm text-muted-foreground max-w-xs mb-6 leading-relaxed">
               Transform your school&apos;s assessment management with policy-smart 
               workflows designed for South African educators.

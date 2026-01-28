@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Menu, X, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Logo, LogoMono } from "./logo";
+import { UnifiedLogo } from "@/components/brand/unified-logo";
 
 interface NavItem {
   label: string;
@@ -59,7 +59,7 @@ export function LandingNavbar() {
         className={cn(
           "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
           isScrolled
-            ? "py-3 glass-panel border-b border-[hsl(var(--border-strong))/0.3]"
+            ? "py-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 shadow-sm"
             : "py-5 bg-transparent"
         )}
       >
@@ -67,16 +67,11 @@ export function LandingNavbar() {
           <nav className="flex items-center justify-between" aria-label="Main navigation">
             {/* Logo */}
             <Link href="/" className="relative z-10">
-              <Logo
+              <UnifiedLogo
                 variant="full"
-                iconClassName={cn(
-                  "h-9 w-9 transition-all duration-300",
-                  isScrolled && "h-8 w-8"
-                )}
-                textClassName={cn(
-                  "transition-all duration-300",
-                  isScrolled ? "text-xl" : "text-2xl"
-                )}
+                size={isScrolled ? "sm" : "md"}
+                colorScheme="gradient"
+                className="transition-all duration-300"
               />
             </Link>
 
@@ -144,10 +139,12 @@ export function LandingNavbar() {
           onClick={() => setIsMobileMenuOpen(false)}
         />
 
-        {/* Menu Panel */}
+        {/* Menu Panel - Solid background for better legibility */}
         <div
           className={cn(
-            "absolute top-0 right-0 bottom-0 w-[280px] aurora-panel",
+            "absolute top-0 right-0 bottom-0 w-[280px]",
+            "bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800",
+            "shadow-2xl",
             "transform transition-transform duration-300 ease-out",
             isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
           )}

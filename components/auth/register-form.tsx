@@ -28,11 +28,11 @@ import {
   MapPin,
   ArrowRight,
   ArrowLeft,
-  Sparkles,
   Shield,
   AlertCircle,
   School,
 } from "lucide-react";
+import { UnifiedLogo } from "@/components/brand/unified-logo";
 
 // South African Provinces
 const SA_PROVINCES = [
@@ -260,8 +260,8 @@ export function RegisterForm() {
     <div className="w-full max-w-lg mx-auto">
       {/* Header */}
       <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/25 mb-4">
-          <Sparkles className="h-7 w-7 text-white" />
+        <div className="flex justify-center mb-4">
+          <UnifiedLogo variant="icon" size="lg" />
         </div>
         <h1 className="text-2xl font-bold text-white dark:text-white">
           Register Your School

@@ -42,13 +42,13 @@
     --text-muted-strong: 227 15% 42%;
     --shadow-rgb: 15 23 42;
 
-    /* Accent hues for gradients */
-    --accent-cobalt: 233 88% 67%;
-    --accent-violet: 266 81% 68%;
-    --accent-iris: 250 74% 60%;
-    --accent-flamingo: 17 87% 66%;
-    --accent-mint: 160 66% 54%;
-    --accent-gold: 41 92% 55%;
+    /* Accent hues for gradients - Enhanced for visibility */
+    --accent-cobalt: 233 88% 58%;
+    --accent-violet: 266 81% 60%;
+    --accent-iris: 250 74% 55%;
+    --accent-flamingo: 17 87% 58%;
+    --accent-mint: 160 84% 39%;
+    --accent-gold: 41 92% 48%;
 
     /* Status colors */
     --status-draft: 230 34% 88%;
@@ -265,12 +265,26 @@
   letter-spacing: -0.015em;
 }
 
-/* Glass morphism */
+/* Glass morphism - Enhanced for better text legibility */
 .glass {
-  background: color-mix(in srgb, hsl(var(--surface-strong)) 65%, transparent);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border: 1px solid hsl(var(--border-strong) / 0.4);
+  background: color-mix(in srgb, hsl(var(--surface-strong)) 88%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid hsl(var(--border-strong) / 0.5);
+}
+
+/* Solid menu backgrounds for optimal legibility */
+.menu-solid {
+  background: hsl(var(--surface-strong));
+  border: 1px solid hsl(var(--border-strong) / 0.6);
+  box-shadow:
+    0 10px 40px rgb(var(--shadow-rgb) / 0.15),
+    0 2px 8px rgb(var(--shadow-rgb) / 0.08);
+}
+
+.dark .menu-solid {
+  background: hsl(228 26% 12%);
+  border-color: hsl(var(--border-strong) / 0.4);
 }
 
 /* Smooth scroll */

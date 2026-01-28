@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MenuSquareIcon, Shield } from "lucide-react";
+import { Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RoleSwitcher } from "@/components/role-switcher";
 import { HelpButton } from "@/components/help/help-button";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { SchoolSwitcher } from "@/components/school-switcher";
 import { SuperAdminOverlay } from "@/components/super-admin/super-admin-overlay";
+import { UnifiedLogo } from "@/components/brand/unified-logo";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard" },
@@ -16,7 +17,11 @@ const navItems = [
   { label: "Assessment Plans", href: "/assessment-plans" },
   { label: "Markbook", href: "/markbook" },
   { label: "Behaviour", href: "/behavior" },
+  { label: "Communications", href: "/communications" },
+  { label: "Fees & Accounts", href: "/fees" },
   { label: "Timetables", href: "/timetables" },
+  { label: "Events", href: "/events" },
+  { label: "Homework", href: "/homework" },
   { label: "Reports", href: "/reports" },
   { label: "Registrations", href: "/registrations" },
   { label: "Students", href: "/students" },
@@ -89,15 +94,10 @@ export function AppShell({ children, initialSchool, isSuperAdmin = false, user }
         aria-hidden
       />
       <aside className="relative z-10 hidden w-64 flex-col border-r border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))/0.9] px-6 py-8 shadow-ambient-sm backdrop-blur lg:flex xl:w-72">
-        <div className="mb-10 flex items-center gap-3 text-lg font-semibold">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[hsl(var(--accent-iris))/0.15] text-primary">
-            <MenuSquareIcon className="h-5 w-5" />
-          </div>
-          <div>
-            <p>SchoolMatica</p>
-            <p className="text-xs font-normal text-muted-foreground">Assessment Suite</p>
-          </div>
-        </div>
+        <Link href="/dashboard" className="mb-10 block hover:opacity-90 transition-opacity">
+          <UnifiedLogo variant="full" size="sm" colorScheme="gradient" />
+          <p className="text-xs font-normal text-muted-foreground mt-1 ml-[52px]">Assessment Suite</p>
+        </Link>
         <nav className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
           {navItems.map((item) => {
             const isActive = pathname?.startsWith(item.href);

@@ -1,7 +1,7 @@
 "use client";
 
-import { lazy, Suspense, useState } from "react";
-import { Play, ChevronRight, BarChart3, ClipboardList, MessageSquare, Grid3x3 } from "lucide-react";
+import { lazy, Suspense, useState, useRef, useCallback, useEffect } from "react";
+import { Play, ChevronRight, BarChart3, ClipboardList, MessageSquare, Grid3x3, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useInView } from "@/lib/hooks/use-in-view";
@@ -112,16 +112,66 @@ function DemoSkeleton() {
   );
 }
 
+// Hook for touch swipe detection
+function useSwipe(onSwipeLeft: () => void, onSwipeRight: () => void) {
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const touchEnd = useRef<{ x: number; y: number } | null>(null);
+  
+  const minSwipeDistance = 50;
+  
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    touchEnd.current = null;
+    touchStart.current = { x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY };
+  }, []);
+  
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    touchEnd.current = { x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY };
+  }, []);
+  
+  const onTouchEnd = useCallback(() => {
+    if (!touchStart.current || !touchEnd.current) return;
+    
+    const distanceX = touchStart.current.x - touchEnd.current.x;
+    const distanceY = Math.abs(touchStart.current.y - touchEnd.current.y);
+    
+    // Only trigger if horizontal swipe is more prominent than vertical
+    if (Math.abs(distanceX) > minSwipeDistance && Math.abs(distanceX) > distanceY) {
+      if (distanceX > 0) {
+        onSwipeLeft();
+      } else {
+        onSwipeRight();
+      }
+    }
+  }, [onSwipeLeft, onSwipeRight]);
+  
+  return { onTouchStart, onTouchMove, onTouchEnd };
+}
+
 export function DemoSection() {
   const [activeTab, setActiveTab] = useState(demoTabs[0].id);
   const [hasInteracted, setHasInteracted] = useState(false);
   const { ref: sectionRef, isVisible } = useInView<HTMLElement>({ threshold: 0.2, triggerOnce: true });
 
   const activeTabData = demoTabs.find((tab) => tab.id === activeTab)!;
+  const activeTabIndex = demoTabs.findIndex((tab) => tab.id === activeTab);
 
   const handleInteraction = () => {
     setHasInteracted(true);
   };
+  
+  // Navigate to next/previous tab
+  const goToNextTab = useCallback(() => {
+    const nextIndex = (activeTabIndex + 1) % demoTabs.length;
+    setActiveTab(demoTabs[nextIndex].id);
+  }, [activeTabIndex]);
+  
+  const goToPrevTab = useCallback(() => {
+    const prevIndex = (activeTabIndex - 1 + demoTabs.length) % demoTabs.length;
+    setActiveTab(demoTabs[prevIndex].id);
+  }, [activeTabIndex]);
+  
+  // Touch swipe handlers
+  const { onTouchStart, onTouchMove, onTouchEnd } = useSwipe(goToNextTab, goToPrevTab);
 
   return (
     <section
@@ -173,8 +223,8 @@ export function DemoSection() {
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
           )}
         >
-          {/* Tab navigation */}
-          <div className="flex justify-center mb-8">
+          {/* Tab navigation - Desktop */}
+          <div className="hidden md:flex justify-center mb-8">
             <div className="inline-flex items-center p-1.5 rounded-xl bg-[hsl(var(--surface-strong))] border border-[hsl(var(--border-strong))/0.3]">
               {demoTabs.map((tab) => (
                 <button
@@ -188,11 +238,65 @@ export function DemoSection() {
                   )}
                 >
                   <tab.icon className="h-4 w-4" />
-                  <span className="hidden sm:inline">{tab.label}</span>
-                  <span className="sm:hidden">{tab.role.split(" ")[0]}</span>
+                  <span>{tab.label}</span>
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Tab navigation - Mobile with swipe indicator */}
+          <div className="md:hidden mb-6">
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={goToPrevTab}
+                className="h-10 w-10 shrink-0"
+                aria-label="Previous demo"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              
+              <div className="flex-1 text-center">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <activeTabData.icon className="h-5 w-5 text-[hsl(var(--accent-violet))]" />
+                  <span className="font-semibold">{activeTabData.label}</span>
+                </div>
+                <span className="text-xs text-muted-foreground">{activeTabData.role}</span>
+              </div>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={goToNextTab}
+                className="h-10 w-10 shrink-0"
+                aria-label="Next demo"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
+            
+            {/* Tab indicators */}
+            <div className="flex justify-center gap-1.5">
+              {demoTabs.map((tab, index) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    "h-1.5 rounded-full transition-all duration-300",
+                    activeTab === tab.id
+                      ? "w-6 bg-[hsl(var(--accent-violet))]"
+                      : "w-1.5 bg-[hsl(var(--border-strong))]"
+                  )}
+                  aria-label={`Go to ${tab.label}`}
+                />
+              ))}
+            </div>
+            
+            {/* Swipe hint */}
+            <p className="text-center text-xs text-muted-foreground mt-2">
+              Swipe left or right to navigate
+            </p>
           </div>
 
           {/* Demo content */}
@@ -273,12 +377,17 @@ export function DemoSection() {
 
             {/* Interactive Demo Area */}
             <div className="lg:col-span-3 order-1 lg:order-2">
-              <div className="relative">
-                {/* Glow effect */}
-                <div className="absolute -inset-4 bg-gradient-to-r from-[hsl(var(--accent-iris))] via-[hsl(var(--accent-violet))] to-[hsl(var(--accent-flamingo))] rounded-3xl opacity-15 blur-2xl" />
+              <div 
+                className="relative"
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
+              >
+                {/* Glow effect - hidden on mobile for performance */}
+                <div className="absolute -inset-4 bg-gradient-to-r from-[hsl(var(--accent-iris))] via-[hsl(var(--accent-violet))] to-[hsl(var(--accent-flamingo))] rounded-3xl opacity-15 blur-2xl hidden md:block" />
 
                 {/* Interactive Demo Container */}
-                <div className="relative rounded-2xl overflow-hidden shadow-ambient aurora-panel">
+                <div className="relative rounded-2xl overflow-hidden shadow-ambient md:aurora-panel bg-background md:bg-transparent">
                   {/* Browser chrome */}
                   <div className="flex items-center gap-2 px-4 py-3 bg-[hsl(var(--surface-soft))] border-b border-[hsl(var(--border-strong))/0.3]">
                     <div className="flex gap-1.5">

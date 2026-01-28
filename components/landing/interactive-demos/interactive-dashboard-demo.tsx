@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   BarChart,
@@ -23,9 +24,40 @@ import {
   Target,
   Award,
   Info,
+  RefreshCw,
 } from "lucide-react";
 import { generateDemoDashboardData, type DemoClassPerformance } from "@/lib/demo/demo-data-generator";
 import { cn } from "@/lib/utils";
+
+// Animated number component for stats
+function AnimatedValue({ value, suffix = "" }: { value: number; suffix?: string }) {
+  const [displayValue, setDisplayValue] = useState(0);
+  
+  useEffect(() => {
+    let start = 0;
+    const duration = 1000;
+    const startTime = performance.now();
+    
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Ease out quad
+      const eased = 1 - (1 - progress) * (1 - progress);
+      const current = Math.round(eased * value);
+      
+      setDisplayValue(current);
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    
+    requestAnimationFrame(animate);
+  }, [value]);
+  
+  return <>{displayValue}{suffix}</>;
+}
 
 interface InteractiveDashboardDemoProps {
   onInteraction?: () => void;
@@ -109,57 +141,61 @@ export function InteractiveDashboardDemo({ onInteraction }: InteractiveDashboard
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {/* Total Students */}
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="transition-all duration-300 hover:shadow-md hover:scale-[1.02]">
+          <CardContent className="p-4 md:pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Students</p>
-                <h3 className="text-2xl font-bold">{overallStats.totalStudents}</h3>
+                <p className="text-xs md:text-sm text-muted-foreground">Students</p>
+                <h3 className="text-xl md:text-2xl font-bold">
+                  <AnimatedValue value={overallStats.totalStudents} />
+                </h3>
               </div>
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                <Users className="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
+            <p className="text-xs text-muted-foreground mt-1 md:mt-2 hidden md:block">
               Across {displayData.length} class{displayData.length !== 1 ? "es" : ""}
             </p>
           </CardContent>
         </Card>
 
         {/* Average Performance */}
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="transition-all duration-300 hover:shadow-md hover:scale-[1.02]">
+          <CardContent className="p-4 md:pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Avg Performance</p>
-                <h3 className="text-2xl font-bold">{overallStats.avgPercentage}%</h3>
+                <p className="text-xs md:text-sm text-muted-foreground">Average</p>
+                <h3 className="text-xl md:text-2xl font-bold">
+                  <AnimatedValue value={overallStats.avgPercentage} suffix="%" />
+                </h3>
               </div>
               <div className={cn(
-                "w-12 h-12 rounded-full flex items-center justify-center",
+                "w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-colors",
                 overallStats.avgPercentage >= 60
                   ? "bg-green-100 dark:bg-green-900/30"
                   : "bg-orange-100 dark:bg-orange-900/30"
               )}>
                 <Target className={cn(
-                  "w-6 h-6",
+                  "w-5 h-5 md:w-6 md:h-6 transition-colors",
                   overallStats.avgPercentage >= 60
                     ? "text-green-600 dark:text-green-400"
                     : "text-orange-600 dark:text-orange-400"
                 )} />
               </div>
             </div>
-            <div className="flex items-center gap-1 mt-2 text-xs">
+            <div className="flex items-center gap-1 mt-1 md:mt-2 text-xs">
               {overallStats.avgPercentage >= 60 ? (
                 <>
                   <TrendingUp className="w-3 h-3 text-green-600" />
-                  <span className="text-green-600">Above target</span>
+                  <span className="text-green-600 hidden sm:inline">Above target</span>
                 </>
               ) : (
                 <>
                   <TrendingDown className="w-3 h-3 text-orange-600" />
-                  <span className="text-orange-600">Below target</span>
+                  <span className="text-orange-600 hidden sm:inline">Below target</span>
                 </>
               )}
             </div>
@@ -167,37 +203,41 @@ export function InteractiveDashboardDemo({ onInteraction }: InteractiveDashboard
         </Card>
 
         {/* Excellent Performers */}
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="transition-all duration-300 hover:shadow-md hover:scale-[1.02]">
+          <CardContent className="p-4 md:pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Excellent (&gt;80%)</p>
-                <h3 className="text-2xl font-bold">{overallStats.totalExcellent}</h3>
+                <p className="text-xs md:text-sm text-muted-foreground">Excellent</p>
+                <h3 className="text-xl md:text-2xl font-bold">
+                  <AnimatedValue value={overallStats.totalExcellent} />
+                </h3>
               </div>
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                <Award className="w-6 h-6 text-green-600 dark:text-green-400" />
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                <Award className="w-5 h-5 md:w-6 md:h-6 text-green-600 dark:text-green-400" />
               </div>
             </div>
-            <p className="text-xs text-green-600 mt-2">
-              {overallStats.excellentPercent}% of students
+            <p className="text-xs text-green-600 mt-1 md:mt-2">
+              {overallStats.excellentPercent}%
             </p>
           </CardContent>
         </Card>
 
         {/* At Risk */}
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="transition-all duration-300 hover:shadow-md hover:scale-[1.02]">
+          <CardContent className="p-4 md:pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">At Risk (&lt;40%)</p>
-                <h3 className="text-2xl font-bold">{overallStats.totalAtRisk}</h3>
+                <p className="text-xs md:text-sm text-muted-foreground">At Risk</p>
+                <h3 className="text-xl md:text-2xl font-bold">
+                  <AnimatedValue value={overallStats.totalAtRisk} />
+                </h3>
               </div>
-              <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 md:w-6 md:h-6 text-red-600 dark:text-red-400" />
               </div>
             </div>
-            <p className="text-xs text-red-600 mt-2">
-              {overallStats.atRiskPercent}% need intervention
+            <p className="text-xs text-red-600 mt-1 md:mt-2">
+              {overallStats.atRiskPercent}%
             </p>
           </CardContent>
         </Card>

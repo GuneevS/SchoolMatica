@@ -101,10 +101,10 @@ export function LoginForm() {
         <div className="flex justify-center mb-4">
           <UnifiedLogo variant="icon" size="lg" />
         </div>
-        <h1 className="text-2xl font-bold text-white dark:text-white">
+        <h1 className="text-2xl font-bold text-foreground">
           Welcome to SchoolMatica
         </h1>
-        <p className="text-slate-300 dark:text-slate-400 mt-1">
+        <p className="text-muted-foreground mt-1">
           South Africa&apos;s complete school management platform
         </p>
       </div>
@@ -120,12 +120,12 @@ export function LoginForm() {
         <div className="absolute -inset-1 bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-pink-500/10 rounded-3xl blur-xl" />
         
         {/* Main card with SOLID background */}
-        <div className="relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl p-6 sm:p-8">
+        <div className="relative bg-[hsl(var(--surface-strong))] rounded-2xl border border-[hsl(var(--border-strong))] shadow-2xl p-6 sm:p-8">
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             {/* School Selector - for non-admin roles */}
             {showSchoolSelector && (
               <div className="space-y-2">
-                <Label htmlFor="school" className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                <Label htmlFor="school" className="text-sm font-medium text-foreground">
                   School
                 </Label>
                 <SchoolSelector
@@ -134,9 +134,9 @@ export function LoginForm() {
                   disabled={isLoading}
                   placeholder="Search for your school..."
                 />
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   Can&apos;t find your school?{" "}
-                  <Link href="/register" className="text-violet-600 dark:text-violet-400 hover:underline font-medium">
+                  <Link href="/register" className="text-[hsl(var(--accent-violet))] hover:underline font-medium">
                     Register it here
                   </Link>
                 </p>
@@ -145,11 +145,11 @@ export function LoginForm() {
 
             {/* Email Field */}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              <Label htmlFor="email" className="text-sm font-medium text-foreground">
                 Email Address
               </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
@@ -164,11 +164,11 @@ export function LoginForm() {
                   }
                   {...form.register("email")}
                   disabled={isLoading}
-                  className="pl-10 h-11 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+                  className="pl-10 h-11 bg-[hsl(var(--surface-soft))] border-[hsl(var(--border))] text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[hsl(var(--accent-violet))] focus:border-[hsl(var(--accent-violet))]"
                 />
               </div>
               {form.formState.errors.email && (
-                <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                <p className="text-sm text-[hsl(var(--destructive))] flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
                   {form.formState.errors.email.message}
                 </p>
@@ -178,30 +178,30 @@ export function LoginForm() {
             {/* Password Field */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                <Label htmlFor="password" className="text-sm font-medium text-foreground">
                   Password
                 </Label>
                 <Link
                   href="/forgot-password"
-                  className="text-xs text-violet-600 dark:text-violet-400 hover:underline font-medium"
+                  className="text-xs text-[hsl(var(--accent-violet))] hover:underline font-medium"
                 >
                   Forgot password?
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   {...form.register("password")}
                   disabled={isLoading}
-                  className="pl-10 pr-10 h-11 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+                  className="pl-10 pr-10 h-11 bg-[hsl(var(--surface-soft))] border-[hsl(var(--border))] text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[hsl(var(--accent-violet))] focus:border-[hsl(var(--accent-violet))]"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
@@ -212,7 +212,7 @@ export function LoginForm() {
                 </button>
               </div>
               {form.formState.errors.password && (
-                <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                <p className="text-sm text-[hsl(var(--destructive))] flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
                   {form.formState.errors.password.message}
                 </p>
@@ -228,11 +228,11 @@ export function LoginForm() {
                   form.setValue("rememberMe", checked as boolean)
                 }
                 disabled={isLoading}
-                className="border-slate-300 dark:border-slate-600 data-[state=checked]:bg-violet-600 data-[state=checked]:border-violet-600"
+                className="border-[hsl(var(--border))] data-[state=checked]:bg-[hsl(var(--accent-violet))] data-[state=checked]:border-[hsl(var(--accent-violet))]"
               />
               <Label
                 htmlFor="rememberMe"
-                className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer"
+                className="text-sm text-muted-foreground cursor-pointer"
               >
                 Remember me for 30 days
               </Label>
@@ -240,7 +240,7 @@ export function LoginForm() {
 
             {/* Error Message */}
             {error && (
-              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm flex items-start gap-2">
+              <div className="p-3 rounded-lg bg-[hsl(var(--destructive))]/10 border border-[hsl(var(--destructive))]/30 text-[hsl(var(--destructive))] text-sm flex items-start gap-2">
                 <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
                 {error}
               </div>
@@ -250,7 +250,7 @@ export function LoginForm() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full h-11 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-medium shadow-lg shadow-violet-500/25 transition-all duration-300"
+              className="w-full h-11 bg-gradient-to-r from-[hsl(var(--accent-violet))] to-[hsl(var(--accent-iris))] hover:from-[hsl(var(--accent-violet))]/90 hover:to-[hsl(var(--accent-iris))]/90 text-white font-medium shadow-lg shadow-[hsl(var(--accent-violet))]/25 transition-all duration-300"
             >
               {isLoading ? (
                 <>
@@ -320,7 +320,7 @@ export function LoginForm() {
       </div>
 
       {/* Security Badge */}
-      <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-400 dark:text-slate-500">
+      <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
         <Shield className="h-4 w-4" />
         <span>POPIA Compliant • Secure • South African Hosted</span>
       </div>

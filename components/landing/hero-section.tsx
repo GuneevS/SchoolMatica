@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Play, Shield, CheckCircle2, School, Users, Award, BookOpen, MessageSquare, BarChart3 } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { ArrowRight, Play, Shield, CheckCircle2, School, Users, Award, BookOpen, MessageSquare, BarChart3, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useInView } from "@/lib/hooks/use-in-view";
+import { AnimatedCounter } from "@/components/ui/animated-counter";
 
 // Trust badges data - South African focused
 const trustBadges = [
@@ -28,11 +30,51 @@ const platformFeatures = [
   { icon: MessageSquare, label: "Communication", color: "text-amber-500" },
 ];
 
+// Hook for parallax scroll effect
+function useParallax() {
+  const [scrollY, setScrollY] = useState(0);
+  
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    
+    // Throttle scroll handler for performance
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  
+  return scrollY;
+}
+
+// Sparkle animation component for CTA button
+function SparkleEffect({ className }: { className?: string }) {
+  return (
+    <span className={cn("absolute pointer-events-none", className)}>
+      <Sparkles className="h-3 w-3 text-white/80 animate-pulse" />
+    </span>
+  );
+}
+
 export function HeroSection() {
   const { ref: heroRef, isVisible } = useInView<HTMLElement>({
     threshold: 0.1,
     triggerOnce: true,
   });
+  
+  const scrollY = useParallax();
+  const parallaxOffset = scrollY * 0.3;
 
   return (
     <section
@@ -77,9 +119,19 @@ export function HeroSection() {
           }}
         />
 
-        {/* Floating decorative elements */}
-        <div className="absolute top-1/4 left-[10%] w-64 h-64 rounded-full bg-[hsl(var(--accent-iris))] opacity-[0.08] blur-3xl animate-float" />
-        <div className="absolute bottom-1/4 right-[15%] w-80 h-80 rounded-full bg-[hsl(var(--accent-violet))] opacity-[0.06] blur-3xl animate-float [animation-delay:2s]" />
+        {/* Floating decorative elements with parallax */}
+        <div 
+          className="absolute top-1/4 left-[10%] w-64 h-64 rounded-full bg-[hsl(var(--accent-iris))] opacity-[0.08] blur-3xl animate-float transition-transform duration-100 ease-out" 
+          style={{ transform: `translateY(${parallaxOffset * 0.5}px)` }}
+        />
+        <div 
+          className="absolute bottom-1/4 right-[15%] w-80 h-80 rounded-full bg-[hsl(var(--accent-violet))] opacity-[0.06] blur-3xl animate-float [animation-delay:2s] transition-transform duration-100 ease-out"
+          style={{ transform: `translateY(${-parallaxOffset * 0.3}px)` }}
+        />
+        <div 
+          className="absolute top-1/2 right-[25%] w-48 h-48 rounded-full bg-[hsl(var(--accent-mint))] opacity-[0.05] blur-3xl animate-float [animation-delay:1s] transition-transform duration-100 ease-out"
+          style={{ transform: `translateY(${parallaxOffset * 0.4}px)` }}
+        />
       </div>
 
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
@@ -161,24 +213,34 @@ export function HeroSection() {
             >
               <Button
                 size="lg"
-                className="w-full sm:w-auto group bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white shadow-lg shadow-violet-500/30"
+                className="w-full sm:w-auto group relative overflow-hidden bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white shadow-lg shadow-violet-500/30 hover:shadow-xl hover:shadow-violet-500/40 transition-all duration-300"
                 asChild
               >
                 <Link
                   href="/register"
                   aria-label="Start your free 14-day trial of SchoolMatica"
                 >
-                  Start Free Trial
-                  <ArrowRight
-                    className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1"
-                    aria-hidden="true"
-                  />
+                  {/* Sparkle effects */}
+                  <SparkleEffect className="top-1 left-2 animate-[pulse_2s_ease-in-out_infinite]" />
+                  <SparkleEffect className="bottom-1 right-3 animate-[pulse_2s_ease-in-out_infinite_0.5s]" />
+                  <SparkleEffect className="top-2 right-8 animate-[pulse_2s_ease-in-out_infinite_1s]" />
+                  
+                  {/* Shine effect */}
+                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
+                  
+                  <span className="relative z-10 flex items-center">
+                    Start Free Trial
+                    <ArrowRight
+                      className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1"
+                      aria-hidden="true"
+                    />
+                  </span>
                 </Link>
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="w-full sm:w-auto group"
+                className="w-full sm:w-auto group hover:bg-[hsl(var(--accent-iris))]/10 hover:border-[hsl(var(--accent-iris))]/30 transition-all duration-300"
                 asChild
               >
                 <Link
@@ -186,7 +248,7 @@ export function HeroSection() {
                   aria-label="Watch SchoolMatica product demonstration video"
                 >
                   <Play
-                    className="mr-2 h-4 w-4 fill-current"
+                    className="mr-2 h-4 w-4 fill-current transition-transform group-hover:scale-110"
                     aria-hidden="true"
                   />
                   Watch Demo
@@ -322,8 +384,11 @@ export function HeroSection() {
                 </div>
               </div>
 
-              {/* Floating metric cards - Updated for comprehensive platform */}
-              <div className="absolute -left-4 top-1/4 glass-panel rounded-xl p-3 shadow-ambient-sm animate-float hidden lg:block">
+              {/* Floating metric cards - Updated for comprehensive platform with parallax */}
+              <div 
+                className="absolute -left-4 top-1/4 glass-panel rounded-xl p-3 shadow-ambient-sm animate-float hidden lg:block hover:scale-105 transition-all duration-300"
+                style={{ transform: `translateY(${parallaxOffset * 0.2}px)` }}
+              >
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-[hsl(var(--accent-mint))]/20 flex items-center justify-center">
                     <BarChart3 className="w-4 h-4 text-[hsl(var(--accent-mint))]" />
@@ -335,7 +400,10 @@ export function HeroSection() {
                 </div>
               </div>
 
-              <div className="absolute -right-4 bottom-1/4 glass-panel rounded-xl p-3 shadow-ambient-sm animate-float [animation-delay:1.5s] hidden lg:block">
+              <div 
+                className="absolute -right-4 bottom-1/4 glass-panel rounded-xl p-3 shadow-ambient-sm animate-float [animation-delay:1.5s] hidden lg:block hover:scale-105 transition-all duration-300"
+                style={{ transform: `translateY(${-parallaxOffset * 0.15}px)` }}
+              >
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-[hsl(var(--accent-iris))]/20 flex items-center justify-center">
                     <MessageSquare className="w-4 h-4 text-[hsl(var(--accent-iris))]" />
@@ -347,7 +415,10 @@ export function HeroSection() {
                 </div>
               </div>
 
-              <div className="absolute -left-2 bottom-1/3 glass-panel rounded-xl p-3 shadow-ambient-sm animate-float [animation-delay:3s] hidden lg:block">
+              <div 
+                className="absolute -left-2 bottom-1/3 glass-panel rounded-xl p-3 shadow-ambient-sm animate-float [animation-delay:3s] hidden lg:block hover:scale-105 transition-all duration-300"
+                style={{ transform: `translateY(${parallaxOffset * 0.1}px)` }}
+              >
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-[hsl(var(--accent-violet))]/20 flex items-center justify-center">
                     <Award className="w-4 h-4 text-[hsl(var(--accent-violet))]" />
@@ -375,13 +446,17 @@ export function HeroSection() {
           {metrics.map((metric, index) => (
             <div
               key={metric.label}
-              className="text-center"
+              className="text-center group"
               style={{ transitionDelay: `${600 + index * 100}ms` }}
               role="listitem"
               aria-label={`${metric.value} ${metric.label}`}
             >
-              <p className="text-3xl sm:text-4xl font-bold gradient-text">
-                {metric.value}
+              <p className="text-3xl sm:text-4xl font-bold gradient-text group-hover:scale-105 transition-transform duration-300">
+                <AnimatedCounter 
+                  value={metric.value} 
+                  duration={2000} 
+                  delay={index * 200}
+                />
               </p>
               <p className="text-sm text-muted-foreground mt-1">{metric.label}</p>
             </div>

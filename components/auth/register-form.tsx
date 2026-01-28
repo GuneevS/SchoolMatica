@@ -217,29 +217,29 @@ export function RegisterForm() {
       <div className="w-full max-w-lg mx-auto">
         <div className="relative">
           <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/10 via-green-500/10 to-teal-500/10 rounded-3xl blur-xl" />
-          <div className="relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl p-8 text-center">
+          <div className="relative bg-[hsl(var(--surface-strong))] rounded-2xl border border-[hsl(var(--border-strong))] shadow-2xl p-8 text-center">
             <div className="mx-auto w-20 h-20 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-emerald-500/25">
               <CheckCircle2 className="w-10 h-10 text-white" />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+            <h2 className="text-2xl font-bold text-foreground mb-2">
               Welcome to SchoolMatica!
             </h2>
-            <p className="text-slate-600 dark:text-slate-400 mb-6">
+            <p className="text-muted-foreground mb-6">
               Your school has been successfully registered
             </p>
-            <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 mb-6 text-left">
+            <div className="bg-[hsl(var(--surface-soft))] rounded-xl p-4 mb-6 text-left">
               <div className="flex items-center gap-3 mb-3">
-                <School className="h-5 w-5 text-violet-500" />
+                <School className="h-5 w-5 text-[hsl(var(--accent-violet))]" />
                 <div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">School</p>
-                  <p className="font-medium text-slate-900 dark:text-white">{registeredData.schoolName}</p>
+                  <p className="text-sm text-muted-foreground">School</p>
+                  <p className="font-medium text-foreground">{registeredData.schoolName}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <User className="h-5 w-5 text-violet-500" />
+                <User className="h-5 w-5 text-[hsl(var(--accent-violet))]" />
                 <div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Administrator</p>
-                  <p className="font-medium text-slate-900 dark:text-white">{registeredData.email}</p>
+                  <p className="text-sm text-muted-foreground">Administrator</p>
+                  <p className="font-medium text-foreground">{registeredData.email}</p>
                 </div>
               </div>
             </div>

@@ -683,12 +683,14 @@ async function seed() {
   });
 
   // Create super administrator (platform-level, no specific school)
+  // IMPORTANT: Use a separate password hash for super admin with custom credentials
+  const superAdminPasswordHash = await bcrypt.hash("12345678", 10);
   const superAdminUser = await prisma.appUser.create({
     data: {
-      email: "super@schoolmatica.com",
-      displayName: "Super Administrator",
+      email: "guneev@themediavault.io",
+      displayName: "Guneev (Super Administrator)",
       schoolId: null, // No specific school - platform-level
-      passwordHash,
+      passwordHash: superAdminPasswordHash,
     },
   });
 
@@ -911,7 +913,7 @@ async function seed() {
 
   console.log("✅ Database seed completed successfully!");
   console.log("   - Created demo school: SchoolMatica High");
-  console.log("   - Created super admin: super@schoolmatica.com (password: password123)");
+  console.log("   - Created super admin: guneev@themediavault.io (password: 12345678)");
   console.log("   - Created school admin: admin@schoolmatica.com (password: password123)");
   console.log("   - Created sample teachers, students, and assessments");
 }

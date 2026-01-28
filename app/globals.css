@@ -359,3 +359,71 @@ html {
     transition: none !important;
   }
 }
+
+/* ============================================
+   Mobile Optimizations
+   ============================================ */
+
+/* Optimize touch targets for mobile (min 44px per WCAG) */
+@media (max-width: 768px) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Reduce blur intensity on mobile for better performance */
+  .glass,
+  .glass-panel {
+    backdrop-filter: blur(10px) saturate(150%);
+    -webkit-backdrop-filter: blur(10px) saturate(150%);
+  }
+  
+  /* Simplify floating animations on mobile */
+  .animate-float {
+    animation-duration: 4s;
+  }
+  
+  /* Reduce gradient animation complexity on mobile */
+  .gradient-text {
+    animation-duration: 8s;
+  }
+}
+
+/* Disable heavy animations on mobile devices for performance */
+@media (max-width: 640px) {
+  /* Simplify parallax effects */
+  [data-parallax] {
+    transform: none !important;
+  }
+  
+  /* Reduce shadow complexity */
+  .shadow-ambient {
+    box-shadow: 0 4px 20px rgb(var(--shadow-rgb) / 0.1);
+  }
+  
+  .shadow-ambient-sm {
+    box-shadow: 0 2px 10px rgb(var(--shadow-rgb) / 0.08);
+  }
+}
+
+/* Optimize for low-end devices */
+@media (max-width: 480px) {
+  /* Further reduce blur for performance */
+  .glass,
+  .glass-panel,
+  .aurora-panel {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+
+/* Safe area insets for notched devices */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

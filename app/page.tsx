@@ -11,6 +11,7 @@ import { TestimonialsSection } from "@/components/landing/testimonials-section";
 import { PricingSection } from "@/components/landing/pricing-section";
 import { FAQSection } from "@/components/landing/faq-section";
 import { CTASection } from "@/components/landing/cta-section";
+import { InteractiveBackground } from "@/components/landing/interactive-background";
 
 // Export SEO metadata
 export const metadata: Metadata = landingPageMetadata;
@@ -32,6 +33,12 @@ export default function LandingPage() {
 
       {/* Main Landing Page Content */}
       <div className="relative min-h-screen bg-canvas text-foreground overflow-x-hidden">
+        {/* Cursor-Interactive Background Animation */}
+        <InteractiveBackground 
+          className="fixed inset-0 z-0" 
+          intensity="subtle" 
+        />
+        
         {/* Navigation */}
         <LandingNavbar />
 

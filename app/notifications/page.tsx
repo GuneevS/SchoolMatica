@@ -1,31 +1,13 @@
-import { Suspense } from "react";
-import { redirect } from "next/navigation";
-import { requireAuth } from "@/lib/auth-server";
-import { prisma } from "@/lib/prisma";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Bell, CheckCheck, Trash2, ExternalLink, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-
-export const dynamic = "force-dynamic";
-
-export const metadata = {
-  title: "Notifications | SchoolMatica",
-  description: "View all your notifications and updates.",
-};
-
-async function getNotifications(userId: string, filter: "all" | "unread") {
-  return prisma.notification.findMany({
-    where: {
-      userId,
-      ...(filter === "unread" && { read: false }),
-    },
-    orderBy: { createdAt: "desc" },
-    take: 100,
-  });
-}
 
 function LoadingState() {
   return (
@@ -64,9 +46,12 @@ function getTimeSince(date: Date) {
 
 interface NotificationListProps {
   notifications: any[];
+  onMarkAsRead: (id: string, actionUrl: string | null) => void;
+  onRefresh: () => void;
 }
 
-function NotificationList({ notifications }: NotificationListProps) {
+function NotificationList({ notifications, onMarkAsRead, onRefresh }: NotificationListProps) {
+  const router = useRouter();
   if (notifications.length === 0) {
     return (
       <Card>
@@ -125,7 +110,7 @@ function NotificationList({ notifications }: NotificationListProps) {
                       {notification.body}
                     </p>
                     
-                    <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">
                         {getTimeSince(notification.createdAt)}
                       </span>
@@ -136,7 +121,7 @@ function NotificationList({ notifications }: NotificationListProps) {
                             variant="ghost" 
                             size="sm"
                             className="h-8 text-xs"
-                            onClick={() => window.location.href = notification.actionUrl}
+                            onClick={() => onMarkAsRead(notification.id, notification.actionUrl)}
                           >
                             <ExternalLink className="h-3 w-3 mr-1" />
                             View
@@ -148,6 +133,7 @@ function NotificationList({ notifications }: NotificationListProps) {
                             variant="ghost" 
                             size="sm"
                             className="h-8 text-xs"
+                            onClick={() => onMarkAsRead(notification.id, null)}
                           >
                             <Check className="h-3 w-3 mr-1" />
                             Mark read
@@ -166,15 +152,87 @@ function NotificationList({ notifications }: NotificationListProps) {
   );
 }
 
-export default async function NotificationsPage() {
-  const auth = await requireAuth();
+export default function NotificationsPage() {
+  const router = useRouter();
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("all");
   
-  if (!auth?.user) {
-    redirect("/login");
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch("/api/notifications");
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data.notifications || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+  
+  const unreadNotifications = notifications.filter(n => !n.read);
+  
+  const markAsRead = async (id: string, actionUrl: string | null) => {
+    try {
+      await fetch("/api/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notificationIds: [id] }),
+      });
+      
+      await fetchNotifications();
+      
+      if (actionUrl) {
+        router.push(actionUrl);
+      }
+    } catch (error) {
+      console.error("Failed to mark as read:", error);
+    }
+  };
+  
+  const markAllAsRead = async () => {
+    try {
+      await fetch("/api/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ all: true }),
+      });
+      await fetchNotifications();
+    } catch (error) {
+      console.error("Failed to mark all as read:", error);
+    }
+  };
+  
+  const clearAll = async () => {
+    if (!confirm("Are you sure you want to delete all notifications? This cannot be undone.")) {
+      return;
+    }
+    
+    try {
+      await fetch("/api/notifications", {
+        method: "DELETE",
+      });
+      await fetchNotifications();
+    } catch (error) {
+      console.error("Failed to clear notifications:", error);
+    }
+  };
+  
+  const filteredNotifications = activeTab === "all" 
+    ? notifications 
+    : activeTab === "unread"
+    ? unreadNotifications
+    : notifications.filter(n => n.type === activeTab);
+  
+  if (loading) {
+    return <LoadingState />;
   }
-
-  const allNotifications = await getNotifications(auth.user.id, "all");
-  const unreadNotifications = allNotifications.filter(n => !n.read);
 
   return (
     <div className="space-y-8">
@@ -187,75 +245,39 @@ export default async function NotificationsPage() {
         </div>
         <div className="flex items-center gap-2">
           {unreadNotifications.length > 0 && (
-            <Button variant="outline">
+            <Button variant="outline" onClick={markAllAsRead}>
               <CheckCheck className="h-4 w-4 mr-2" />
               Mark All Read
             </Button>
           )}
-          <Button variant="outline">
+          <Button variant="outline" onClick={clearAll}>
             <Trash2 className="h-4 w-4 mr-2" />
             Clear All
           </Button>
         </div>
       </div>
 
-      <Tabs defaultValue="all" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList>
           <TabsTrigger value="all">
-            All ({allNotifications.length})
+            All ({notifications.length})
           </TabsTrigger>
           <TabsTrigger value="unread">
             Unread ({unreadNotifications.length})
           </TabsTrigger>
           <TabsTrigger value="behavior">Behavior</TabsTrigger>
-          <TabsTrigger value="grades">Grades</TabsTrigger>
-          <TabsTrigger value="messages">Messages</TabsTrigger>
+          <TabsTrigger value="grade">Grades</TabsTrigger>
+          <TabsTrigger value="message">Messages</TabsTrigger>
           <TabsTrigger value="system">System</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="mt-6">
-          <Suspense fallback={<LoadingState />}>
-            <NotificationList notifications={allNotifications} />
-          </Suspense>
-        </TabsContent>
-
-        <TabsContent value="unread" className="mt-6">
-          <Suspense fallback={<LoadingState />}>
-            <NotificationList notifications={unreadNotifications} />
-          </Suspense>
-        </TabsContent>
-
-        <TabsContent value="behavior" className="mt-6">
-          <Suspense fallback={<LoadingState />}>
-            <NotificationList 
-              notifications={allNotifications.filter(n => n.type === "behavior")} 
-            />
-          </Suspense>
-        </TabsContent>
-
-        <TabsContent value="grades" className="mt-6">
-          <Suspense fallback={<LoadingState />}>
-            <NotificationList 
-              notifications={allNotifications.filter(n => n.type === "grade")} 
-            />
-          </Suspense>
-        </TabsContent>
-
-        <TabsContent value="messages" className="mt-6">
-          <Suspense fallback={<LoadingState />}>
-            <NotificationList 
-              notifications={allNotifications.filter(n => n.type === "message")} 
-            />
-          </Suspense>
-        </TabsContent>
-
-        <TabsContent value="system" className="mt-6">
-          <Suspense fallback={<LoadingState />}>
-            <NotificationList 
-              notifications={allNotifications.filter(n => n.type === "system")} 
-            />
-          </Suspense>
-        </TabsContent>
+        <div className="mt-6">
+          <NotificationList 
+            notifications={filteredNotifications} 
+            onMarkAsRead={markAsRead}
+            onRefresh={fetchNotifications}
+          />
+        </div>
       </Tabs>
     </div>
   );

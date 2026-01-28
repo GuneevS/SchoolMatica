@@ -216,9 +216,9 @@ export function RegisterForm() {
     return (
       <div className="w-full max-w-lg mx-auto">
         <div className="relative">
-          <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/10 via-green-500/10 to-teal-500/10 rounded-3xl blur-xl" />
+          <div className="absolute -inset-1 bg-gradient-to-r from-[hsl(var(--success))]/10 via-[hsl(var(--accent-mint))]/10 to-[hsl(var(--success))]/10 rounded-3xl blur-xl" />
           <div className="relative bg-[hsl(var(--surface-strong))] rounded-2xl border border-[hsl(var(--border-strong))] shadow-2xl p-8 text-center">
-            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-emerald-500/25">
+            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-[hsl(var(--success))] to-[hsl(var(--accent-mint))] rounded-full flex items-center justify-center mb-6 shadow-lg shadow-[hsl(var(--success))]/25">
               <CheckCircle2 className="w-10 h-10 text-white" />
             </div>
             <h2 className="text-2xl font-bold text-foreground mb-2">
@@ -318,7 +318,7 @@ export function RegisterForm() {
 
       {/* Form Card - SOLID BACKGROUND */}
       <div className="relative">
-        <div className="absolute -inset-1 bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-pink-500/10 rounded-3xl blur-xl" />
+        <div className="absolute -inset-1 bg-gradient-to-r from-[hsl(var(--accent-violet))]/10 via-[hsl(var(--accent-iris))]/10 to-[hsl(var(--accent-flamingo))]/10 rounded-3xl blur-xl" />
         <div className="relative bg-[hsl(var(--surface-strong))] rounded-2xl border border-[hsl(var(--border-strong))] shadow-2xl p-6 sm:p-8">
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             
@@ -614,7 +614,7 @@ export function RegisterForm() {
 
               {/* Consent Checkboxes */}
               <div className="space-y-3 pt-2">
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-[hsl(var(--border))]">
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-[hsl(var(--surface-soft))] border border-[hsl(var(--border))]">
                   <Checkbox
                     id="acceptTerms"
                     checked={watch("acceptTerms")}
@@ -637,13 +637,13 @@ export function RegisterForm() {
                   </div>
                 </div>
                 {errors.acceptTerms && (
-                  <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1 ml-1">
+                  <p className="text-sm text-[hsl(var(--destructive))] flex items-center gap-1 ml-1">
                     <AlertCircle className="h-3 w-3" />
                     {errors.acceptTerms.message}
                   </p>
                 )}
 
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-[hsl(var(--border))]">
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-[hsl(var(--surface-soft))] border border-[hsl(var(--border))]">
                   <Checkbox
                     id="acceptPopia"
                     checked={watch("acceptPopia")}
@@ -665,7 +665,7 @@ export function RegisterForm() {
                   </div>
                 </div>
                 {errors.acceptPopia && (
-                  <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1 ml-1">
+                  <p className="text-sm text-[hsl(var(--destructive))] flex items-center gap-1 ml-1">
                     <AlertCircle className="h-3 w-3" />
                     {errors.acceptPopia.message}
                   </p>
@@ -732,7 +732,7 @@ export function RegisterForm() {
       </div>
 
       {/* Security Badge */}
-      <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-400 dark:text-slate-500">
+      <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
         <Shield className="h-4 w-4" />
         <span>POPIA Compliant • 256-bit SSL • South African Hosted</span>
       </div>

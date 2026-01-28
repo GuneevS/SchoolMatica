@@ -117,7 +117,7 @@ export function LoginForm() {
       {/* Login Card - SOLID BACKGROUND */}
       <div className="relative">
         {/* Subtle glow effect */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-pink-500/10 rounded-3xl blur-xl" />
+        <div className="absolute -inset-1 bg-gradient-to-r from-[hsl(var(--accent-violet))]/10 via-[hsl(var(--accent-iris))]/10 to-[hsl(var(--accent-flamingo))]/10 rounded-3xl blur-xl" />
         
         {/* Main card with SOLID background */}
         <div className="relative bg-[hsl(var(--surface-strong))] rounded-2xl border border-[hsl(var(--border-strong))] shadow-2xl p-6 sm:p-8">

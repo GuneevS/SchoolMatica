@@ -101,56 +101,56 @@ export function SchoolSelector({
           disabled={disabled}
           className={cn(
             "w-full justify-between h-11",
-            "bg-slate-50 dark:bg-slate-800",
-            "border-slate-200 dark:border-slate-600",
-            "hover:bg-slate-100 dark:hover:bg-slate-700",
-            "text-slate-900 dark:text-white",
+            "bg-[hsl(var(--surface-soft))]",
+            "border-[hsl(var(--border))]",
+            "hover:bg-[hsl(var(--surface-soft))]/80",
+            "text-foreground",
             className
           )}
         >
           <div className="flex items-center gap-2 truncate">
-            <School className="h-4 w-4 shrink-0 text-slate-400" />
+            <School className="h-4 w-4 shrink-0 text-muted-foreground" />
             {selectedSchool ? (
-              <span className="truncate text-slate-900 dark:text-white">
+              <span className="truncate text-foreground">
                 {selectedSchool.name}
                 {selectedSchool.shortCode && (
-                  <span className="ml-1 text-slate-500 dark:text-slate-400">
+                  <span className="ml-1 text-muted-foreground">
                     ({selectedSchool.shortCode})
                   </span>
                 )}
               </span>
             ) : (
-              <span className="text-slate-400 dark:text-slate-500">{placeholder}</span>
+              <span className="text-muted-foreground">{placeholder}</span>
             )}
           </div>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-slate-400" />
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
         </Button>
       </PopoverTrigger>
       <PopoverContent 
         className="w-[var(--radix-popover-trigger-width)] p-0" 
         align="start"
       >
-        <Command shouldFilter={false} className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
-          <div className="flex items-center border-b border-slate-200 dark:border-slate-700 px-3">
-            <Search className="mr-2 h-4 w-4 shrink-0 text-slate-400" />
+        <Command shouldFilter={false} className="bg-[hsl(var(--surface-strong))] border-[hsl(var(--border-strong))]">
+          <div className="flex items-center border-b border-[hsl(var(--border))] px-3">
+            <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
             <input
               placeholder="Search by school name or code..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex h-11 w-full bg-transparent py-3 text-sm text-slate-900 dark:text-white outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
+              className="flex h-11 w-full bg-transparent py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
             />
           </div>
           <CommandList className="max-h-[200px]">
             {loading ? (
               <div className="flex items-center justify-center py-6">
-                <Loader2 className="h-5 w-5 animate-spin text-violet-500" />
+                <Loader2 className="h-5 w-5 animate-spin text-[hsl(var(--accent-violet))]" />
               </div>
             ) : searchQuery.length < 2 ? (
-              <div className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+              <div className="py-6 text-center text-sm text-muted-foreground">
                 Type at least 2 characters to search...
               </div>
             ) : schools.length === 0 ? (
-              <CommandEmpty className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+              <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
                 No school found.
               </CommandEmpty>
             ) : (
@@ -164,18 +164,18 @@ export function SchoolSelector({
                       onSelect(school.id, school);
                       setOpen(false);
                     }}
-                    className="cursor-pointer rounded-lg px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-900 dark:text-white"
+                    className="cursor-pointer rounded-lg px-3 py-2 hover:bg-[hsl(var(--surface-soft))] text-foreground"
                   >
                     <Check
                       className={cn(
-                        "mr-2 h-4 w-4 text-violet-500",
+                        "mr-2 h-4 w-4 text-[hsl(var(--accent-violet))]",
                         value === school.id ? "opacity-100" : "opacity-0"
                       )}
                     />
                     <div className="flex flex-col">
                       <span className="font-medium">{school.name}</span>
                       {school.shortCode && (
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                        <span className="text-xs text-muted-foreground">
                           Code: {school.shortCode}
                         </span>
                       )}

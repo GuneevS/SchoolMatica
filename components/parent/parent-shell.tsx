@@ -8,7 +8,6 @@ import {
   MessageSquare,
   FileText,
   Award,
-  Bell,
   Settings,
   LogOut,
   CreditCard,
@@ -18,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { NotificationDropdown } from "@/components/notifications";
 import { signOut } from "next-auth/react";
 import { UnifiedLogo } from "@/components/brand/unified-logo";
 
@@ -130,12 +130,7 @@ export function ParentShell({ children, user }: Props) {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-[hsl(var(--accent-iris))] text-[10px] font-bold text-white flex items-center justify-center">
-                  5
-                </span>
-              </Button>
+              <NotificationDropdown />
               <ThemeToggle />
               <Button variant="ghost" size="icon">
                 <Settings className="h-5 w-5" />

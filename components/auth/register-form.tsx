@@ -244,7 +244,7 @@ export function RegisterForm() {
               </div>
             </div>
             <Button
-              className="w-full h-11 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white"
+              className="w-full h-11 bg-gradient-to-r from-[hsl(var(--accent-violet))] to-[hsl(var(--accent-iris))] hover:from-[hsl(var(--accent-violet))]/90 hover:to-[hsl(var(--accent-iris))]/90 text-white"
               onClick={() => router.push("/login")}
             >
               Sign In to Your Dashboard
@@ -263,10 +263,10 @@ export function RegisterForm() {
         <div className="flex justify-center mb-4">
           <UnifiedLogo variant="icon" size="lg" />
         </div>
-        <h1 className="text-2xl font-bold text-white dark:text-white">
+        <h1 className="text-2xl font-bold text-foreground">
           Register Your School
         </h1>
-        <p className="text-slate-300 dark:text-slate-400 mt-1">
+        <p className="text-muted-foreground mt-1">
           Join South Africa&apos;s leading school management platform
         </p>
       </div>
@@ -275,9 +275,9 @@ export function RegisterForm() {
       <div className="mb-6">
         <div className="flex items-center justify-between relative">
           {/* Progress Line */}
-          <div className="absolute left-0 right-0 top-5 h-0.5 bg-slate-600" />
+          <div className="absolute left-0 right-0 top-5 h-0.5 bg-[hsl(var(--border))]" />
           <div
-            className="absolute left-0 top-5 h-0.5 bg-gradient-to-r from-violet-500 to-purple-600 transition-all duration-500"
+            className="absolute left-0 top-5 h-0.5 bg-gradient-to-r from-[hsl(var(--accent-violet))] to-[hsl(var(--accent-iris))] transition-all duration-500"
             style={{ width: `${((step - 1) / 3) * 100}%` }}
           />
           
@@ -292,10 +292,10 @@ export function RegisterForm() {
                   className={cn(
                     "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300",
                     isCompleted
-                      ? "bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-md"
+                      ? "bg-gradient-to-br from-[hsl(var(--accent-violet))] to-[hsl(var(--accent-iris))] text-white shadow-md"
                       : isActive
-                      ? "bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg ring-4 ring-violet-500/30"
-                      : "bg-slate-700 text-slate-400 border border-slate-600"
+                      ? "bg-gradient-to-br from-[hsl(var(--accent-violet))] to-[hsl(var(--accent-iris))] text-white shadow-lg ring-4 ring-[hsl(var(--accent-violet))]/30"
+                      : "bg-[hsl(var(--surface-soft))] text-muted-foreground border border-[hsl(var(--border))]"
                   )}
                 >
                   {isCompleted ? (
@@ -306,7 +306,7 @@ export function RegisterForm() {
                 </div>
                 <span className={cn(
                   "text-xs mt-2 font-medium hidden sm:block",
-                  isActive || isCompleted ? "text-white" : "text-slate-400"
+                  isActive || isCompleted ? "text-foreground" : "text-muted-foreground"
                 )}>
                   {s.label}
                 </span>
@@ -319,24 +319,24 @@ export function RegisterForm() {
       {/* Form Card - SOLID BACKGROUND */}
       <div className="relative">
         <div className="absolute -inset-1 bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-pink-500/10 rounded-3xl blur-xl" />
-        <div className="relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl p-6 sm:p-8">
+        <div className="relative bg-[hsl(var(--surface-strong))] rounded-2xl border border-[hsl(var(--border-strong))] shadow-2xl p-6 sm:p-8">
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             
             {/* Step 1: School Details */}
             <div className={cn("space-y-4", step !== 1 && "hidden")}>
               <div className="space-y-2">
-                <Label htmlFor="schoolName" className="flex items-center gap-1 text-slate-700 dark:text-slate-200">
-                  School Name <span className="text-red-500">*</span>
+                <Label htmlFor="schoolName" className="flex items-center gap-1 text-foreground">
+                  School Name <span className="text-[hsl(var(--destructive))]">*</span>
                 </Label>
                 <Input
                   id="schoolName"
                   placeholder="e.g., Pretoria High School for Girls"
                   {...form.register("schoolName")}
                   disabled={isLoading}
-                  className="h-11 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white"
+                  className="h-11 bg-[hsl(var(--surface-soft))] border-[hsl(var(--border))] text-foreground placeholder:text-muted-foreground"
                 />
                 {errors.schoolName && (
-                  <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                  <p className="text-sm text-[hsl(var(--destructive))] flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
                     {errors.schoolName.message}
                   </p>
@@ -345,39 +345,39 @@ export function RegisterForm() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="schoolShortCode" className="text-slate-700 dark:text-slate-200">Short Code</Label>
+                  <Label htmlFor="schoolShortCode" className="text-foreground">Short Code</Label>
                   <Input
                     id="schoolShortCode"
                     placeholder="e.g., PHSG"
                     maxLength={10}
                     {...form.register("schoolShortCode")}
                     disabled={isLoading}
-                    className="h-11 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white"
+                    className="h-11 bg-[hsl(var(--surface-soft))] border-[hsl(var(--border))] text-foreground placeholder:text-muted-foreground"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="emisNumber" className="text-slate-700 dark:text-slate-200">EMIS Number</Label>
+                  <Label htmlFor="emisNumber" className="text-foreground">EMIS Number</Label>
                   <Input
                     id="emisNumber"
                     placeholder="e.g., 700000000"
                     {...form.register("emisNumber")}
                     disabled={isLoading}
-                    className="h-11 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white"
+                    className="h-11 bg-[hsl(var(--surface-soft))] border-[hsl(var(--border))] text-foreground placeholder:text-muted-foreground"
                   />
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                  <p className="text-xs text-muted-foreground">
                     DBE school identifier (optional)
                   </p>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-700 dark:text-slate-200">School Type <span className="text-red-500">*</span></Label>
+                <Label className="text-foreground">School Type <span className="text-[hsl(var(--destructive))]">*</span></Label>
                 <Select
                   value={watch("schoolType")}
                   onValueChange={(value) => setValue("schoolType", value)}
                   disabled={isLoading}
                 >
-                  <SelectTrigger className="h-11 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white">
+                  <SelectTrigger className="h-11 bg-[hsl(var(--surface-soft))] border-[hsl(var(--border))] text-foreground placeholder:text-muted-foreground">
                     <SelectValue placeholder="Select school type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -389,7 +389,7 @@ export function RegisterForm() {
                   </SelectContent>
                 </Select>
                 {errors.schoolType && (
-                  <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                  <p className="text-sm text-[hsl(var(--destructive))] flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
                     {errors.schoolType.message}
                   </p>
@@ -397,13 +397,13 @@ export function RegisterForm() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-700 dark:text-slate-200">School Phase <span className="text-red-500">*</span></Label>
+                <Label className="text-foreground">School Phase <span className="text-[hsl(var(--destructive))]">*</span></Label>
                 <Select
                   value={watch("schoolPhase")}
                   onValueChange={(value) => setValue("schoolPhase", value)}
                   disabled={isLoading}
                 >
-                  <SelectTrigger className="h-11 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white">
+                  <SelectTrigger className="h-11 bg-[hsl(var(--surface-soft))] border-[hsl(var(--border))] text-foreground placeholder:text-muted-foreground">
                     <SelectValue placeholder="Select school phase" />
                   </SelectTrigger>
                   <SelectContent>
@@ -415,7 +415,7 @@ export function RegisterForm() {
                   </SelectContent>
                 </Select>
                 {errors.schoolPhase && (
-                  <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                  <p className="text-sm text-[hsl(var(--destructive))] flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
                     {errors.schoolPhase.message}
                   </p>
@@ -426,13 +426,13 @@ export function RegisterForm() {
             {/* Step 2: Location */}
             <div className={cn("space-y-4", step !== 2 && "hidden")}>
               <div className="space-y-2">
-                <Label className="text-slate-700 dark:text-slate-200">Province <span className="text-red-500">*</span></Label>
+                <Label className="text-foreground">Province <span className="text-[hsl(var(--destructive))]">*</span></Label>
                 <Select
                   value={watch("province")}
                   onValueChange={(value) => setValue("province", value)}
                   disabled={isLoading}
                 >
-                  <SelectTrigger className="h-11 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white">
+                  <SelectTrigger className="h-11 bg-[hsl(var(--surface-soft))] border-[hsl(var(--border))] text-foreground placeholder:text-muted-foreground">
                     <SelectValue placeholder="Select your province" />
                   </SelectTrigger>
                   <SelectContent>
@@ -444,7 +444,7 @@ export function RegisterForm() {
                   </SelectContent>
                 </Select>
                 {errors.province && (
-                  <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                  <p className="text-sm text-[hsl(var(--destructive))] flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
                     {errors.province.message}
                   </p>
@@ -452,27 +452,27 @@ export function RegisterForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="district" className="text-slate-700 dark:text-slate-200">Education District (optional)</Label>
+                <Label htmlFor="district" className="text-foreground">Education District (optional)</Label>
                 <Input
                   id="district"
                   placeholder="e.g., Tshwane North"
                   {...form.register("district")}
                   disabled={isLoading}
-                  className="h-11 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white"
+                  className="h-11 bg-[hsl(var(--surface-soft))] border-[hsl(var(--border))] text-foreground placeholder:text-muted-foreground"
                 />
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   Your school&apos;s education district
                 </p>
               </div>
 
-              <div className="rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 mt-4">
+              <div className="rounded-xl bg-[hsl(var(--info))]/10 border border-[hsl(var(--info))]/30 p-4 mt-4">
                 <div className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <MapPin className="h-5 w-5 text-[hsl(var(--info))] mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-slate-900 dark:text-white">
+                    <p className="text-sm font-medium text-foreground">
                       South African Schools
                     </p>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       SchoolMatica is designed specifically for South African schools,
                       with full CAPS curriculum alignment and DBE compliance features.
                     </p>
@@ -485,36 +485,36 @@ export function RegisterForm() {
             <div className={cn("space-y-4", step !== 3 && "hidden")}>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName" className="text-slate-700 dark:text-slate-200">
-                    First Name <span className="text-red-500">*</span>
+                  <Label htmlFor="firstName" className="text-foreground">
+                    First Name <span className="text-[hsl(var(--destructive))]">*</span>
                   </Label>
                   <Input
                     id="firstName"
                     placeholder="John"
                     {...form.register("firstName")}
                     disabled={isLoading}
-                    className="h-11 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white"
+                    className="h-11 bg-[hsl(var(--surface-soft))] border-[hsl(var(--border))] text-foreground placeholder:text-muted-foreground"
                   />
                   {errors.firstName && (
-                    <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                    <p className="text-sm text-[hsl(var(--destructive))] flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
                       {errors.firstName.message}
                     </p>
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName" className="text-slate-700 dark:text-slate-200">
-                    Last Name <span className="text-red-500">*</span>
+                  <Label htmlFor="lastName" className="text-foreground">
+                    Last Name <span className="text-[hsl(var(--destructive))]">*</span>
                   </Label>
                   <Input
                     id="lastName"
                     placeholder="Smith"
                     {...form.register("lastName")}
                     disabled={isLoading}
-                    className="h-11 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white"
+                    className="h-11 bg-[hsl(var(--surface-soft))] border-[hsl(var(--border))] text-foreground placeholder:text-muted-foreground"
                   />
                   {errors.lastName && (
-                    <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                    <p className="text-sm text-[hsl(var(--destructive))] flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
                       {errors.lastName.message}
                     </p>
@@ -523,8 +523,8 @@ export function RegisterForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-700 dark:text-slate-200">
-                  Email Address <span className="text-red-500">*</span>
+                <Label htmlFor="email" className="text-foreground">
+                  Email Address <span className="text-[hsl(var(--destructive))]">*</span>
                 </Label>
                 <Input
                   id="email"
@@ -532,13 +532,13 @@ export function RegisterForm() {
                   placeholder="admin@school.co.za"
                   {...form.register("email")}
                   disabled={isLoading}
-                  className="h-11 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white"
+                  className="h-11 bg-[hsl(var(--surface-soft))] border-[hsl(var(--border))] text-foreground placeholder:text-muted-foreground"
                 />
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   This will be your login email
                 </p>
                 {errors.email && (
-                  <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                  <p className="text-sm text-[hsl(var(--destructive))] flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
                     {errors.email.message}
                   </p>
@@ -547,24 +547,24 @@ export function RegisterForm() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-slate-700 dark:text-slate-200">Phone Number</Label>
+                  <Label htmlFor="phone" className="text-foreground">Phone Number</Label>
                   <Input
                     id="phone"
                     type="tel"
                     placeholder="012 345 6789"
                     {...form.register("phone")}
                     disabled={isLoading}
-                    className="h-11 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white"
+                    className="h-11 bg-[hsl(var(--surface-soft))] border-[hsl(var(--border))] text-foreground placeholder:text-muted-foreground"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="jobTitle" className="text-slate-700 dark:text-slate-200">Job Title</Label>
+                  <Label htmlFor="jobTitle" className="text-foreground">Job Title</Label>
                   <Input
                     id="jobTitle"
                     placeholder="e.g., Principal"
                     {...form.register("jobTitle")}
                     disabled={isLoading}
-                    className="h-11 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white"
+                    className="h-11 bg-[hsl(var(--surface-soft))] border-[hsl(var(--border))] text-foreground placeholder:text-muted-foreground"
                   />
                 </div>
               </div>
@@ -573,8 +573,8 @@ export function RegisterForm() {
             {/* Step 4: Security & Consent */}
             <div className={cn("space-y-4", step !== 4 && "hidden")}>
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-slate-700 dark:text-slate-200">
-                  Password <span className="text-red-500">*</span>
+                <Label htmlFor="password" className="text-foreground">
+                  Password <span className="text-[hsl(var(--destructive))]">*</span>
                 </Label>
                 <Input
                   id="password"
@@ -582,10 +582,10 @@ export function RegisterForm() {
                   placeholder="Minimum 8 characters"
                   {...form.register("password")}
                   disabled={isLoading}
-                  className="h-11 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white"
+                  className="h-11 bg-[hsl(var(--surface-soft))] border-[hsl(var(--border))] text-foreground placeholder:text-muted-foreground"
                 />
                 {errors.password && (
-                  <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                  <p className="text-sm text-[hsl(var(--destructive))] flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
                     {errors.password.message}
                   </p>
@@ -593,8 +593,8 @@ export function RegisterForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-slate-700 dark:text-slate-200">
-                  Confirm Password <span className="text-red-500">*</span>
+                <Label htmlFor="confirmPassword" className="text-foreground">
+                  Confirm Password <span className="text-[hsl(var(--destructive))]">*</span>
                 </Label>
                 <Input
                   id="confirmPassword"
@@ -602,10 +602,10 @@ export function RegisterForm() {
                   placeholder="Re-enter your password"
                   {...form.register("confirmPassword")}
                   disabled={isLoading}
-                  className="h-11 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white"
+                  className="h-11 bg-[hsl(var(--surface-soft))] border-[hsl(var(--border))] text-foreground placeholder:text-muted-foreground"
                 />
                 {errors.confirmPassword && (
-                  <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
+                  <p className="text-sm text-[hsl(var(--destructive))] flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
                     {errors.confirmPassword.message}
                   </p>
@@ -614,25 +614,25 @@ export function RegisterForm() {
 
               {/* Consent Checkboxes */}
               <div className="space-y-3 pt-2">
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-[hsl(var(--border))]">
                   <Checkbox
                     id="acceptTerms"
                     checked={watch("acceptTerms")}
                     onCheckedChange={(checked) => setValue("acceptTerms", checked as boolean)}
                     disabled={isLoading}
-                    className="mt-1 border-slate-300 dark:border-slate-600"
+                    className="mt-1 border-[hsl(var(--border))]"
                   />
                   <div className="flex-1">
-                    <Label htmlFor="acceptTerms" className="cursor-pointer text-sm font-normal text-slate-700 dark:text-slate-300">
+                    <Label htmlFor="acceptTerms" className="cursor-pointer text-sm font-normal text-foreground">
                       I accept the{" "}
-                      <Link href="/terms" className="text-violet-600 dark:text-violet-400 hover:underline">
+                      <Link href="/terms" className="text-[hsl(var(--accent-violet))] hover:underline">
                         Terms of Service
                       </Link>{" "}
                       and{" "}
-                      <Link href="/privacy" className="text-violet-600 dark:text-violet-400 hover:underline">
+                      <Link href="/privacy" className="text-[hsl(var(--accent-violet))] hover:underline">
                         Privacy Policy
                       </Link>
-                      <span className="text-red-500"> *</span>
+                      <span className="text-[hsl(var(--destructive))]"> *</span>
                     </Label>
                   </div>
                 </div>
@@ -643,23 +643,23 @@ export function RegisterForm() {
                   </p>
                 )}
 
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-[hsl(var(--border))]">
                   <Checkbox
                     id="acceptPopia"
                     checked={watch("acceptPopia")}
                     onCheckedChange={(checked) => setValue("acceptPopia", checked as boolean)}
                     disabled={isLoading}
-                    className="mt-1 border-slate-300 dark:border-slate-600"
+                    className="mt-1 border-[hsl(var(--border))]"
                   />
                   <div className="flex-1">
-                    <Label htmlFor="acceptPopia" className="cursor-pointer text-sm font-normal text-slate-700 dark:text-slate-300">
+                    <Label htmlFor="acceptPopia" className="cursor-pointer text-sm font-normal text-foreground">
                       I consent to the processing of personal information in accordance with{" "}
-                      <Link href="/popia" className="text-violet-600 dark:text-violet-400 hover:underline">
+                      <Link href="/popia" className="text-[hsl(var(--accent-violet))] hover:underline">
                         POPIA
                       </Link>
-                      <span className="text-red-500"> *</span>
+                      <span className="text-[hsl(var(--destructive))]"> *</span>
                     </Label>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       Protection of Personal Information Act compliance
                     </p>
                   </div>
@@ -681,7 +681,7 @@ export function RegisterForm() {
                   variant="outline"
                   onClick={prevStep}
                   disabled={isLoading}
-                  className="flex-1 h-11 border-slate-200 dark:border-slate-700"
+                  className="flex-1 h-11 border-[hsl(var(--border))]"
                 >
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back
@@ -692,7 +692,7 @@ export function RegisterForm() {
                   type="button"
                   onClick={nextStep}
                   disabled={isLoading}
-                  className="flex-1 h-11 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white"
+                  className="flex-1 h-11 bg-gradient-to-r from-[hsl(var(--accent-violet))] to-[hsl(var(--accent-iris))] hover:from-[hsl(var(--accent-violet))]/90 hover:to-[hsl(var(--accent-iris))]/90 text-white"
                 >
                   Continue
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -701,7 +701,7 @@ export function RegisterForm() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="flex-1 h-11 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white"
+                  className="flex-1 h-11 bg-gradient-to-r from-[hsl(var(--accent-violet))] to-[hsl(var(--accent-iris))] hover:from-[hsl(var(--accent-violet))]/90 hover:to-[hsl(var(--accent-iris))]/90 text-white"
                 >
                   {isLoading ? (
                     <>
@@ -720,10 +720,10 @@ export function RegisterForm() {
           </form>
 
           {/* Sign In Link */}
-          <div className="mt-6 text-center border-t border-slate-200 dark:border-slate-700 pt-6">
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+          <div className="mt-6 text-center border-t border-[hsl(var(--border))] pt-6">
+            <p className="text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link href="/login" className="text-violet-600 dark:text-violet-400 hover:underline font-medium">
+              <Link href="/login" className="text-[hsl(var(--accent-violet))] hover:underline font-medium">
                 Sign in
               </Link>
             </p>

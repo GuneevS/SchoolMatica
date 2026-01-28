@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authorizeWithSchool, hasSchoolAccess } from "@/lib/auth";
+import { createBulkNotifications } from "@/lib/notifications";
 
 interface Params {
   params: Promise<{ threadId: string }>;
@@ -75,5 +76,62 @@ export async function POST(request: NextRequest, { params }: Params) {
       attachmentUrl: parsed.data.attachmentUrl ?? null,
     },
   });
+
+  // Notify other participants in the thread (except the commenter)
+  try {
+    // Get all unique roles that have commented on this thread
+    const participantRoles = await prisma.moderationComment.findMany({
+      where: { threadId },
+      select: { authorRole: true },
+      distinct: ["authorRole"],
+    });
+
+    // Get plan details for context
+    const planId = thread.assessmentPlan?.id || thread.assessment?.assessmentPlanId;
+    const planName = thread.assessmentPlan?.name || thread.title || "Assessment Plan";
+
+    // Find users with those roles (excluding the commenter's role)
+    const roleKeys = participantRoles
+      .map(p => p.authorRole.toLowerCase())
+      .filter(role => role !== parsed.data.authorRole.toLowerCase());
+
+    if (roleKeys.length > 0) {
+      const participants = await prisma.appUser.findMany({
+        where: {
+          schoolId,
+          roleAssignments: {
+            some: {
+              role: {
+                key: { in: roleKeys },
+              },
+              scopeSchoolId: schoolId,
+            },
+          },
+        },
+      });
+
+      if (participants.length > 0) {
+        await createBulkNotifications({
+          prisma,
+          schoolId,
+          userIds: participants.map(p => p.id),
+          type: "system",
+          title: "New Moderation Comment",
+          body: `${parsed.data.authorRole} added a comment to the moderation discussion for "${planName}"`,
+          actionUrl: `/assessment-plans/${planId}`,
+          data: { 
+            threadId, 
+            commentId: comment.id,
+            authorRole: parsed.data.authorRole,
+            planId,
+          },
+        });
+      }
+    }
+  } catch (notificationError) {
+    // Log error but don't fail the comment creation
+    console.error("Failed to send moderation comment notifications:", notificationError);
+  }
+
   return NextResponse.json(comment, { status: 201 });
 }

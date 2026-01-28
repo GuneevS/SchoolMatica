@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { authorizeWithSchool, hasSchoolAccess } from "@/lib/auth";
+import { notifyParentsOfBehaviorIncident } from "@/lib/notifications";
+import { recordAuditLog } from "@/lib/domain/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -143,7 +145,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Update the student's behavior balance
-    await prisma.behaviorBalance.upsert({
+    const updatedBalance = await prisma.behaviorBalance.upsert({
       where: { studentId },
       create: {
         studentId,
@@ -160,20 +162,117 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Check if student has crossed any thresholds (simplified)
-    if (type === "Demerit") {
-      const balance = await prisma.behaviorBalance.findUnique({
-        where: { studentId },
-      });
+    // Record audit log
+    await recordAuditLog({
+      prisma,
+      schoolId: effectiveSchoolId,
+      entityType: "BehaviorIncident",
+      entityId: incident.id,
+      action: "INCIDENT_CREATED",
+      actorRole: auth.role || "Unknown",
+      actorName: auth.user.displayName || "System",
+      metadata: {
+        type: incident.type,
+        category: incident.category,
+        points: incident.points,
+        studentId: incident.studentId,
+        studentName: `${incident.student.firstName} ${incident.student.lastName}`,
+      },
+    });
 
-      if (balance && balance.demeritTotal >= 10) {
-        // Could trigger notifications here
-        // For now, just log
-        console.log(`Student ${studentId} has reached ${balance.demeritTotal} demerits`);
+    // Trigger parent notifications
+    const studentWithParents = await prisma.student.findUnique({
+      where: { id: studentId },
+      include: {
+        parents: { where: { primary: true } },
+        user: true,
+      },
+    });
+
+    if (studentWithParents?.parents && studentWithParents.parents.length > 0) {
+      const primaryParent = studentWithParents.parents[0];
+      
+      try {
+        await notifyParentsOfBehaviorIncident({
+          incident,
+          student: studentWithParents,
+          school: { id: effectiveSchoolId, name: "School" }, // Will be fetched in notification function
+          parentContact: primaryParent,
+        });
+      } catch (notifError) {
+        // Log error but don't fail the incident creation
+        console.error("Failed to send parent notification:", notifError);
       }
     }
 
-    return NextResponse.json({ incident });
+    // Check if student has crossed any thresholds
+    const policies = await prisma.behaviorPolicy.findMany({
+      where: {
+        schoolId: effectiveSchoolId,
+        type,
+        isActive: true,
+      },
+    });
+
+    for (const policy of policies) {
+      const thresholds = (policy.thresholds as any) || [];
+      
+      if (Array.isArray(thresholds)) {
+        for (const threshold of thresholds) {
+          const relevantTotal = type === "Merit" 
+            ? updatedBalance.meritTotal 
+            : updatedBalance.demeritTotal;
+
+          // Check if threshold is crossed
+          if (relevantTotal >= threshold.value) {
+            // Check if trigger already exists for this threshold
+            const existingTrigger = await prisma.behaviorThresholdTrigger.findFirst({
+              where: {
+                studentId,
+                type,
+                thresholdValue: threshold.value,
+                status: "Active",
+              },
+            });
+
+            if (!existingTrigger) {
+              // Create threshold trigger
+              await prisma.behaviorThresholdTrigger.create({
+                data: {
+                  studentId,
+                  schoolId: effectiveSchoolId,
+                  type,
+                  thresholdValue: threshold.value,
+                  thresholdName: threshold.name || `${threshold.value} ${type}s`,
+                  action: threshold.action || "NOTIFY_PARENT",
+                  status: "Active",
+                },
+              });
+
+              // Log threshold crossing
+              await recordAuditLog({
+                prisma,
+                schoolId: effectiveSchoolId,
+                entityType: "BehaviorThresholdTrigger",
+                entityId: studentId,
+                action: "THRESHOLD_CROSSED",
+                actorRole: "System",
+                actorName: "Automated Threshold Check",
+                metadata: {
+                  type,
+                  thresholdValue: threshold.value,
+                  thresholdName: threshold.name,
+                  currentTotal: relevantTotal,
+                  studentId,
+                },
+              });
+            }
+          }
+        }
+      }
+    }
+
+    return NextResponse.json({ incident, balance: updatedBalance });
   } catch (error) {
     console.error("Error creating incident:", error);
     return NextResponse.json(

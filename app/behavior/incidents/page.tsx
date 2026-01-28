@@ -38,6 +38,7 @@ async function getIncidents(schoolId: string) {
               name: true,
             },
           },
+          behaviorBalance: true,
         },
       },
       issuedBy: {
@@ -209,6 +210,13 @@ export default async function IncidentsPage() {
                             {incident.type === "Merit" ? "+" : "-"}{incident.points} pts
                           </Badge>
                           <Badge variant="outline">{incident.category}</Badge>
+                          {incident.student.behaviorBalance && (
+                            <Badge variant="secondary" className="text-xs">
+                              Running: {incident.type === "Merit" 
+                                ? `${incident.student.behaviorBalance.meritTotal} merits`
+                                : `${incident.student.behaviorBalance.demeritTotal} demerits`}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                       

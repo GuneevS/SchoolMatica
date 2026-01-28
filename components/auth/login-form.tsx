@@ -269,10 +269,10 @@ export function LoginForm() {
           {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200 dark:border-slate-700" />
+              <div className="w-full border-t border-[hsl(var(--border))]" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white dark:bg-slate-900 px-3 text-slate-500 dark:text-slate-400">
+              <span className="bg-[hsl(var(--surface-strong))] px-3 text-muted-foreground">
                 New to SchoolMatica?
               </span>
             </div>
@@ -281,25 +281,25 @@ export function LoginForm() {
           {/* Register Link - Only for Schools */}
           <div className="text-center">
             {selectedRole === "school" ? (
-              <Button variant="outline" asChild className="w-full h-11 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">
+              <Button variant="outline" asChild className="w-full h-11 border-[hsl(var(--border))] hover:bg-[hsl(var(--surface-soft))]">
                 <Link href="/register">
                   Register Your School
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
             ) : (
-              <p className="text-sm text-slate-600 dark:text-slate-400">
+              <p className="text-sm text-muted-foreground">
                 {selectedRole === "teacher" ? (
                   <>
                     Ask your school administrator to invite you, or{" "}
-                    <Link href="/register" className="text-violet-600 dark:text-violet-400 hover:underline font-medium">
+                    <Link href="/register" className="text-[hsl(var(--accent-violet))] hover:underline font-medium">
                       register your school
                     </Link>
                   </>
                 ) : selectedRole === "parent" ? (
                   <>
                     Parent accounts are created by the school.{" "}
-                    <Link href="/contact" className="text-violet-600 dark:text-violet-400 hover:underline font-medium">
+                    <Link href="/contact" className="text-[hsl(var(--accent-violet))] hover:underline font-medium">
                       Contact your school
                     </Link>{" "}
                     for access.
@@ -307,7 +307,7 @@ export function LoginForm() {
                 ) : (
                   <>
                     Student accounts are managed by your school.{" "}
-                    <Link href="/contact" className="text-violet-600 dark:text-violet-400 hover:underline font-medium">
+                    <Link href="/contact" className="text-[hsl(var(--accent-violet))] hover:underline font-medium">
                       Contact your school
                     </Link>{" "}
                     for access.

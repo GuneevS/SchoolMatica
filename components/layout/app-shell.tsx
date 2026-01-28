@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { SchoolSwitcher } from "@/components/school-switcher";
 import { SuperAdminOverlay } from "@/components/super-admin/super-admin-overlay";
 import { UnifiedLogo } from "@/components/brand/unified-logo";
+import { NotificationDropdown } from "@/components/notifications";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard" },
@@ -143,6 +144,7 @@ export function AppShell({ children, initialSchool, isSuperAdmin = false, user }
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <NotificationDropdown />
               <SchoolSwitcher initialSchool={initialSchool} />
               <ThemeToggle />
               <RoleSwitcher />

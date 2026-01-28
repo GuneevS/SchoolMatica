@@ -21,32 +21,32 @@ const roleOptions: RoleOption[] = [
     label: "School Admin",
     description: "Administrative access",
     icon: Building2,
-    activeGradient: "from-violet-500 to-purple-600",
-    iconBg: "bg-violet-100 dark:bg-violet-900/50 text-violet-600 dark:text-violet-400",
+    activeGradient: "from-[hsl(var(--accent-violet))] to-[hsl(var(--accent-iris))]",
+    iconBg: "bg-[hsl(var(--accent-violet))]/10 text-[hsl(var(--accent-violet))]",
   },
   {
     id: "teacher",
     label: "Teacher",
     description: "Educator portal",
     icon: GraduationCap,
-    activeGradient: "from-blue-500 to-cyan-600",
-    iconBg: "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400",
+    activeGradient: "from-[hsl(var(--accent-cobalt))] to-[hsl(var(--accent-iris))]",
+    iconBg: "bg-[hsl(var(--accent-cobalt))]/10 text-[hsl(var(--accent-cobalt))]",
   },
   {
     id: "parent",
     label: "Parent",
     description: "Guardian access",
     icon: Users,
-    activeGradient: "from-emerald-500 to-teal-600",
-    iconBg: "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400",
+    activeGradient: "from-[hsl(var(--accent-mint))] to-[hsl(var(--success))]",
+    iconBg: "bg-[hsl(var(--accent-mint))]/10 text-[hsl(var(--accent-mint))]",
   },
   {
     id: "student",
     label: "Student",
     description: "Learner portal",
     icon: UserCircle,
-    activeGradient: "from-amber-500 to-orange-600",
-    iconBg: "bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400",
+    activeGradient: "from-[hsl(var(--accent-flamingo))] to-[hsl(var(--accent-gold))]",
+    iconBg: "bg-[hsl(var(--accent-flamingo))]/10 text-[hsl(var(--accent-flamingo))]",
   },
 ];
 
@@ -60,7 +60,7 @@ export function RoleLoginTabs({ value, onChange, className }: RoleLoginTabsProps
   return (
     <div className={cn("w-full", className)}>
       {/* Desktop tabs - SOLID BACKGROUND */}
-      <div className="hidden sm:grid sm:grid-cols-4 gap-2 p-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-lg">
+      <div className="hidden sm:grid sm:grid-cols-4 gap-2 p-2 rounded-2xl bg-[hsl(var(--surface-strong))] border border-[hsl(var(--border-strong))] shadow-lg">
         {roleOptions.map((role) => {
           const Icon = role.icon;
           const isActive = value === role.id;
@@ -74,7 +74,7 @@ export function RoleLoginTabs({ value, onChange, className }: RoleLoginTabsProps
                 "relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl transition-all duration-200",
                 isActive
                   ? `bg-gradient-to-br ${role.activeGradient} text-white shadow-lg`
-                  : "bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
+                  : "bg-[hsl(var(--surface-soft))] hover:bg-[hsl(var(--surface-soft))]/80 text-foreground"
               )}
             >
               <Icon className={cn("h-5 w-5", isActive && "drop-shadow-sm")} />
@@ -99,7 +99,7 @@ export function RoleLoginTabs({ value, onChange, className }: RoleLoginTabsProps
                 "w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200",
                 isActive
                   ? `bg-gradient-to-r ${role.activeGradient} text-white shadow-lg`
-                  : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  : "bg-[hsl(var(--surface-strong))] border border-[hsl(var(--border-strong))] hover:bg-[hsl(var(--surface-soft))]"
               )}
             >
               <div
@@ -115,14 +115,14 @@ export function RoleLoginTabs({ value, onChange, className }: RoleLoginTabsProps
               <div className="flex-1 text-left">
                 <p className={cn(
                   "text-sm font-semibold",
-                  !isActive && "text-slate-900 dark:text-white"
+                  !isActive && "text-foreground"
                 )}>
                   {role.label}
                 </p>
                 <p
                   className={cn(
                     "text-xs",
-                    isActive ? "text-white/80" : "text-slate-500 dark:text-slate-400"
+                    isActive ? "text-white/80" : "text-muted-foreground"
                   )}
                 >
                   {role.description}

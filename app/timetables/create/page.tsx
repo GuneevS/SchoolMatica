@@ -9,9 +9,18 @@ import { Calendar } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function CreateTimetablePage() {
-  const school = await getActiveSchool();
+  let school = await getActiveSchool();
+  
+  // Fallback to first school if none active
   if (!school) {
-    redirect("/");
+    school = await prisma.school.findFirst({ 
+      include: { gradingConfig: true },
+      orderBy: { createdAt: "desc" } 
+    });
+  }
+  
+  if (!school) {
+    redirect("/dashboard?error=no_school");
   }
 
   const classes = await prisma.classGroup.findMany({

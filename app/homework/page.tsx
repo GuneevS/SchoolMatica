@@ -1,4 +1,4 @@
-import { getAuthContext } from "@/lib/auth";
+import { getAuthContext, isSuperAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { HomeworkPageClient } from "./homework-client";
@@ -7,8 +7,15 @@ export default async function HomeworkPage() {
   const auth = await getAuthContext();
   if (!auth) redirect("/login");
 
-  const schoolId = auth.user.schoolId;
-  if (!schoolId) redirect("/login");
+  let schoolId = auth.user.schoolId;
+  
+  // Super admins may not have a schoolId - use first available school
+  if (!schoolId && isSuperAdmin(auth)) {
+    const firstSchool = await prisma.school.findFirst({ orderBy: { createdAt: "desc" } });
+    if (firstSchool) schoolId = firstSchool.id;
+  }
+  
+  if (!schoolId) redirect("/dashboard?error=no_school");
 
   // Fetch homework with submissions and related data
   const homework = await prisma.homework.findMany({

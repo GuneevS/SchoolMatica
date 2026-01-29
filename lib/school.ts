@@ -11,7 +11,7 @@ export async function getActiveSchool() {
 
   const isAccessible = (schoolId: string) => {
     if (!auth) return false;
-    if (auth.isAdmin) return true;
+    if (auth.isAdmin || auth.isSuperAdmin) return true;
     return auth.schoolIds.includes(schoolId);
   };
 
@@ -34,8 +34,12 @@ export async function getActiveSchool() {
       });
       if (school) return school;
     }
-    if (auth.isAdmin) {
-      const school = await prisma.school.findFirst({ include: { gradingConfig: true } });
+    // Super admins and system admins can access any school
+    if (auth.isAdmin || auth.isSuperAdmin) {
+      const school = await prisma.school.findFirst({ 
+        include: { gradingConfig: true },
+        orderBy: { createdAt: "desc" },
+      });
       if (school) return school;
     }
   }

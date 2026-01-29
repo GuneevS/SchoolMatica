@@ -153,7 +153,7 @@ export async function getAuthorizedActiveSchool() {
 
   // If cookie has a school ID, validate access
   if (schoolIdFromCookie) {
-    if (auth.isAdmin || auth.schoolIds.includes(schoolIdFromCookie)) {
+    if (auth.isAdmin || auth.isSuperAdmin || auth.schoolIds.includes(schoolIdFromCookie)) {
       const school = await prisma.school.findUnique({
         where: { id: schoolIdFromCookie },
         include: { gradingConfig: true },
@@ -171,10 +171,11 @@ export async function getAuthorizedActiveSchool() {
     return school;
   }
 
-  // For admins with no specific assignments, get first school
-  if (auth.isAdmin) {
+  // For admins/super admins with no specific assignments, get first school
+  if (auth.isAdmin || auth.isSuperAdmin) {
     const school = await prisma.school.findFirst({
       include: { gradingConfig: true },
+      orderBy: { createdAt: "desc" },
     });
     return school;
   }

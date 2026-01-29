@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Shield } from "lucide-react";
@@ -11,25 +12,167 @@ import { SchoolSwitcher } from "@/components/school-switcher";
 import { SuperAdminOverlay } from "@/components/super-admin/super-admin-overlay";
 import { UnifiedLogo } from "@/components/brand/unified-logo";
 import { NotificationDropdown } from "@/components/notifications";
+import { useAuth } from "@/lib/hooks/use-auth";
+import {
+  hasPermission,
+  hasAnyPermission,
+  type ClientAuthContext,
+} from "@/lib/permissions-client";
 
-const navItems = [
+/**
+ * Navigation item with permission requirements
+ */
+interface NavItem {
+  label: string;
+  href: string;
+  /**
+   * Permission check function - returns true if the user can see this nav item
+   * If undefined, the item is visible to all authenticated users
+   */
+  canAccess?: (auth: ClientAuthContext | null) => boolean;
+}
+
+/**
+ * Helper to check if user has a specific role key
+ */
+function hasRoleKey(auth: ClientAuthContext | null, roleKeys: string[]): boolean {
+  if (!auth) return false;
+  return auth.user.roleAssignments.some(ra => roleKeys.includes(ra.role.key));
+}
+
+/**
+ * Navigation items with permission-based visibility rules
+ */
+const navItems: NavItem[] = [
+  // Dashboard: Everyone authenticated
   { label: "Dashboard", href: "/dashboard" },
-  { label: "Classes", href: "/classes" },
-  { label: "Assessment Plans", href: "/assessment-plans" },
-  { label: "Markbook", href: "/markbook" },
-  { label: "Behaviour", href: "/behavior" },
-  { label: "Communications", href: "/communications" },
-  { label: "Fees & Accounts", href: "/fees" },
-  { label: "Timetables", href: "/timetables" },
+  
+  // Classes: class:read permission
+  {
+    label: "Classes",
+    href: "/classes",
+    canAccess: (auth) => hasPermission(auth, "class:read"),
+  },
+  
+  // Assessment Plans: assessmentPlan:read permission
+  {
+    label: "Assessment Plans",
+    href: "/assessment-plans",
+    canAccess: (auth) => hasPermission(auth, "assessmentPlan:read"),
+  },
+  
+  // Markbook: mark:read permission
+  {
+    label: "Markbook",
+    href: "/markbook",
+    canAccess: (auth) => hasPermission(auth, "mark:read"),
+  },
+  
+  // Behaviour: Teachers and above (staff with classroom responsibilities)
+  {
+    label: "Behaviour",
+    href: "/behavior",
+    canAccess: (auth) =>
+      hasRoleKey(auth, ["teacher", "hod", "deputy", "principal", "admin", "smt"]) ||
+      hasAnyPermission(auth, ["student:update", "class:manage"]),
+  },
+  
+  // Communications: All school staff
+  {
+    label: "Communications",
+    href: "/communications",
+    canAccess: (auth) =>
+      hasRoleKey(auth, ["teacher", "hod", "deputy", "principal", "admin", "smt", "clerk", "secretary"]) ||
+      hasAnyPermission(auth, ["class:read", "student:read"]),
+  },
+  
+  // Fees & Accounts: Admin roles only
+  {
+    label: "Fees & Accounts",
+    href: "/fees",
+    canAccess: (auth) =>
+      hasRoleKey(auth, ["admin", "principal", "deputy", "bursar", "finance"]) ||
+      auth?.isAdmin === true,
+  },
+  
+  // Timetables: timetable:read permission
+  {
+    label: "Timetables",
+    href: "/timetables",
+    canAccess: (auth) => hasPermission(auth, "timetable:read"),
+  },
+  
+  // Events: Visible to all authenticated users
   { label: "Events", href: "/events" },
-  { label: "Homework", href: "/homework" },
-  { label: "Reports", href: "/reports" },
-  { label: "Registrations", href: "/registrations" },
-  { label: "Students", href: "/students" },
-  { label: "Teachers", href: "/teachers" },
-  { label: "Schools", href: "/schools" },
-  { label: "Settings", href: "/settings/grading" },
+  
+  // Homework: Teachers and above
+  {
+    label: "Homework",
+    href: "/homework",
+    canAccess: (auth) =>
+      hasRoleKey(auth, ["teacher", "hod", "deputy", "principal", "admin", "smt"]) ||
+      hasPermission(auth, "class:manage"),
+  },
+  
+  // Reports: report:read permission
+  {
+    label: "Reports",
+    href: "/reports",
+    canAccess: (auth) => hasPermission(auth, "report:read"),
+  },
+  
+  // Registrations: registration:read permission
+  {
+    label: "Registrations",
+    href: "/registrations",
+    canAccess: (auth) => hasPermission(auth, "registration:read"),
+  },
+  
+  // Students: student:read permission
+  {
+    label: "Students",
+    href: "/students",
+    canAccess: (auth) => hasPermission(auth, "student:read"),
+  },
+  
+  // Teachers: teacher:read permission (SMT, HOD, Admin)
+  {
+    label: "Teachers",
+    href: "/teachers",
+    canAccess: (auth) => hasPermission(auth, "teacher:read"),
+  },
+  
+  // Schools: school:manage permission (admin level)
+  {
+    label: "Schools",
+    href: "/schools",
+    canAccess: (auth) =>
+      hasAnyPermission(auth, ["school:manage", "school:create", "system:admin"]) ||
+      auth?.isAdmin === true,
+  },
+  
+  // Settings: school:manage or grading:read permission
+  {
+    label: "Settings",
+    href: "/settings/grading",
+    canAccess: (auth) =>
+      hasAnyPermission(auth, ["school:manage", "gradingConfig:read", "gradingConfig:update"]),
+  },
 ];
+
+/**
+ * Filter navigation items based on user permissions
+ */
+function filterNavItems(items: NavItem[], auth: ClientAuthContext | null): NavItem[] {
+  if (!auth) return [];
+  
+  return items.filter((item) => {
+    // If no permission check defined, item is visible to all authenticated users
+    if (!item.canAccess) return true;
+    // Run the permission check
+    return item.canAccess(auth);
+  });
+}
 
 // Marketing/landing pages that should NOT show the app shell
 const marketingPaths = ["/"];
@@ -60,6 +203,36 @@ interface Props {
 
 export function AppShell({ children, initialSchool, isSuperAdmin = false, user }: Props) {
   const pathname = usePathname();
+  const { user: authUser, permissions, isAdmin, schoolIds, isLoading } = useAuth();
+
+  // Build the client auth context for permission checks
+  const clientAuth: ClientAuthContext | null = useMemo(() => {
+    if (!authUser) return null;
+    return {
+      user: {
+        id: authUser.id,
+        email: authUser.email,
+        displayName: authUser.displayName ?? "",
+        schoolId: authUser.schoolId ?? "",
+        roleAssignments: authUser.roleAssignments,
+      },
+      permissions,
+      isAdmin,
+      schoolIds,
+    };
+  }, [authUser, permissions, isAdmin, schoolIds]);
+
+  // Filter navigation items based on user permissions
+  const filteredNavItems = useMemo(
+    () => filterNavItems(navItems, clientAuth),
+    [clientAuth]
+  );
+
+  // Check if user has super admin access
+  const hasSuperAdminAccess = useMemo(
+    () => hasPermission(clientAuth, "superadmin:access") || isSuperAdmin,
+    [clientAuth, isSuperAdmin]
+  );
 
   // For marketing pages, render children directly without the app shell chrome
   const isMarketingPage = pathname && marketingPaths.includes(pathname);
@@ -100,27 +273,39 @@ export function AppShell({ children, initialSchool, isSuperAdmin = false, user }
           <p className="text-xs font-normal text-muted-foreground mt-1 ml-[52px]">Assessment Suite</p>
         </Link>
         <nav className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
-          {navItems.map((item) => {
-            const isActive = pathname?.startsWith(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "rounded-2xl px-4 py-2 transition-all duration-200",
-                  isActive
-                    ? "bg-[hsl(var(--accent-iris))/0.12] text-foreground shadow-ambient-sm"
-                    : "hover:text-foreground hover:bg-[hsl(var(--surface-soft))]",
-                )}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
+          {isLoading ? (
+            // Show skeleton loading state while permissions are being fetched
+            <div className="space-y-2">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div
+                  key={i}
+                  className="h-9 rounded-2xl bg-[hsl(var(--surface-soft))] animate-pulse"
+                />
+              ))}
+            </div>
+          ) : (
+            filteredNavItems.map((item) => {
+              const isActive = pathname?.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "rounded-2xl px-4 py-2 transition-all duration-200",
+                    isActive
+                      ? "bg-[hsl(var(--accent-iris))/0.12] text-foreground shadow-ambient-sm"
+                      : "hover:text-foreground hover:bg-[hsl(var(--surface-soft))]",
+                  )}
+                >
+                  {item.label}
+                </Link>
+              );
+            })
+          )}
         </nav>
 
-        {/* Super Admin Link */}
-        {isSuperAdmin && (
+        {/* Super Admin Link - ONLY visible to users with superadmin:access permission */}
+        {hasSuperAdminAccess && (
           <div className="mt-auto pt-4 border-t border-[hsl(var(--border))/0.5]">
             <Link
               href="/super-admin"
@@ -160,8 +345,8 @@ export function AppShell({ children, initialSchool, isSuperAdmin = false, user }
         className="border border-[hsl(var(--border-strong))/0.55] bg-[hsl(var(--surface-strong))/0.95] text-foreground shadow-ambient-sm backdrop-blur hover:shadow-ambient"
       />
 
-      {/* Super Admin Overlay - only visible to super admins */}
-      {isSuperAdmin && user && (
+      {/* Super Admin Overlay - only visible to users with superadmin:access permission */}
+      {hasSuperAdminAccess && user && (
         <SuperAdminOverlay
           user={user}
           activeSchoolId={initialSchool?.id}

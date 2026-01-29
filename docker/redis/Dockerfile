@@ -24,9 +24,18 @@ RUN echo '#!/bin/sh' > /docker-entrypoint-init.sh && \
     echo 'exec docker-entrypoint.sh "$@"' >> /docker-entrypoint-init.sh && \
     chmod +x /docker-entrypoint-init.sh
 
+# Health check script that handles password authentication
+RUN echo '#!/bin/sh' > /healthcheck.sh && \
+    echo 'if [ -n "$REDIS_PASSWORD" ]; then' >> /healthcheck.sh && \
+    echo '  redis-cli -a "$REDIS_PASSWORD" --no-auth-warning ping | grep -q PONG || exit 1' >> /healthcheck.sh && \
+    echo 'else' >> /healthcheck.sh && \
+    echo '  redis-cli ping | grep -q PONG || exit 1' >> /healthcheck.sh && \
+    echo 'fi' >> /healthcheck.sh && \
+    chmod +x /healthcheck.sh
+
 # Health check
 HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
-    CMD redis-cli ping | grep -q PONG || exit 1
+    CMD /healthcheck.sh
 
 # Expose Redis port
 EXPOSE 6379

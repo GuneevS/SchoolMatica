@@ -2,17 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { mkdir, writeFile } from "fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { getAuthContext, hasSchoolAccess, getPrimarySchoolId } from "@/lib/auth";
+import { authorizeWithSchool, hasSchoolAccess, getPrimarySchoolId } from "@/lib/auth";
 
 const uploadsDir = path.join(process.cwd(), "public", "uploads");
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["application/pdf", "image/png", "image/jpeg", "image/jpg"];
 
 export async function POST(request: NextRequest) {
-  const auth = await getAuthContext(request);
-  if (!auth) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Require assessmentDocument:upload permission for file uploads
+  const result = await authorizeWithSchool(request, "assessmentDocument:upload");
+  if ("error" in result) {
+    return result.error;
   }
+  const { auth } = result;
 
   const formData = await request.formData();
   const file = formData.get("file");

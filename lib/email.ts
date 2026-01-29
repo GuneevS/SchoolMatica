@@ -3,30 +3,17 @@
  *
  * Handles all email communications including password resets, invitations, notifications, etc.
  *
- * PRODUCTION SETUP REQUIRED:
- * This module provides a structure for email sending but requires configuration
- * of an actual email service provider. Choose one of the following:
- *
- * 1. Resend (Recommended - Modern, developer-friendly)
- *    - npm install resend
- *    - Set RESEND_API_KEY in environment
- *    - https://resend.com/docs
- *
- * 2. SendGrid (Popular, reliable)
- *    - npm install @sendgrid/mail
- *    - Set SENDGRID_API_KEY in environment
- *    - https://sendgrid.com/docs
- *
- * 3. AWS SES (Cost-effective for high volume)
- *    - npm install @aws-sdk/client-ses
- *    - Set AWS credentials in environment
- *    - https://aws.amazon.com/ses/
- *
- * 4. Nodemailer (SMTP - Generic)
- *    - npm install nodemailer
- *    - Set SMTP credentials in environment
- *    - https://nodemailer.com/
+ * CONFIGURATION:
+ * Set the following environment variables for production:
+ * - SMTP_HOST: SMTP server hostname (e.g., smtp.gmail.com, smtp.sendgrid.net)
+ * - SMTP_PORT: SMTP port (587 for TLS, 465 for SSL)
+ * - SMTP_SECURE: "true" for SSL/TLS, "false" for STARTTLS
+ * - SMTP_USER: SMTP username/email
+ * - SMTP_PASSWORD: SMTP password or app-specific password
+ * - SMTP_FROM: Default sender email (e.g., "SchoolMatica <noreply@schoolmatica.co.za>")
  */
+
+import nodemailer from "nodemailer";
 
 export interface EmailOptions {
   to: string | string[];
@@ -50,85 +37,94 @@ export interface TeacherInvitationEmailData {
   inviterName: string;
 }
 
+export interface HomeworkMissingEmailData {
+  parentName: string;
+  studentName: string;
+  homeworkTitle: string;
+  subject: string;
+  className: string;
+  dueDate: string;
+  teacherName: string;
+  teacherEmail: string;
+  schoolName: string;
+  customMessage?: string;
+}
+
+// Create reusable transporter (lazy initialization)
+let transporter: nodemailer.Transporter | null = null;
+
+function getTransporter(): nodemailer.Transporter {
+  if (!transporter) {
+    const smtpHost = process.env.SMTP_HOST;
+    const smtpPort = parseInt(process.env.SMTP_PORT || "587", 10);
+    const smtpSecure = process.env.SMTP_SECURE === "true";
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPassword = process.env.SMTP_PASSWORD;
+
+    // Validate required config in production
+    if (process.env.NODE_ENV === "production") {
+      if (!smtpHost || !smtpUser || !smtpPassword) {
+        throw new Error(
+          "Email service not configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASSWORD environment variables."
+        );
+      }
+    }
+
+    transporter = nodemailer.createTransport({
+      host: smtpHost || "localhost",
+      port: smtpPort,
+      secure: smtpSecure,
+      auth: smtpUser && smtpPassword ? {
+        user: smtpUser,
+        pass: smtpPassword,
+      } : undefined,
+      // Connection pool for better performance
+      pool: true,
+      maxConnections: 5,
+      maxMessages: 100,
+    });
+  }
+  return transporter;
+}
+
 /**
- * Send an email using the configured email service
+ * Send an email using the configured SMTP service
  *
  * @param options - Email options (to, subject, html, etc.)
  * @returns Promise that resolves when email is sent
  */
 export async function sendEmail(options: EmailOptions): Promise<void> {
-  // TODO: Implement actual email sending in production
-  // For now, log to console in development
+  const defaultFrom = process.env.SMTP_FROM || "SchoolMatica <noreply@schoolmatica.co.za>";
 
-  if (process.env.NODE_ENV === "development") {
-    console.log("\n=== EMAIL (Development Mode) ===");
+  // Development mode: log email details without actually sending
+  if (process.env.NODE_ENV === "development" && !process.env.SMTP_HOST) {
+    console.log("\n=== EMAIL (Development Mode - Not Sent) ===");
     console.log("To:", options.to);
     console.log("Subject:", options.subject);
-    console.log("From:", options.from || process.env.SMTP_FROM || "noreply@schoolmatica.co.za");
-    console.log("HTML Preview:", options.html.substring(0, 200) + "...");
-    console.log("================================\n");
+    console.log("From:", options.from || defaultFrom);
+    console.log("HTML Preview:", options.html.substring(0, 500) + "...");
+    console.log("=============================================\n");
     return;
   }
 
-  // PRODUCTION IMPLEMENTATION EXAMPLES:
+  try {
+    const transport = getTransporter();
+    
+    const mailOptions = {
+      from: options.from || defaultFrom,
+      to: Array.isArray(options.to) ? options.to.join(", ") : options.to,
+      subject: options.subject,
+      html: options.html,
+      text: options.text,
+      replyTo: options.replyTo,
+    };
 
-  // Example 1: Using Resend
-  /*
-  const { Resend } = require('resend');
-  const resend = new Resend(process.env.RESEND_API_KEY);
-
-  await resend.emails.send({
-    from: options.from || 'SchoolMatica <noreply@schoolmatica.co.za>',
-    to: Array.isArray(options.to) ? options.to : [options.to],
-    subject: options.subject,
-    html: options.html,
-    text: options.text,
-    reply_to: options.replyTo,
-  });
-  */
-
-  // Example 2: Using SendGrid
-  /*
-  const sgMail = require('@sendgrid/mail');
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-  await sgMail.send({
-    to: options.to,
-    from: options.from || 'noreply@schoolmatica.co.za',
-    subject: options.subject,
-    html: options.html,
-    text: options.text,
-    replyTo: options.replyTo,
-  });
-  */
-
-  // Example 3: Using Nodemailer (SMTP)
-  /*
-  const nodemailer = require('nodemailer');
-  const transporter = nodemailer.createTransporter({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASSWORD,
-    },
-  });
-
-  await transporter.sendMail({
-    from: options.from || process.env.SMTP_FROM,
-    to: options.to,
-    subject: options.subject,
-    html: options.html,
-    text: options.text,
-    replyTo: options.replyTo,
-  });
-  */
-
-  throw new Error(
-    "Email service not configured. Please implement sendEmail() in lib/email.ts " +
-      "with your chosen email provider (Resend, SendGrid, AWS SES, or SMTP)."
-  );
+    const info = await transport.sendMail(mailOptions);
+    console.log(`[Email] Message sent: ${info.messageId} to ${options.to}`);
+  } catch (error) {
+    console.error("[Email] Failed to send email:", error);
+    throw new Error(`Failed to send email: ${error instanceof Error ? error.message : "Unknown error"}`);
+  }
 }
 
 /**
@@ -291,6 +287,130 @@ South Africa
   await sendEmail({
     to: email,
     subject: `Invitation to join ${data.schoolName} on SchoolMatica`,
+    html,
+    text,
+  });
+}
+
+/**
+ * Send homework missing notification email to parent
+ */
+export async function sendHomeworkMissingEmail(
+  email: string,
+  data: HomeworkMissingEmailData
+): Promise<void> {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Missing Homework Notification</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
+    <div style="text-align: center; margin-bottom: 20px;">
+      <span style="display: inline-block; background-color: #fef3c7; color: #92400e; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+        ⚠️ HOMEWORK ALERT
+      </span>
+    </div>
+
+    <h1 style="color: #dc2626; margin-top: 0; text-align: center;">Missing Homework</h1>
+
+    <p>Dear ${data.parentName},</p>
+
+    <p>This is a notification from <strong>${data.schoolName}</strong> regarding incomplete homework for your child.</p>
+
+    <div style="background-color: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0;">
+      <h3 style="margin-top: 0; color: #1f2937;">Assignment Details</h3>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280;">Student:</td>
+          <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: 600;">${data.studentName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280;">Assignment:</td>
+          <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: 600;">${data.homeworkTitle}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280;">Subject:</td>
+          <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">${data.subject}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280;">Class:</td>
+          <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">${data.className}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #6b7280;">Due Date:</td>
+          <td style="padding: 8px 0; color: #dc2626; font-weight: 600;">${data.dueDate}</td>
+        </tr>
+      </table>
+    </div>
+
+    ${data.customMessage ? `
+    <div style="background-color: #fefce8; border-left: 4px solid #eab308; padding: 15px; margin: 20px 0;">
+      <p style="margin: 0; color: #713f12;"><strong>Message from teacher:</strong></p>
+      <p style="margin: 10px 0 0 0; color: #78350f;">${data.customMessage}</p>
+    </div>
+    ` : ''}
+
+    <p>Please ensure that ${data.studentName} completes and submits this assignment as soon as possible. Consistent homework completion is important for academic success.</p>
+
+    <p>If you have any questions about this assignment, please contact the teacher:</p>
+    
+    <div style="background-color: #eff6ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
+      <p style="margin: 0;"><strong>${data.teacherName}</strong></p>
+      <p style="margin: 5px 0 0 0;">
+        <a href="mailto:${data.teacherEmail}" style="color: #2563eb;">${data.teacherEmail}</a>
+      </p>
+    </div>
+
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+
+    <p style="font-size: 14px; color: #6b7280;">
+      <strong>${data.schoolName}</strong><br>
+      Powered by SchoolMatica<br>
+      Comprehensive School Management System
+    </p>
+
+    <p style="font-size: 12px; color: #9ca3af;">
+      This is an automated notification from your child's school. Please do not reply directly to this email.
+    </p>
+  </div>
+</body>
+</html>
+  `;
+
+  const text = `
+Missing Homework Notification
+
+Dear ${data.parentName},
+
+This is a notification from ${data.schoolName} regarding incomplete homework for your child.
+
+ASSIGNMENT DETAILS
+------------------
+Student: ${data.studentName}
+Assignment: ${data.homeworkTitle}
+Subject: ${data.subject}
+Class: ${data.className}
+Due Date: ${data.dueDate}
+
+${data.customMessage ? `Message from teacher: ${data.customMessage}\n` : ''}
+Please ensure that ${data.studentName} completes and submits this assignment as soon as possible.
+
+If you have any questions, please contact:
+${data.teacherName}
+${data.teacherEmail}
+
+---
+${data.schoolName}
+Powered by SchoolMatica
+  `;
+
+  await sendEmail({
+    to: email,
+    subject: `Missing Homework: ${data.homeworkTitle} - ${data.studentName}`,
     html,
     text,
   });

@@ -112,9 +112,8 @@ export async function POST(request: NextRequest, { params }: Params) {
 
       if (participants.length > 0) {
         await createBulkNotifications({
-          prisma,
-          schoolId,
           userIds: participants.map(p => p.id),
+          schoolId,
           type: "system",
           title: "New Moderation Comment",
           body: `${parsed.data.authorRole} added a comment to the moderation discussion for "${planName}"`,

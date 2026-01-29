@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
     where: { id: { in: entryAssessmentIds } },
     select: {
       id: true,
+      totalMark: true,
       assessmentPlan: {
         select: {
           status: true,
@@ -52,6 +53,22 @@ export async function POST(request: NextRequest) {
       },
     },
   });
+
+  // Validate mark ranges for each entry
+  for (const entry of parsed.data.entries) {
+    if (entry.rawMark !== null && entry.rawMark !== undefined) {
+      const assessment = assessmentsWithSchool.find(a => a.id === entry.assessmentId);
+      if (!assessment) {
+        return NextResponse.json({ error: `Assessment ${entry.assessmentId} not found` }, { status: 404 });
+      }
+      if (entry.rawMark < 0) {
+        return NextResponse.json({ error: `Mark cannot be negative` }, { status: 400 });
+      }
+      if (entry.rawMark > assessment.totalMark) {
+        return NextResponse.json({ error: `Mark ${entry.rawMark} exceeds total ${assessment.totalMark}` }, { status: 400 });
+      }
+    }
+  }
 
   // Check user has access to all schools involved
   const schoolIds = new Set(

@@ -18,6 +18,7 @@ import Link from "next/link";
 import { formatDateTime } from "@/lib/date-utils";
 import { ProvisionAdminDialog } from "@/components/super-admin/provision-admin-dialog";
 import { SchoolSwitchButton } from "@/components/super-admin/school-switch-button";
+import { SchoolEditDialog } from "@/components/super-admin/school-edit-dialog";
 
 interface PageProps {
   params: Promise<{ schoolId: string }>;
@@ -120,6 +121,7 @@ export default async function SchoolDetailPage({ params }: PageProps) {
             </p>
           </div>
           <div className="flex gap-3">
+            <SchoolEditDialog school={{ id: school.id, name: school.name, shortCode: school.shortCode }} />
             <SchoolSwitchButton schoolId={school.id} schoolName={school.name} />
             <ProvisionAdminDialog schoolId={school.id} schoolName={school.name} />
           </div>

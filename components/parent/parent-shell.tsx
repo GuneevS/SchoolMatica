@@ -12,6 +12,7 @@ import {
   LogOut,
   CreditCard,
   Calendar,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -21,16 +22,6 @@ import { NotificationDropdown } from "@/components/notifications";
 import { signOut } from "next-auth/react";
 import { UnifiedLogo } from "@/components/brand/unified-logo";
 
-const navItems = [
-  { label: "Dashboard", href: "/parent", icon: Home },
-  { label: "My Children", href: "/parent/children", icon: Users },
-  { label: "Messages", href: "/parent/messages", icon: MessageSquare, badge: 3 },
-  { label: "Fees & Payments", href: "/parent/fees", icon: CreditCard },
-  { label: "Events", href: "/parent/events", icon: Calendar },
-  { label: "Reports", href: "/parent/reports", icon: FileText },
-  { label: "Behaviour", href: "/parent/behavior", icon: Award },
-];
-
 interface Props {
   children: React.ReactNode;
   user: {
@@ -38,10 +29,35 @@ interface Props {
     email: string;
     displayName: string | null;
   };
+  unreadMessageCount?: number;
+  homeworkCount?: {
+    upcoming: number;
+    overdue: number;
+  };
+  childNames?: string[];
 }
 
-export function ParentShell({ children, user }: Props) {
+function getNavItems(unreadMessageCount: number, homeworkCount?: { upcoming: number; overdue: number }) {
+  const homeworkBadge = homeworkCount && (homeworkCount.upcoming + homeworkCount.overdue) > 0
+    ? homeworkCount.upcoming + homeworkCount.overdue
+    : undefined;
+  const homeworkBadgeVariant = homeworkCount && homeworkCount.overdue > 0 ? "destructive" : "default";
+  
+  return [
+    { label: "Dashboard", href: "/parent", icon: Home },
+    { label: "My Children", href: "/parent/children", icon: Users },
+    { label: "Homework", href: "/parent/homework", icon: BookOpen, badge: homeworkBadge, badgeVariant: homeworkBadgeVariant },
+    { label: "Messages", href: "/parent/messages", icon: MessageSquare, badge: unreadMessageCount > 0 ? unreadMessageCount : undefined },
+    { label: "Fees & Payments", href: "/parent/fees", icon: CreditCard },
+    { label: "Events", href: "/parent/events", icon: Calendar },
+    { label: "Reports", href: "/parent/reports", icon: FileText },
+    { label: "Behaviour", href: "/parent/behavior", icon: Award },
+  ];
+}
+
+export function ParentShell({ children, user, unreadMessageCount = 0, homeworkCount, childNames = [] }: Props) {
   const pathname = usePathname();
+  const navItems = getNavItems(unreadMessageCount, homeworkCount);
 
   return (
     <div className="relative flex min-h-screen bg-canvas text-foreground">
@@ -87,7 +103,14 @@ export function ParentShell({ children, user }: Props) {
                   {item.label}
                 </div>
                 {item.badge && (
-                  <Badge className="bg-[hsl(var(--accent-iris))] text-white text-xs h-5 min-w-5 flex items-center justify-center">
+                  <Badge 
+                    className={cn(
+                      "text-white text-xs h-5 min-w-5 flex items-center justify-center",
+                      item.badgeVariant === "destructive" 
+                        ? "bg-red-500" 
+                        : "bg-[hsl(var(--accent-iris))]"
+                    )}
+                  >
                     {item.badge}
                   </Badge>
                 )}

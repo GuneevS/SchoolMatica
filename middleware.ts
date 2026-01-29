@@ -7,7 +7,7 @@ const publicMarketingPaths = ["/"];
 // Auth-related pages that should be accessible without authentication
 const publicAuthPaths = ["/login", "/register", "/forgot-password", "/reset-password"];
 
-// Super admin pages - require authentication but skip school context
+// Super admin pages - require authentication AND super admin role
 const superAdminPaths = ["/super-admin"];
 
 // Parent portal pages - require parent role authentication
@@ -16,11 +16,12 @@ const parentPortalPaths = ["/parent"];
 // Student portal pages - require student role authentication
 const studentPortalPaths = ["/student"];
 
-export default authMiddleware((req) => {
+export default authMiddleware(async (req) => {
     const isAuth = !!req.auth;
+    const userEmail = req.auth?.user?.email;
     const pathname = req.nextUrl.pathname;
     const isAuthPage = publicAuthPaths.some(p => pathname.startsWith(p));
-    const isPublicPage = pathname.startsWith("/api/auth") || pathname.startsWith("/api/health") || pathname.startsWith("/api/schools/search");
+    const isPublicPage = pathname.startsWith("/api/auth") || pathname.startsWith("/api/health");
     const isMarketingPage = publicMarketingPaths.includes(pathname);
     const isSuperAdminPage = superAdminPaths.some(p => pathname.startsWith(p));
     const isParentPortal = parentPortalPaths.some(p => pathname.startsWith(p));
@@ -53,8 +54,15 @@ export default authMiddleware((req) => {
         );
     }
 
-    // Super admin pages - just check auth (page itself handles permission check)
-    if (isSuperAdminPage && isAuth) {
+    // Super admin pages - require authentication
+    // Permission check is done in the page components and API routes
+    // Middleware just ensures authentication
+    if (isSuperAdminPage) {
+        if (!isAuth) {
+            return Response.redirect(new URL("/login?callbackUrl=" + encodeURIComponent(pathname), req.nextUrl));
+        }
+        // Note: Detailed permission check happens in the page components
+        // Middleware doesn't have access to database to check permissions
         return null;
     }
 

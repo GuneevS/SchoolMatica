@@ -103,7 +103,7 @@ export function MarkbookGrid({ payload }: Props) {
     if (!isAbsent && numeric !== null && Number.isNaN(numeric)) {
       return;
     }
-    if (numeric !== null && numeric > assessmentTotal) {
+    if (numeric !== null && (numeric < 0 || numeric > assessmentTotal)) {
       return;
     }
     if (isAbsent) {
@@ -323,9 +323,15 @@ export function MarkbookGrid({ payload }: Props) {
                     const mark = row.marks.find((item) => item.assessmentId === assessment.id);
                     const displayValue = getDisplayValue(row.student.id, assessment.id, mark);
                     const numericValue = Number(displayValue);
-                    const showWarning = Boolean(
-                      displayValue && !Number.isNaN(numericValue) && numericValue > assessment.totalMark,
-                    );
+                    const isNumeric = displayValue !== "" && displayValue !== "-" && !Number.isNaN(numericValue);
+                    const isNegative = isNumeric && numericValue < 0;
+                    const exceedsTotal = isNumeric && numericValue > assessment.totalMark;
+                    const isInvalid = isNegative || exceedsTotal;
+                    const errorMessage = isNegative 
+                      ? "Mark cannot be negative" 
+                      : exceedsTotal 
+                        ? `Mark exceeds total (${assessment.totalMark})`
+                        : "";
                     
                     // Calculate percentage for heat map
                     const percentage = mark && !mark.isAbsent && mark.rawMark !== null
@@ -337,18 +343,28 @@ export function MarkbookGrid({ payload }: Props) {
                     
                     return (
                       <td key={assessment.id} className="p-3">
-                        <Input
-                          type="text"
-                          value={displayValue}
-                          onChange={(event) => handleInputChange(row.student.id, assessment.id, event.target.value)}
-                          onBlur={() => handlePersist(row.student.id, assessment.id, assessment.totalMark)}
-                          className={cn(
-                            "h-9",
-                            showWarning && "border-red-500 focus-visible:ring-red-500",
-                            heatMapClass
+                        <Tooltip open={isInvalid ? undefined : false}>
+                          <TooltipTrigger asChild>
+                            <Input
+                              type="text"
+                              value={displayValue}
+                              onChange={(event) => handleInputChange(row.student.id, assessment.id, event.target.value)}
+                              onBlur={() => handlePersist(row.student.id, assessment.id, assessment.totalMark)}
+                              className={cn(
+                                "h-9",
+                                isInvalid && "border-red-500 focus-visible:ring-red-500 bg-red-50 dark:bg-red-950/20",
+                                heatMapClass
+                              )}
+                              disabled={!canEdit}
+                              aria-invalid={isInvalid}
+                            />
+                          </TooltipTrigger>
+                          {isInvalid && (
+                            <TooltipContent side="top" className="bg-red-500 text-white border-red-600">
+                              <p>{errorMessage}</p>
+                            </TooltipContent>
                           )}
-                          disabled={!canEdit}
-                        />
+                        </Tooltip>
                         <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
                           <span>/{assessment.totalMark}</span>
                           {canEdit && (

@@ -90,9 +90,8 @@ export async function transitionAssessmentPlanStatus(args: {
         });
 
         await createBulkNotifications({
-          prisma,
-          schoolId: plan.classGroup.schoolId,
           userIds: approvers.map(u => u.id),
+          schoolId: plan.classGroup.schoolId,
           type: "system",
           title: "Assessment Plan Needs Approval",
           body: `${plan.name} has been submitted by ${actorName || actorRole} and requires your approval`,
@@ -121,7 +120,6 @@ export async function transitionAssessmentPlanStatus(args: {
 
         if (planWithDetails?.classGroup?.primaryTeacher?.user) {
           await createNotification({
-            prisma,
             userId: planWithDetails.classGroup.primaryTeacher.user.id,
             schoolId: plan.classGroup.schoolId,
             type: "system",
@@ -154,7 +152,6 @@ export async function transitionAssessmentPlanStatus(args: {
 
           if (planWithDetails?.classGroup?.primaryTeacher?.user) {
             await createNotification({
-              prisma,
               userId: planWithDetails.classGroup.primaryTeacher.user.id,
               schoolId: plan.classGroup.schoolId,
               type: "system",
@@ -187,7 +184,6 @@ export async function transitionAssessmentPlanStatus(args: {
 
         if (planWithDetails?.classGroup?.primaryTeacher?.user) {
           await createNotification({
-            prisma,
             userId: planWithDetails.classGroup.primaryTeacher.user.id,
             schoolId: plan.classGroup.schoolId,
             type: "system",

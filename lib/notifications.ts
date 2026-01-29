@@ -14,6 +14,16 @@ interface CreateNotificationParams {
   data?: Record<string, unknown>;
 }
 
+interface BulkNotificationParams {
+  userIds: string[];
+  schoolId?: string;
+  type: "behavior" | "grade" | "message" | "announcement" | "report" | "system";
+  title: string;
+  body: string;
+  actionUrl?: string;
+  data?: Record<string, unknown>;
+}
+
 /**
  * Create a notification for a user
  */
@@ -42,19 +52,23 @@ export async function createNotification({
 /**
  * Create notifications for multiple users
  */
-export async function createBulkNotifications(
-  userIds: string[],
-  notification: Omit<CreateNotificationParams, "userId">
-) {
+export async function createBulkNotifications(params: BulkNotificationParams) {
+  const { userIds, type, title, body, actionUrl, schoolId, data } = params;
+
+  // Handle empty userIds array gracefully
+  if (!userIds || userIds.length === 0) {
+    return { count: 0 };
+  }
+
   return prisma.notification.createMany({
     data: userIds.map((userId) => ({
       userId,
-      type: notification.type,
-      title: notification.title,
-      body: notification.body,
-      actionUrl: notification.actionUrl,
-      schoolId: notification.schoolId,
-      data: notification.data ? JSON.stringify(notification.data) : null,
+      type,
+      title,
+      body,
+      actionUrl,
+      schoolId,
+      data: data ? JSON.stringify(data) : null,
     })),
   });
 }
@@ -98,7 +112,8 @@ export async function notifyParentsOfBehaviorIncident(
 
   if (parentUserIds.length === 0) return;
 
-  await createBulkNotifications(parentUserIds, {
+  await createBulkNotifications({
+    userIds: parentUserIds,
     type: "behavior",
     title: `${incidentType === "Merit" ? "Merit Awarded" : "Demerit Recorded"}: ${student.firstName}`,
     body: `${student.firstName} ${student.lastName} received ${points} ${incidentType.toLowerCase()} points. ${description}`,
@@ -149,7 +164,8 @@ export async function notifyParentsOfNewGrades(
 
   if (parentUserIds.length === 0) return;
 
-  await createBulkNotifications(parentUserIds, {
+  await createBulkNotifications({
+    userIds: parentUserIds,
     type: "grade",
     title: `New Marks Available: ${student.firstName}`,
     body: `${student.firstName}'s marks for ${assessmentName} in ${subjectName} have been published.`,
@@ -200,7 +216,8 @@ export async function notifyParentsOfReportCard(
 
   if (parentUserIds.length === 0) return;
 
-  await createBulkNotifications(parentUserIds, {
+  await createBulkNotifications({
+    userIds: parentUserIds,
     type: "report",
     title: `Report Card Available: ${student.firstName}`,
     body: `${student.firstName}'s ${term} ${year} report card is now available for viewing.`,
@@ -242,13 +259,11 @@ export async function sendSchoolAnnouncement(
 
   if (users.length === 0) return;
 
-  await createBulkNotifications(
-    users.map((u) => u.id),
-    {
-      type: "announcement",
-      title,
-      body: content.substring(0, 200) + (content.length > 200 ? "..." : ""),
-      schoolId,
-    }
-  );
+  await createBulkNotifications({
+    userIds: users.map((u) => u.id),
+    type: "announcement",
+    title,
+    body: content.substring(0, 200) + (content.length > 200 ? "..." : ""),
+    schoolId,
+  });
 }

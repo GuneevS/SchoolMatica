@@ -5,6 +5,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 // CRITICAL: Validate NEXTAUTH_SECRET is set at runtime (not during build)
 // During Next.js build, this file is analyzed but we use a placeholder secret
@@ -16,6 +17,13 @@ if (!isBuildTime && !process.env.NEXTAUTH_SECRET) {
     );
 }
 
+// Strong password validation (same as registration)
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+// In-memory login attempt tracking for rate limiting
+// In production, this is supplemented by Redis-based rate limiting
+const loginAttempts = new Map<string, { count: number; resetTime: number }>();
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
     adapter: PrismaAdapter(prisma),
     trustHost: true, // Allow localhost and container hosts
@@ -25,9 +33,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 email: { label: "Email", type: "email" },
                 password: { label: "Password", type: "password" },
             },
-            authorize: async (credentials) => {
+            authorize: async (credentials, request) => {
                 const parsed = z
-                    .object({ email: z.string().email(), password: z.string().min(8) })
+                    .object({ 
+                        email: z.string().email().transform(e => e.toLowerCase().trim()), 
+                        password: z.string().min(8) 
+                    })
                     .safeParse(credentials);
 
                 if (!parsed.success) {
@@ -35,6 +46,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 }
 
                 const { email, password } = parsed.data;
+                
+                // Rate limit login attempts by email
+                // This supplements the account lockout mechanism
+                const rateLimit = await checkRateLimit(`login:${email}`, RATE_LIMITS.AUTH_LOGIN);
+                if (!rateLimit.success) {
+                    console.warn(`[Auth] Rate limit exceeded for login attempts: ${email}`);
+                    return null;
+                }
                 const user = await prisma.appUser.findUnique({
                     where: { email },
                     include: { roleAssignments: { include: { role: true } } },

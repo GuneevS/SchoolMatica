@@ -1,468 +1,51 @@
-"use client";
+import { getAuthContext } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
+import { EventsPageClient } from "./events-client";
 
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Calendar,
-  CalendarDays,
-  Plus,
-  Download,
-  Filter,
-  MapPin,
-  Clock,
-  Users,
-  ChevronLeft,
-  ChevronRight,
-  Search,
-  Activity,
-  GraduationCap,
-  Trophy,
-  Music,
-  BookOpen,
-  PartyPopper,
-  Briefcase,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+export default async function EventsPage() {
+  const auth = await getAuthContext();
+  if (!auth) redirect("/login");
 
-// Mock events data
-const mockEvents = [
-  {
-    id: "1",
-    title: "Parent-Teacher Meeting",
-    type: "Meeting",
-    date: "2024-02-15",
-    startTime: "14:00",
-    endTime: "17:00",
-    location: "School Hall",
-    description: "Term 1 progress discussions with parents",
-    audience: ["all"],
-    color: "violet",
-  },
-  {
-    id: "2",
-    title: "Inter-house Athletics",
-    type: "Sports",
-    date: "2024-02-20",
-    startTime: "08:00",
-    endTime: "15:00",
-    location: "Sports Field",
-    description: "Annual inter-house athletics competition",
-    audience: ["all"],
-    color: "emerald",
-  },
-  {
-    id: "3",
-    title: "Grade 12 Trial Exams Start",
-    type: "Exam",
-    date: "2024-03-01",
-    startTime: "08:00",
-    endTime: "11:00",
-    location: "Exam Hall",
-    description: "Trial examinations begin for matrics",
-    audience: ["grade-12"],
-    color: "red",
-  },
-  {
-    id: "4",
-    title: "Cultural Evening",
-    type: "Cultural",
-    date: "2024-03-10",
-    startTime: "18:00",
-    endTime: "21:00",
-    location: "School Auditorium",
-    description: "Annual cultural diversity celebration",
-    audience: ["all"],
-    color: "amber",
-  },
-  {
-    id: "5",
-    title: "Career Day",
-    type: "Academic",
-    date: "2024-03-15",
-    startTime: "09:00",
-    endTime: "14:00",
-    location: "School Hall",
-    description: "Career guidance and university presentations",
-    audience: ["grade-11", "grade-12"],
-    color: "blue",
-  },
-  {
-    id: "6",
-    title: "Term 1 Ends",
-    type: "Holiday",
-    date: "2024-03-22",
-    startTime: "12:00",
-    endTime: "12:00",
-    location: "",
-    description: "End of first term",
-    audience: ["all"],
-    color: "slate",
-    isAllDay: true,
-  },
-];
+  const schoolId = auth.user.schoolId;
+  if (!schoolId) redirect("/login");
 
-const eventTypeIcons: Record<string, React.ReactNode> = {
-  Meeting: <Briefcase className="h-4 w-4" />,
-  Sports: <Trophy className="h-4 w-4" />,
-  Exam: <BookOpen className="h-4 w-4" />,
-  Cultural: <Music className="h-4 w-4" />,
-  Academic: <GraduationCap className="h-4 w-4" />,
-  Holiday: <PartyPopper className="h-4 w-4" />,
-};
-
-const eventTypeColors: Record<string, string> = {
-  Meeting: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
-  Sports: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-  Exam: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-  Cultural: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  Academic: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  Holiday: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400",
-};
-
-const heroHighlights = [
-  { label: "Smart filtering", color: "hsl(var(--accent-iris))" },
-  { label: "Calendar sync", color: "hsl(var(--accent-mint))" },
-  { label: "Role-based views", color: "hsl(var(--accent-violet))" },
-];
-
-export default function EventsPage() {
-  const [viewMode, setViewMode] = useState<"calendar" | "list">("list");
-  const [typeFilter, setTypeFilter] = useState("");
-  const [audienceFilter, setAudienceFilter] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [currentMonth, setCurrentMonth] = useState(new Date(2024, 1)); // February 2024
-
-  const filteredEvents = mockEvents.filter((event) => {
-    const matchesType = !typeFilter || event.type === typeFilter;
-    const matchesAudience = !audienceFilter || event.audience.includes(audienceFilter) || event.audience.includes("all");
-    const matchesSearch = !searchQuery || 
-      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesType && matchesAudience && matchesSearch;
+  // Fetch school events
+  const events = await prisma.schoolEvent.findMany({
+    where: {
+      schoolId,
+      status: { not: "Cancelled" },
+    },
+    orderBy: { startDate: "asc" },
   });
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("en-ZA", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
+  // Transform data for the client component
+  const transformedEvents = events.map((event) => ({
+    id: event.id,
+    title: event.title,
+    type: event.eventType,
+    date: event.startDate.toISOString().split("T")[0],
+    startTime: event.startTime || "00:00",
+    endTime: event.endTime || "23:59",
+    location: event.location || "",
+    description: event.description || "",
+    audience: (event.audience as string[]) || ["all"],
+    color: getEventColor(event.eventType),
+    isAllDay: event.isAllDay,
+  }));
+
+  return <EventsPageClient events={transformedEvents} />;
+}
+
+function getEventColor(eventType: string): string {
+  const colors: Record<string, string> = {
+    Meeting: "violet",
+    Sports: "emerald",
+    Exam: "red",
+    Cultural: "amber",
+    Academic: "blue",
+    Holiday: "slate",
+    Other: "slate",
   };
-
-  const exportToICS = (event: typeof mockEvents[0]) => {
-    // Generate ICS file content
-    const icsContent = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//SchoolMatica//Events//EN
-BEGIN:VEVENT
-DTSTART:${event.date.replace(/-/g, "")}T${event.startTime.replace(":", "")}00
-DTEND:${event.date.replace(/-/g, "")}T${event.endTime.replace(":", "")}00
-SUMMARY:${event.title}
-DESCRIPTION:${event.description}
-LOCATION:${event.location}
-END:VEVENT
-END:VCALENDAR`;
-
-    const blob = new Blob([icsContent], { type: "text/calendar" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${event.title.replace(/\s+/g, "-")}.ics`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const upcomingEvents = filteredEvents.filter(
-    (e) => new Date(e.date) >= new Date()
-  ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-  return (
-    <div className="space-y-8">
-      <AuroraHero
-        eyebrow="School Calendar"
-        title={
-          <>
-            <span className="gradient-text">Events</span> & Calendar
-          </>
-        }
-        description="View all school events, filter by relevance, and sync with your personal calendar. Stay updated on academic, sports, cultural, and administrative events."
-        badges={heroHighlights}
-        aside={
-          <HeroMetricPanel
-            title="This month"
-            icon={<Activity className="h-4 w-4" />}
-            metrics={[
-              {
-                label: "Upcoming",
-                value: upcomingEvents.length.toString(),
-                helper: "Events",
-                accent: "highlight",
-              },
-              { label: "Meetings", value: mockEvents.filter(e => e.type === "Meeting").length.toString() },
-              { label: "Sports", value: mockEvents.filter(e => e.type === "Sports").length.toString() },
-              { label: "Exams", value: mockEvents.filter(e => e.type === "Exam").length.toString() },
-            ]}
-          />
-        }
-      />
-
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search events..."
-                className="pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Event type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All types</SelectItem>
-                <SelectItem value="Meeting">Meetings</SelectItem>
-                <SelectItem value="Sports">Sports</SelectItem>
-                <SelectItem value="Exam">Exams</SelectItem>
-                <SelectItem value="Cultural">Cultural</SelectItem>
-                <SelectItem value="Academic">Academic</SelectItem>
-                <SelectItem value="Holiday">Holidays</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={audienceFilter} onValueChange={setAudienceFilter}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="For whom" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All</SelectItem>
-                <SelectItem value="grade-10">Grade 10</SelectItem>
-                <SelectItem value="grade-11">Grade 11</SelectItem>
-                <SelectItem value="grade-12">Grade 12</SelectItem>
-                <SelectItem value="parents">Parents</SelectItem>
-                <SelectItem value="teachers">Teachers</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="flex items-center gap-2 border rounded-lg p-1">
-              <Button
-                variant={viewMode === "list" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-              >
-                <CalendarDays className="h-4 w-4 mr-1" />
-                List
-              </Button>
-              <Button
-                variant={viewMode === "calendar" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("calendar")}
-              >
-                <Calendar className="h-4 w-4 mr-1" />
-                Calendar
-              </Button>
-            </div>
-            <Button className="bg-violet-500 hover:bg-violet-600">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Event
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Events Display */}
-      {viewMode === "list" ? (
-        <div className="space-y-4">
-          {filteredEvents.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-medium">No events found</h3>
-                <p className="text-sm text-muted-foreground">
-                  Try adjusting your filters or search query
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            filteredEvents.map((event) => (
-              <Card key={event.id} className="overflow-hidden">
-                <div className="flex">
-                  <div
-                    className={cn(
-                      "w-2 shrink-0",
-                      event.color === "violet" && "bg-violet-500",
-                      event.color === "emerald" && "bg-emerald-500",
-                      event.color === "red" && "bg-red-500",
-                      event.color === "amber" && "bg-amber-500",
-                      event.color === "blue" && "bg-blue-500",
-                      event.color === "slate" && "bg-slate-400"
-                    )}
-                  />
-                  <CardContent className="flex-1 p-6">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge className={eventTypeColors[event.type]}>
-                            {eventTypeIcons[event.type]}
-                            <span className="ml-1">{event.type}</span>
-                          </Badge>
-                          {event.audience.includes("all") ? (
-                            <Badge variant="outline">All School</Badge>
-                          ) : (
-                            event.audience.map((a) => (
-                              <Badge key={a} variant="outline">
-                                {a.replace("grade-", "Grade ")}
-                              </Badge>
-                            ))
-                          )}
-                        </div>
-                        <h3 className="text-lg font-semibold mb-2">{event.title}</h3>
-                        <p className="text-sm text-muted-foreground mb-3">
-                          {event.description}
-                        </p>
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            {formatDate(event.date)}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-4 w-4" />
-                            {event.startTime} - {event.endTime}
-                          </div>
-                          {event.location && (
-                            <div className="flex items-center gap-1">
-                              <MapPin className="h-4 w-4" />
-                              {event.location}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => exportToICS(event)}
-                        >
-                          <Download className="h-4 w-4 mr-1" />
-                          Add to Calendar
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </div>
-              </Card>
-            ))
-          )}
-        </div>
-      ) : (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>
-                {currentMonth.toLocaleDateString("en-ZA", {
-                  month: "long",
-                  year: "numeric",
-                })}
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() =>
-                    setCurrentMonth(
-                      new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1)
-                    )
-                  }
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() =>
-                    setCurrentMonth(
-                      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1)
-                    )
-                  }
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {/* Simple calendar grid */}
-            <div className="grid grid-cols-7 gap-1">
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                <div
-                  key={day}
-                  className="text-center text-sm font-medium text-muted-foreground py-2"
-                >
-                  {day}
-                </div>
-              ))}
-              {Array.from({ length: 35 }).map((_, i) => {
-                const dayNum = i - new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay() + 1;
-                const isCurrentMonth = dayNum > 0 && dayNum <= new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
-                const dateStr = isCurrentMonth
-                  ? `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`
-                  : "";
-                const dayEvents = filteredEvents.filter((e) => e.date === dateStr);
-
-                return (
-                  <div
-                    key={i}
-                    className={cn(
-                      "min-h-[80px] p-1 border rounded",
-                      isCurrentMonth ? "bg-background" : "bg-muted/30"
-                    )}
-                  >
-                    {isCurrentMonth && (
-                      <>
-                        <p className="text-sm font-medium">{dayNum}</p>
-                        <div className="space-y-1 mt-1">
-                          {dayEvents.slice(0, 2).map((event) => (
-                            <div
-                              key={event.id}
-                              className={cn(
-                                "text-xs p-1 rounded truncate cursor-pointer",
-                                eventTypeColors[event.type]
-                              )}
-                              title={event.title}
-                            >
-                              {event.title}
-                            </div>
-                          ))}
-                          {dayEvents.length > 2 && (
-                            <p className="text-xs text-muted-foreground">
-                              +{dayEvents.length - 2} more
-                            </p>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
+  return colors[eventType] || "slate";
 }

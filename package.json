@@ -40,9 +40,11 @@
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^4.1.12",
-    "zustand": "^5.0.8"
+    "zustand": "^5.0.8",
+    "nodemailer": "^7.0.7"
   },
   "devDependencies": {
+    "@types/nodemailer": "^6.4.17",
     "@auth/prisma-adapter": "^2.11.1",
     "@prisma/client": "^6.19.0",
     "@tailwindcss/postcss": "^4",

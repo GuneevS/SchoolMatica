@@ -2,6 +2,67 @@
 
 All notable changes to SchoolMatica are documented in this file.
 
+## [2.0.0] - 2026-01-29 - Production Grade Multi-tenant Release
+
+### Security Enhancements
+
+#### Fixed
+- **Authentication**: Added login rate limiting (5 attempts per 15 minutes per email)
+- **Password Requirements**: Strengthened to require uppercase, lowercase, numbers, and special characters
+- **Authorization**: Fixed missing authorization on grade-levels API endpoints
+- **File Uploads**: Added proper permission check (`assessmentDocument:upload`) to uploads endpoint
+
+#### Added
+- **Health Endpoint**: Created `/api/health` endpoint for container orchestration and load balancers
+- **Email Service**: Implemented production-ready email service using nodemailer with SMTP configuration
+
+### Multi-tenant Architecture
+
+#### Added
+- **Super Admin Dashboard**: Complete platform management for super administrators
+  - Overview statistics (schools, users, teachers, students)
+  - School management (create, edit, provision admins)
+  - User management across all schools with role assignment
+  - Platform-wide settings page
+- **School Registration Flow**: Full self-service registration for new schools
+  - Creates school with default grading configuration
+  - Creates initial administrator account
+  - Assigns proper role permissions scoped to school
+- **Super Admin User**: Initialized with credentials guneev66@gmail.com / Admin@2025
+
+### Frontend Improvements
+
+#### Fixed
+- **Parent Portal**: Replaced all mock data with real database queries
+  - Dashboard with children's performance and notifications
+  - Messages with real message threads
+  - Children list with academic performance
+  - Behavior tracking with merit/demerit system
+  - Report cards from database
+- **Parent Role Verification**: Layout now properly checks for ParentUser record
+- **Navigation Permissions**: Navigation items now filtered by user permissions
+- **Fees Management**: Real invoices, payments, and fee structures from database
+- **Events Calendar**: Real school events from database
+- **Homework Management**: Real homework assignments and submissions
+- **Communications**: Real message threads and announcements
+
+### Configuration & Infrastructure
+
+#### Added
+- **Environment Template**: Created comprehensive `.env.example` with all required variables
+- **Redis Healthcheck**: Fixed to support password authentication
+
+#### Fixed
+- **Docker Configuration**: Redis healthcheck now works with REDIS_PASSWORD environment variable
+
+### Database & API
+
+#### Fixed
+- **Grade Levels**: All endpoints (GET, PATCH, DELETE) now have proper authorization and school scoping
+- **Email Normalization**: Email addresses are now lowercased and trimmed on registration/login
+
+---
+
 ## [1.1.0] - 2026-01-19
 
 ### Assessment & Weighting System Fixes

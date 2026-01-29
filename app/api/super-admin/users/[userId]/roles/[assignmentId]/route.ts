@@ -52,23 +52,25 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     where: { id: assignmentId },
   });
 
-  // Create audit log
-  await prisma.auditLog.create({
-    data: {
-      schoolId: assignment.scopeSchoolId ?? null,
-      entityType: "UserRoleAssignment",
-      entityId: assignmentId,
-      action: "ROLE_REMOVED",
-      actorRole: "SuperAdmin",
-      actorName: result.auth.user.displayName,
-      metadata: {
-        userId,
-        roleKey: assignment.role.key,
-        scopeSchoolId: assignment.scopeSchoolId,
-        removedBy: result.auth.user.email,
+  // Create audit log (only if school context exists)
+  if (assignment.scopeSchoolId) {
+    await prisma.auditLog.create({
+      data: {
+        schoolId: assignment.scopeSchoolId,
+        entityType: "UserRoleAssignment",
+        entityId: assignmentId,
+        action: "ROLE_REMOVED",
+        actorRole: "SuperAdmin",
+        actorName: result.auth.user.displayName,
+        metadata: {
+          userId,
+          roleKey: assignment.role.key,
+          scopeSchoolId: assignment.scopeSchoolId,
+          removedBy: result.auth.user.email,
+        },
       },
-    },
-  });
+    });
+  }
 
   return NextResponse.json({ success: true, deleted: assignmentId });
 }

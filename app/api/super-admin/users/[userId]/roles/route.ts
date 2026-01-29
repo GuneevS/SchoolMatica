@@ -34,12 +34,30 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     where: { userId },
     include: {
       role: { select: { key: true, name: true, priority: true } },
-      scopeSchool: { select: { id: true, name: true, shortCode: true } },
     },
     orderBy: { role: { priority: "desc" } },
   });
 
-  return NextResponse.json(assignments);
+  // Fetch school info for scoped assignments
+  const schoolIds = assignments
+    .filter(a => a.scopeSchoolId)
+    .map(a => a.scopeSchoolId as string);
+  
+  const schools = schoolIds.length > 0
+    ? await prisma.school.findMany({
+        where: { id: { in: schoolIds } },
+        select: { id: true, name: true, shortCode: true },
+      })
+    : [];
+  
+  const schoolMap = new Map(schools.map(s => [s.id, s]));
+  
+  const assignmentsWithSchool = assignments.map(a => ({
+    ...a,
+    scopeSchool: a.scopeSchoolId ? schoolMap.get(a.scopeSchoolId) || null : null,
+  }));
+
+  return NextResponse.json(assignmentsWithSchool);
 }
 
 /**
@@ -118,14 +136,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     },
     include: {
       role: { select: { key: true, name: true, priority: true } },
-      scopeSchool: { select: { id: true, name: true, shortCode: true } },
     },
   });
 
-  // Create audit log
-  await prisma.auditLog.create({
-    data: {
-      schoolId: parsed.data.scopeSchoolId ?? null,
+  // Create audit log (only if school context exists)
+  if (parsed.data.scopeSchoolId) {
+    await prisma.auditLog.create({
+      data: {
+        schoolId: parsed.data.scopeSchoolId,
       entityType: "UserRoleAssignment",
       entityId: assignment.id,
       action: "ROLE_ASSIGNED",
@@ -138,7 +156,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         assignedBy: result.auth.user.email,
       },
     },
-  });
+    });
+  }
 
   return NextResponse.json(assignment, { status: 201 });
 }

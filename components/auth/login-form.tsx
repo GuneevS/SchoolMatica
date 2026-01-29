@@ -30,7 +30,7 @@ const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   schoolId: z.string().optional(),
-  rememberMe: z.boolean().default(false),
+  rememberMe: z.boolean(),
 });
 
 type FormData = z.infer<typeof formSchema>;

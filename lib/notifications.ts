@@ -44,7 +44,7 @@ export async function createNotification({
       body,
       actionUrl,
       schoolId,
-      data: data ? JSON.stringify(data) : null,
+      data: data ? JSON.stringify(data) : undefined,
     },
   });
 }
@@ -68,7 +68,7 @@ export async function createBulkNotifications(params: BulkNotificationParams) {
       body,
       actionUrl,
       schoolId,
-      data: data ? JSON.stringify(data) : null,
+      data: data ? JSON.stringify(data) : undefined,
     })),
   });
 }

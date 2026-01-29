@@ -110,7 +110,7 @@ export async function transitionAssessmentPlanStatus(args: {
               include: {
                 primaryTeacher: {
                   include: {
-                    user: true,
+                    account: true,
                   },
                 },
               },
@@ -118,9 +118,9 @@ export async function transitionAssessmentPlanStatus(args: {
           },
         });
 
-        if (planWithDetails?.classGroup?.primaryTeacher?.user) {
+        if (planWithDetails?.classGroup?.primaryTeacher?.account) {
           await createNotification({
-            userId: planWithDetails.classGroup.primaryTeacher.user.id,
+            userId: planWithDetails.classGroup.primaryTeacher.account.id,
             schoolId: plan.classGroup.schoolId,
             type: "system",
             title: "Assessment Plan Approved",
@@ -142,7 +142,7 @@ export async function transitionAssessmentPlanStatus(args: {
                 include: {
                   primaryTeacher: {
                     include: {
-                      user: true,
+                      account: true,
                     },
                   },
                 },
@@ -150,9 +150,9 @@ export async function transitionAssessmentPlanStatus(args: {
             },
           });
 
-          if (planWithDetails?.classGroup?.primaryTeacher?.user) {
+          if (planWithDetails?.classGroup?.primaryTeacher?.account) {
             await createNotification({
-              userId: planWithDetails.classGroup.primaryTeacher.user.id,
+              userId: planWithDetails.classGroup.primaryTeacher.account.id,
               schoolId: plan.classGroup.schoolId,
               type: "system",
               title: "Assessment Plan Returned",
@@ -174,7 +174,7 @@ export async function transitionAssessmentPlanStatus(args: {
               include: {
                 primaryTeacher: {
                   include: {
-                    user: true,
+                    account: true,
                   },
                 },
               },
@@ -182,9 +182,9 @@ export async function transitionAssessmentPlanStatus(args: {
           },
         });
 
-        if (planWithDetails?.classGroup?.primaryTeacher?.user) {
+        if (planWithDetails?.classGroup?.primaryTeacher?.account) {
           await createNotification({
-            userId: planWithDetails.classGroup.primaryTeacher.user.id,
+            userId: planWithDetails.classGroup.primaryTeacher.account.id,
             schoolId: plan.classGroup.schoolId,
             type: "system",
             title: "Assessment Plan Locked",

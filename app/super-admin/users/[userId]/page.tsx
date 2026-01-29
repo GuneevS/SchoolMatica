@@ -35,7 +35,6 @@ async function getUser(userId: string) {
       roleAssignments: {
         include: {
           role: { select: { key: true, name: true, priority: true } },
-          scopeSchool: { select: { id: true, name: true, shortCode: true } },
         },
         orderBy: { role: { priority: "desc" } },
       },
@@ -51,7 +50,7 @@ async function getUser(userId: string) {
         },
       },
       accounts: {
-        select: { provider: true, createdAt: true },
+        select: { provider: true },
       },
       sessions: {
         select: { id: true, expires: true },
@@ -87,8 +86,29 @@ async function getUser(userId: string) {
     select: { id: true, name: true, shortCode: true },
   });
 
+  // Fetch scope school names for role assignments that have scopeSchoolId
+  const scopeSchoolIds = user.roleAssignments
+    .map(ra => ra.scopeSchoolId)
+    .filter((id): id is string => id !== null);
+  
+  const scopeSchools = scopeSchoolIds.length > 0
+    ? await prisma.school.findMany({
+        where: { id: { in: scopeSchoolIds } },
+        select: { id: true, name: true, shortCode: true },
+      })
+    : [];
+  
+  const scopeSchoolMap = new Map(scopeSchools.map(s => [s.id, s]));
+
+  // Enhance role assignments with scope school data
+  const roleAssignmentsWithSchool = user.roleAssignments.map(ra => ({
+    ...ra,
+    scopeSchool: ra.scopeSchoolId ? scopeSchoolMap.get(ra.scopeSchoolId) || null : null,
+  }));
+
   return {
     ...user,
+    roleAssignments: roleAssignmentsWithSchool,
     recentLogs,
     allRoles,
     allSchools,
@@ -304,8 +324,6 @@ export default async function UserDetailPage({ params }: PageProps) {
                   {user.accounts.map((acc, i) => (
                     <p key={i} className="text-sm text-muted-foreground">
                       <span className="font-medium capitalize">{acc.provider}</span>
-                      <span className="mx-2">·</span>
-                      Linked {formatDateTime(acc.createdAt)}
                     </p>
                   ))}
                 </div>

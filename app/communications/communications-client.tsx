@@ -82,6 +82,7 @@ export function CommunicationsPageClient({
     }
 
     async function fetchMessages() {
+      if (!activeConversation) return;
       setIsLoadingMessages(true);
       try {
         const response = await fetch(`/api/messages/threads/${activeConversation.id}/messages`);

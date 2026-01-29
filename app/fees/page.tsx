@@ -1,14 +1,59 @@
-import { getAuthContext } from "@/lib/auth";
+import { getServerAuthContext, requireAuth } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { FeesPageClient } from "./fees-client";
 
+export const metadata = {
+  title: "Fees & Accounting | SchoolMatica",
+  description: "Manage school fees, invoices, payments, and financial records.",
+};
+
+// Check if user has finance access
+async function checkFinanceAccess(auth: NonNullable<Awaited<ReturnType<typeof getServerAuthContext>>>) {
+  // Finance access granted to: super admin, school admin, or users with finance permissions
+  const financePermissions = [
+    "finance:read",
+    "finance:write",
+    "fees:manage",
+    "invoices:read",
+    "invoices:write",
+    "payments:read",
+    "payments:write",
+  ];
+  
+  // Super admin and school admin always have access
+  if (auth.isSuperAdmin || auth.isAdmin) {
+    return true;
+  }
+  
+  // Check for finance-specific roles
+  const financeRoles = ["bursar", "finance_admin", "accountant", "finance"];
+  if (auth.roleAssignments.some(ra => financeRoles.includes(ra.role.key))) {
+    return true;
+  }
+  
+  // Check for specific finance permissions
+  for (const perm of financePermissions) {
+    if (auth.permissions.has(perm)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
 export default async function FeesPage() {
-  const auth = await getAuthContext();
+  const auth = await getServerAuthContext();
   if (!auth) redirect("/login");
 
   const schoolId = auth.user.schoolId;
   if (!schoolId) redirect("/login");
+
+  // Check finance access
+  const hasFinanceAccess = await checkFinanceAccess(auth);
+  if (!hasFinanceAccess) {
+    redirect("/dashboard?error=unauthorized&message=Finance%20access%20required");
+  }
 
   // Fetch invoices with related data
   const invoices = await prisma.invoice.findMany({

@@ -70,50 +70,6 @@
     --chart-surface-bg: linear-gradient(145deg, #f8f9ff 0%, #f3f4ff 55%, #fef5f1 100%);
   }
 
-  .dark {
-    --background: 223 60% 5%;
-    --foreground: 215 35% 96%;
-    --card: 228 26% 14%;
-    --card-foreground: 0 0% 100%;
-    --popover: 228 26% 14%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 245 86% 67%;
-    --primary-foreground: 223 60% 6%;
-    --secondary: 225 32% 16%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 227 20% 20%;
-    --muted-foreground: 215 15% 72%;
-    --accent: 230 28% 22%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62% 42%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 225 30% 20%;
-    --border-strong: 230 24% 32%;
-    --input: 226 28% 20%;
-    --ring: 247 82% 70%;
-
-    --canvas: 223 48% 6%;
-    --canvas-gradient: radial-gradient(circle at 5% 15%, rgba(96, 165, 250, 0.15), transparent 45%),
-      radial-gradient(circle at 80% 0%, rgba(147, 51, 234, 0.18), transparent 55%),
-      radial-gradient(circle at 70% 80%, rgba(16, 185, 129, 0.12), transparent 60%),
-      linear-gradient(180deg, #040612 0%, #090f1f 55%, #040612 100%);
-    --surface-soft: 228 22% 16%;
-    --surface-strong: 230 20% 12%;
-    --text-muted-strong: 220 18% 70%;
-    --shadow-rgb: 4 7 20;
-
-    /* Shell glow accents */
-    --shell-glow-a: rgba(59, 130, 246, 0.35);
-    --shell-glow-b: rgba(147, 51, 234, 0.35);
-    --shell-glow-c: rgba(16, 185, 129, 0.22);
-
-    --aurora-panel-bg:
-      radial-gradient(120% 120% at 0% 0%, rgba(102, 126, 234, 0.4), transparent 60%),
-      radial-gradient(120% 120% at 100% 0%, rgba(232, 121, 249, 0.35), transparent 65%),
-      radial-gradient(120% 120% at 20% 100%, rgba(16, 185, 129, 0.25), transparent 60%),
-      linear-gradient(135deg, #070b18 0%, #0d1429 60%, #090f1f 100%);
-    --chart-surface-bg: linear-gradient(145deg, rgba(7, 11, 24, 0.95) 0%, rgba(11, 13, 27, 0.9) 45%, rgba(9, 15, 31, 0.9) 100%);
-  }
 }
 
 @layer base {
@@ -136,10 +92,6 @@
   .surface-panel {
     background-image: linear-gradient(135deg, hsl(var(--surface-strong)) 0%, hsl(var(--surface-soft)) 100%);
     border: 1px solid hsl(var(--border-strong) / 0.5);
-  }
-  .dark .surface-panel {
-    background-image: linear-gradient(140deg, rgba(6, 11, 24, 0.9) 0%, rgba(10, 16, 32, 0.85) 100%);
-    border-color: hsl(var(--border-strong) / 0.4);
   }
 
   .shadow-ambient {
@@ -280,11 +232,6 @@
   box-shadow:
     0 10px 40px rgb(var(--shadow-rgb) / 0.15),
     0 2px 8px rgb(var(--shadow-rgb) / 0.08);
-}
-
-.dark .menu-solid {
-  background: hsl(228 26% 12%);
-  border-color: hsl(var(--border-strong) / 0.4);
 }
 
 /* Smooth scroll */

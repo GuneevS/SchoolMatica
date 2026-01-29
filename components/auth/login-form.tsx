@@ -55,8 +55,8 @@ export function LoginForm() {
     },
   });
 
-  // Determine if school selector should be shown
-  const showSchoolSelector = selectedRole !== "school";
+  // Determine if school selector should be shown (hidden for School Admin and Platform Admin)
+  const showSchoolSelector = selectedRole !== "school" && selectedRole !== "platform";
 
   async function onSubmit(values: FormData) {
     setIsLoading(true);
@@ -80,7 +80,9 @@ export function LoginForm() {
       } else {
         // Successful login, redirect based on role
         let redirectUrl = callbackUrl;
-        if (selectedRole === "parent") {
+        if (selectedRole === "platform") {
+          redirectUrl = "/super-admin";
+        } else if (selectedRole === "parent") {
           redirectUrl = "/parent";
         } else if (selectedRole === "student") {
           redirectUrl = "/student";
@@ -154,7 +156,9 @@ export function LoginForm() {
                   id="email"
                   type="email"
                   placeholder={
-                    selectedRole === "school"
+                    selectedRole === "platform"
+                      ? "superadmin@schoolmatica.co.za"
+                      : selectedRole === "school"
                       ? "admin@school.co.za"
                       : selectedRole === "teacher"
                       ? "teacher@school.co.za"
@@ -280,7 +284,15 @@ export function LoginForm() {
 
           {/* Register Link - Only for Schools */}
           <div className="text-center">
-            {selectedRole === "school" ? (
+            {selectedRole === "platform" ? (
+              <p className="text-sm text-muted-foreground">
+                Platform Admin access is restricted.{" "}
+                <Link href="/contact" className="text-[hsl(var(--accent-violet))] hover:underline font-medium">
+                  Contact SchoolMatica
+                </Link>{" "}
+                for access.
+              </p>
+            ) : selectedRole === "school" ? (
               <Button variant="outline" asChild className="w-full h-11 border-[hsl(var(--border))] hover:bg-[hsl(var(--surface-soft))]">
                 <Link href="/register">
                   Register Your School

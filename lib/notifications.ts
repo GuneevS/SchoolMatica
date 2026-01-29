@@ -267,3 +267,175 @@ export async function sendSchoolAnnouncement(
     schoolId,
   });
 }
+
+/**
+ * Notification threshold configuration type
+ */
+interface NotificationThreshold {
+  points: number;
+  name: string;
+  notifyParent: boolean;
+  notifyHOD: boolean;
+  notifyPrincipal: boolean;
+  sendEmail: boolean;
+  action: string;
+}
+
+/**
+ * Check if a student has crossed any demerit thresholds and send notifications
+ */
+export async function checkDemeritThresholds(
+  studentId: string,
+  schoolId: string,
+  newDemeritTotal: number
+) {
+  // Get the school's behavior policy with thresholds
+  const policy = await prisma.behaviorPolicy.findFirst({
+    where: {
+      schoolId,
+      type: "Demerit",
+      isActive: true,
+    },
+  });
+
+  if (!policy || !policy.thresholds) return;
+
+  const thresholds = policy.thresholds as NotificationThreshold[];
+  
+  // Get student details
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    include: {
+      parents: {
+        where: { parentUserId: { not: null } },
+        include: {
+          parentUser: {
+            include: { user: true },
+          },
+        },
+      },
+      classGroup: {
+        include: { school: true },
+      },
+    },
+  });
+
+  if (!student) return;
+
+  // Check if previous balance was below any threshold that is now crossed
+  const previousBalance = await prisma.behaviorBalance.findUnique({
+    where: { studentId },
+  });
+
+  const previousTotal = previousBalance?.demeritTotal || 0;
+
+  // Find thresholds that were just crossed
+  const crossedThresholds = thresholds.filter(
+    (t) => t.points > previousTotal && t.points <= newDemeritTotal
+  );
+
+  for (const threshold of crossedThresholds) {
+    // Create trigger record
+    await prisma.behaviorThresholdTrigger.create({
+      data: {
+        studentId,
+        schoolId,
+        type: "Demerit",
+        thresholdValue: threshold.points,
+        thresholdName: threshold.name,
+        action: threshold.action,
+        status: "Pending",
+      },
+    });
+
+    const notificationTitle = `Demerit Alert: ${student.firstName} ${student.lastName}`;
+    const notificationBody = `${student.firstName} has reached ${newDemeritTotal} demerit points (${threshold.name}). ${threshold.action === "hearing" ? "A disciplinary hearing may be required." : `Action: ${threshold.action.replace(/_/g, " ")}`}`;
+
+    // Notify parents
+    if (threshold.notifyParent) {
+      const parentUserIds = student.parents
+        .filter((p) => p.parentUser?.userId)
+        .map((p) => p.parentUser!.userId);
+
+      if (parentUserIds.length > 0) {
+        await createBulkNotifications({
+          userIds: parentUserIds,
+          type: "behavior",
+          title: notificationTitle,
+          body: notificationBody,
+          actionUrl: "/parent/behavior",
+          schoolId,
+          data: {
+            studentId,
+            threshold: threshold.name,
+            demeritTotal: newDemeritTotal,
+            action: threshold.action,
+          },
+        });
+      }
+    }
+
+    // Notify HOD (users with HOD role at this school)
+    if (threshold.notifyHOD) {
+      const hodUsers = await prisma.appUser.findMany({
+        where: {
+          schoolId,
+          roleAssignments: {
+            some: {
+              role: { key: { in: ["hod", "head_of_department", "department_head"] } },
+            },
+          },
+        },
+        select: { id: true },
+      });
+
+      if (hodUsers.length > 0) {
+        await createBulkNotifications({
+          userIds: hodUsers.map((u) => u.id),
+          type: "behavior",
+          title: notificationTitle,
+          body: notificationBody,
+          actionUrl: "/behavior",
+          schoolId,
+          data: {
+            studentId,
+            threshold: threshold.name,
+            demeritTotal: newDemeritTotal,
+          },
+        });
+      }
+    }
+
+    // Notify Principal
+    if (threshold.notifyPrincipal) {
+      const principalUsers = await prisma.appUser.findMany({
+        where: {
+          schoolId,
+          roleAssignments: {
+            some: {
+              role: { key: { in: ["principal", "school_admin", "admin"] } },
+            },
+          },
+        },
+        select: { id: true },
+      });
+
+      if (principalUsers.length > 0) {
+        await createBulkNotifications({
+          userIds: principalUsers.map((u) => u.id),
+          type: "behavior",
+          title: `URGENT: ${notificationTitle}`,
+          body: notificationBody,
+          actionUrl: "/behavior",
+          schoolId,
+          data: {
+            studentId,
+            threshold: threshold.name,
+            demeritTotal: newDemeritTotal,
+            urgent: true,
+          },
+        });
+      }
+    }
+  }
+}

@@ -7,20 +7,14 @@ import { getActiveSchool } from "@/lib/school";
 import { getServerAuthContext } from "@/lib/auth-server";
 import "./globals.css";
 
+// Force light mode only - dark mode disabled
 const themeInitScript = `
 (() => {
   try {
-    const storageKey = "schoolmatica-theme";
     const root = document.documentElement;
-    const stored = window.localStorage.getItem(storageKey);
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const mode = stored === "light" || stored === "dark" ? stored : prefersDark ? "dark" : "light";
-    if (mode === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-    root.dataset.colorMode = mode;
+    root.classList.remove("dark");
+    root.dataset.colorMode = "light";
+    window.localStorage.setItem("schoolmatica-theme", "light");
   } catch (error) {
     console.warn("theme init error", error);
   }

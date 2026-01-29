@@ -2,6 +2,60 @@
 
 All notable changes to SchoolMatica are documented in this file.
 
+## [2.1.0] - 2026-01-29 - Deep Feature Implementation & Docker Deployment
+
+### Homework System - Complete Implementation
+
+#### Added
+- **Homework API Endpoints**:
+  - `POST/GET /api/homework` - Create and list homework
+  - `GET/PATCH/DELETE /api/homework/[homeworkId]` - Manage individual homework
+  - `GET/PATCH /api/homework/[homeworkId]/submissions` - Manage student submissions
+  - `POST /api/homework/[homeworkId]/notify-parents` - Bulk parent notifications
+- **Parent Homework Visibility**:
+  - Homework section on parent dashboard with upcoming/overdue view
+  - Full homework page at `/parent/homework` with filtering
+  - Navigation badge showing pending homework count
+- **Parent Notification System**:
+  - Personalized email template with student/homework details
+  - In-app notifications for parents
+  - Bulk notification for inadequate submissions
+
+### Markbook Validation
+
+#### Fixed
+- **Server-side Validation**: Marks must be between 0 and total marks
+- **Client-side Validation**: Negative marks rejected with visual feedback
+- **Visual Feedback**: Red border and tooltip for invalid marks
+
+### Bug Fixes
+
+#### Fixed
+- `createBulkNotifications` function signature mismatch causing runtime errors
+- `recordAuditLog` incorrectly passing `prisma` parameter
+- `notifyParentsOfBehaviorIncident` function signature mismatch
+- Multiple TypeScript compilation errors across 15+ files
+- Null handling in notification API routes
+- Missing authentication checks in behavior incidents
+
+### Docker Deployment
+
+#### Added
+- Full Docker containerization with `docker-compose.yml`
+- PostgreSQL 15 Alpine container with health checks
+- Application container with production build
+- Database seeding automation with Super Admin user
+
+### Document System Review
+
+#### Verified
+- Multiple file format support (PDF, PNG, JPEG)
+- Document versioning system
+- Approval workflow (Draft → Pending → Approved)
+- Role-based access control on all document endpoints
+
+---
+
 ## [2.0.0] - 2026-01-29 - Production Grade Multi-tenant Release
 
 ### Security Enhancements

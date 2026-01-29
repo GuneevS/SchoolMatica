@@ -2,9 +2,9 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { Building2, GraduationCap, Users, UserCircle } from "lucide-react";
+import { Building2, GraduationCap, Users, UserCircle, ShieldCheck } from "lucide-react";
 
-export type LoginRole = "school" | "teacher" | "parent" | "student";
+export type LoginRole = "school" | "teacher" | "parent" | "student" | "platform";
 
 interface RoleOption {
   id: LoginRole;
@@ -16,6 +16,14 @@ interface RoleOption {
 }
 
 const roleOptions: RoleOption[] = [
+  {
+    id: "platform",
+    label: "Platform Admin",
+    description: "Super admin access",
+    icon: ShieldCheck,
+    activeGradient: "from-[hsl(var(--accent-gold))] to-[hsl(var(--accent-flamingo))]",
+    iconBg: "bg-[hsl(var(--accent-gold))]/10 text-[hsl(var(--accent-gold))]",
+  },
   {
     id: "school",
     label: "School Admin",
@@ -60,7 +68,7 @@ export function RoleLoginTabs({ value, onChange, className }: RoleLoginTabsProps
   return (
     <div className={cn("w-full", className)}>
       {/* Desktop tabs - SOLID BACKGROUND */}
-      <div className="hidden sm:grid sm:grid-cols-4 gap-2 p-2 rounded-2xl bg-[hsl(var(--surface-strong))] border border-[hsl(var(--border-strong))] shadow-lg">
+      <div className="hidden sm:grid sm:grid-cols-5 gap-2 p-2 rounded-2xl bg-[hsl(var(--surface-strong))] border border-[hsl(var(--border-strong))] shadow-lg">
         {roleOptions.map((role) => {
           const Icon = role.icon;
           const isActive = value === role.id;

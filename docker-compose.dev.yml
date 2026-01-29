@@ -94,7 +94,7 @@ services:
     working_dir: /app
     # Override entrypoint from Dockerfile since we mount source directly
     entrypoint: [""]
-    command: ["sh", "-c", "npm install && rm -f node_modules/.prisma/client && npx prisma generate && npm run dev"]
+    command: ["sh", "-c", "npm install && npx prisma generate && npm run dev"]
     depends_on:
       postgres:
         condition: service_healthy

@@ -300,7 +300,7 @@ export async function checkDemeritThresholds(
 
   if (!policy || !policy.thresholds) return;
 
-  const thresholds = policy.thresholds as NotificationThreshold[];
+  const thresholds = policy.thresholds as unknown as NotificationThreshold[];
   
   // Get student details
   const student = await prisma.student.findUnique({

@@ -201,9 +201,9 @@ interface Props {
   } | null;
 }
 
-export function AppShell({ children, initialSchool, isSuperAdmin = false, user }: Props) {
+export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminProp = false, user }: Props) {
   const pathname = usePathname();
-  const { user: authUser, permissions, isAdmin, schoolIds, isLoading } = useAuth();
+  const { user: authUser, permissions, isAdmin, isSuperAdmin: isSuperAdminFromHook, schoolIds, isLoading } = useAuth();
 
   // Build the client auth context for permission checks
   const clientAuth: ClientAuthContext | null = useMemo(() => {
@@ -218,9 +218,10 @@ export function AppShell({ children, initialSchool, isSuperAdmin = false, user }
       },
       permissions,
       isAdmin,
+      isSuperAdmin: isSuperAdminFromHook || isSuperAdminProp,
       schoolIds,
     };
-  }, [authUser, permissions, isAdmin, schoolIds]);
+  }, [authUser, permissions, isAdmin, isSuperAdminFromHook, isSuperAdminProp, schoolIds]);
 
   // Filter navigation items based on user permissions
   const filteredNavItems = useMemo(
@@ -230,8 +231,8 @@ export function AppShell({ children, initialSchool, isSuperAdmin = false, user }
 
   // Check if user has super admin access
   const hasSuperAdminAccess = useMemo(
-    () => hasPermission(clientAuth, "superadmin:access") || isSuperAdmin,
-    [clientAuth, isSuperAdmin]
+    () => hasPermission(clientAuth, "superadmin:access") || isSuperAdminFromHook || isSuperAdminProp,
+    [clientAuth, isSuperAdminFromHook, isSuperAdminProp]
   );
 
   // For marketing pages, render children directly without the app shell chrome

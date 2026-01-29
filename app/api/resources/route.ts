@@ -22,14 +22,21 @@ export async function GET(request: NextRequest) {
     const year = searchParams.get("year");
     const search = searchParams.get("search");
 
+    // Build school filter - only apply if not super admin or if schoolId exists
+    const schoolFilter = schoolId
+      ? {
+          OR: [
+            { assessment: { assessmentPlan: { classGroup: { schoolId } } } },
+            { assessmentPlan: { classGroup: { schoolId } } },
+          ],
+        }
+      : {};
+
     // Get approved assessment documents as resources
     const documents = await prisma.assessmentDocument.findMany({
       where: {
         status: "Approved",
-        OR: [
-          { assessment: { assessmentPlan: { classGroup: { schoolId } } } },
-          { assessmentPlan: { classGroup: { schoolId } } },
-        ],
+        ...schoolFilter,
         ...(subject && {
           OR: [
             { assessment: { assessmentPlan: { classGroup: { subject: { name: subject } } } } },

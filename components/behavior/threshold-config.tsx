@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -354,40 +354,40 @@ export function ThresholdConfig({ schoolId, initialThresholds, onSave }: Thresho
                     <Label>Notification Recipients</Label>
                     <div className="flex flex-wrap gap-4">
                       <div className="flex items-center gap-2">
-                        <Switch
+                        <Checkbox
                           id={`parent-${threshold.id}`}
                           checked={threshold.notifyParent}
-                          onCheckedChange={(checked) => updateThreshold(threshold.id, { notifyParent: checked })}
+                          onCheckedChange={(checked) => updateThreshold(threshold.id, { notifyParent: checked === true })}
                         />
                         <Label htmlFor={`parent-${threshold.id}`} className="cursor-pointer">
                           Notify Parent
                         </Label>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Switch
+                        <Checkbox
                           id={`hod-${threshold.id}`}
                           checked={threshold.notifyHOD}
-                          onCheckedChange={(checked) => updateThreshold(threshold.id, { notifyHOD: checked })}
+                          onCheckedChange={(checked) => updateThreshold(threshold.id, { notifyHOD: checked === true })}
                         />
                         <Label htmlFor={`hod-${threshold.id}`} className="cursor-pointer">
                           Notify HOD
                         </Label>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Switch
+                        <Checkbox
                           id={`principal-${threshold.id}`}
                           checked={threshold.notifyPrincipal}
-                          onCheckedChange={(checked) => updateThreshold(threshold.id, { notifyPrincipal: checked })}
+                          onCheckedChange={(checked) => updateThreshold(threshold.id, { notifyPrincipal: checked === true })}
                         />
                         <Label htmlFor={`principal-${threshold.id}`} className="cursor-pointer">
                           Notify Principal
                         </Label>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Switch
+                        <Checkbox
                           id={`email-${threshold.id}`}
                           checked={threshold.sendEmail}
-                          onCheckedChange={(checked) => updateThreshold(threshold.id, { sendEmail: checked })}
+                          onCheckedChange={(checked) => updateThreshold(threshold.id, { sendEmail: checked === true })}
                         />
                         <Label htmlFor={`email-${threshold.id}`} className="cursor-pointer">
                           Send Email

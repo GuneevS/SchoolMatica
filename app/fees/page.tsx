@@ -46,8 +46,23 @@ export default async function FeesPage() {
   const auth = await getServerAuthContext();
   if (!auth) redirect("/login");
 
-  const schoolId = auth.user.schoolId;
-  if (!schoolId) redirect("/login");
+  // For super admins without a school, get the first school or allow them to select
+  let schoolId = auth.user.schoolId;
+  
+  // Super admins can access fees even without an assigned school
+  if (!schoolId && auth.isSuperAdmin) {
+    // Get the first school for super admin to view
+    const firstSchool = await prisma.school.findFirst({
+      orderBy: { createdAt: "desc" },
+    });
+    if (firstSchool) {
+      schoolId = firstSchool.id;
+    }
+  }
+  
+  if (!schoolId) {
+    redirect("/dashboard?error=no_school&message=No%20school%20available");
+  }
 
   // Check finance access
   const hasFinanceAccess = await checkFinanceAccess(auth);

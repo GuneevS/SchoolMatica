@@ -23,6 +23,7 @@ export interface AuthContextData {
   user: AuthUser | null;
   permissions: string[];
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   schoolIds: string[];
   activeRoleKey: string | null;
   isLoading: boolean;
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [schoolIds, setSchoolIds] = useState<string[]>([]);
   const [activeRoleKey, setActiveRoleKey] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
           setPermissions([]);
           setIsAdmin(false);
+          setIsSuperAdmin(false);
           setSchoolIds([]);
           return;
         }
@@ -68,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(data.user);
       setPermissions(data.permissions);
       setIsAdmin(data.isAdmin);
+      setIsSuperAdmin(data.isSuperAdmin ?? false);
       setSchoolIds(data.schoolIds);
 
       // Set active role from cookie or default to highest priority role
@@ -111,6 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     permissions,
     isAdmin,
+    isSuperAdmin,
     schoolIds,
     activeRoleKey,
     isLoading,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthContext, isSystemAdmin, getUserSchoolIds } from "@/lib/auth";
+import { getAuthContext, isSystemAdmin, getUserSchoolIds, isSuperAdmin } from "@/lib/auth";
 
 /**
  * GET /api/auth/me
@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
     },
     permissions: Array.from(auth.permissions),
     isAdmin: isSystemAdmin(auth),
+    isSuperAdmin: isSuperAdmin(auth),
     schoolIds: getUserSchoolIds(auth),
   };
   

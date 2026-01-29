@@ -24,30 +24,40 @@ export interface ClientAuthContext {
   };
   permissions: string[];
   isAdmin: boolean;
+  isSuperAdmin?: boolean;
   schoolIds: string[];
 }
 
 /**
  * Check if user has a specific permission
+ * Super admins have all permissions
  */
 export function hasPermission(auth: ClientAuthContext | null, permission: PermissionKey): boolean {
   if (!auth) return false;
+  // Super admins have all permissions
+  if (auth.isSuperAdmin || auth.isAdmin) return true;
   return auth.permissions.includes(permission);
 }
 
 /**
  * Check if user has any of the specified permissions
+ * Super admins have all permissions
  */
 export function hasAnyPermission(auth: ClientAuthContext | null, permissions: PermissionKey[]): boolean {
   if (!auth) return false;
+  // Super admins have all permissions
+  if (auth.isSuperAdmin || auth.isAdmin) return true;
   return permissions.some(p => auth.permissions.includes(p));
 }
 
 /**
  * Check if user has all of the specified permissions
+ * Super admins have all permissions
  */
 export function hasAllPermissions(auth: ClientAuthContext | null, permissions: PermissionKey[]): boolean {
   if (!auth) return false;
+  // Super admins have all permissions
+  if (auth.isSuperAdmin || auth.isAdmin) return true;
   return permissions.every(p => auth.permissions.includes(p));
 }
 

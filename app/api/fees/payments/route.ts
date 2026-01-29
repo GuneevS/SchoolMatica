@@ -25,7 +25,7 @@ const recordPaymentSchema = z.object({
   gatewayRef: z.string().optional(),
   paidBy: z.string().optional(),
   paidByContact: z.string().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 // Generate payment reference: PAY-YYYY-XXXXX
@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
           gatewayRef: data.gatewayRef,
           paidBy: data.paidBy,
           paidByContact: data.paidByContact,
-          metadata: data.metadata,
+          metadata: data.metadata as object | undefined,
           status: "Completed",
           processedAt: new Date(),
         },

@@ -89,16 +89,17 @@ export async function transitionAssessmentPlanStatus(args: {
           },
         });
 
-        await createBulkNotifications({
-          prisma,
-          schoolId: plan.classGroup.schoolId,
-          userIds: approvers.map(u => u.id),
-          type: "system",
-          title: "Assessment Plan Needs Approval",
-          body: `${plan.name} has been submitted by ${actorName || actorRole} and requires your approval`,
-          actionUrl: `/assessment-plans/${plan.id}`,
-          data: { planId: plan.id, status: targetStatus, previousStatus: plan.status },
-        });
+        await createBulkNotifications(
+          approvers.map(u => u.id),
+          {
+            schoolId: plan.classGroup.schoolId,
+            type: "system",
+            title: "Assessment Plan Needs Approval",
+            body: `${plan.name} has been submitted by ${actorName || actorRole} and requires your approval`,
+            actionUrl: `/assessment-plans/${plan.id}`,
+            data: { planId: plan.id, status: targetStatus, previousStatus: plan.status },
+          }
+        );
         break;
       }
 
@@ -111,7 +112,7 @@ export async function transitionAssessmentPlanStatus(args: {
               include: {
                 primaryTeacher: {
                   include: {
-                    user: true,
+                    account: true,
                   },
                 },
               },
@@ -119,11 +120,10 @@ export async function transitionAssessmentPlanStatus(args: {
           },
         });
 
-        if (planWithDetails?.classGroup?.primaryTeacher?.user) {
+        if (planWithDetails?.classGroup?.primaryTeacher?.account) {
           await createNotification({
-            prisma,
-            userId: planWithDetails.classGroup.primaryTeacher.user.id,
-            schoolId: plan.classGroup.schoolId,
+            userId: planWithDetails.classGroup.primaryTeacher.account.id,
+            schoolId: planWithDetails.classGroup.schoolId,
             type: "system",
             title: "Assessment Plan Approved",
             body: `Your plan "${plan.name}" has been approved by ${actorName || actorRole}`,
@@ -144,7 +144,7 @@ export async function transitionAssessmentPlanStatus(args: {
                 include: {
                   primaryTeacher: {
                     include: {
-                      user: true,
+                      account: true,
                     },
                   },
                 },
@@ -152,11 +152,10 @@ export async function transitionAssessmentPlanStatus(args: {
             },
           });
 
-          if (planWithDetails?.classGroup?.primaryTeacher?.user) {
+          if (planWithDetails?.classGroup?.primaryTeacher?.account) {
             await createNotification({
-              prisma,
-              userId: planWithDetails.classGroup.primaryTeacher.user.id,
-              schoolId: plan.classGroup.schoolId,
+              userId: planWithDetails.classGroup.primaryTeacher.account.id,
+              schoolId: planWithDetails.classGroup.schoolId,
               type: "system",
               title: "Assessment Plan Returned",
               body: `Your plan "${plan.name}" has been returned to Draft by ${actorName || actorRole}. Please review and resubmit.`,
@@ -177,7 +176,7 @@ export async function transitionAssessmentPlanStatus(args: {
               include: {
                 primaryTeacher: {
                   include: {
-                    user: true,
+                    account: true,
                   },
                 },
               },
@@ -185,11 +184,10 @@ export async function transitionAssessmentPlanStatus(args: {
           },
         });
 
-        if (planWithDetails?.classGroup?.primaryTeacher?.user) {
+        if (planWithDetails?.classGroup?.primaryTeacher?.account) {
           await createNotification({
-            prisma,
-            userId: planWithDetails.classGroup.primaryTeacher.user.id,
-            schoolId: plan.classGroup.schoolId,
+            userId: planWithDetails.classGroup.primaryTeacher.account.id,
+            schoolId: planWithDetails.classGroup.schoolId,
             type: "system",
             title: "Assessment Plan Locked",
             body: `Your plan "${plan.name}" has been locked by ${actorName || actorRole}. No further changes can be made.`,

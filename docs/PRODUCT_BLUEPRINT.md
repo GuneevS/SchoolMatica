@@ -7,6 +7,6 @@ The full, canonical blueprint currently lives in `MarkbookSaaS_docs/docs/PRODUCT
 - **Domain rules:** Raw → normalised weight pipeline, SBA/Term % calculations excluding absent entries, level mapping via grading config.
 - **Moderation:** Plan thread lifecycle (Draft → Pending → Approved → Locked) and assessment-level moderation threads with comments and status.
 - **UI pillars:** Dashboard tiles, Assessment Plan editor, Class Markbook grid, Students directory, Grading settings.
-- **Tech stack:** Next 14 App Router, Tailwind + shadcn/ui, Prisma (SQLite dev), API routes only, domain logic in `/lib`.
+- **Tech stack:** Next.js 16 App Router, Tailwind + shadcn/ui, Prisma (PostgreSQL), Docker, API routes, domain logic in `/lib`.
 
 > Whenever requirements evolve, update this summary and sync it with the canonical file to ensure `/docs` remains the first stop for direction.

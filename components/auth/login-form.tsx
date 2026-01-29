@@ -30,7 +30,7 @@ const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   schoolId: z.string().optional(),
-  rememberMe: z.boolean().default(false),
+  rememberMe: z.boolean(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -77,16 +77,35 @@ export function LoginForm() {
           setError("Invalid email or password. Please check your credentials and try again.");
         }
         setIsLoading(false);
-      } else {
-        // Successful login, redirect based on role
-        let redirectUrl = callbackUrl;
-        if (selectedRole === "parent") {
-          redirectUrl = "/parent";
-        } else if (selectedRole === "student") {
-          redirectUrl = "/student";
+      } else if (result?.ok) {
+        // Successful login, fetch user to determine redirect
+        const meResponse = await fetch("/api/auth/me");
+        if (meResponse.ok) {
+          const userData = await meResponse.json();
+          
+          // Determine redirect based on role
+          let redirectUrl = callbackUrl;
+          
+          // Check if user is super admin
+          if (userData.user?.isSuperAdmin || userData.user?.roles?.some((r: any) => r.key === "super_admin")) {
+            redirectUrl = "/super-admin";
+          } else if (selectedRole === "parent") {
+            redirectUrl = "/parent";
+          } else if (selectedRole === "student") {
+            redirectUrl = "/student";
+          }
+          
+          router.push(redirectUrl);
+          router.refresh();
+        } else {
+          // Session created but user fetch failed, use default redirect
+          router.push(callbackUrl);
+          router.refresh();
         }
-        router.push(redirectUrl);
-        router.refresh();
+      } else {
+        // Unknown state
+        setError("An unexpected error occurred. Please try again.");
+        setIsLoading(false);
       }
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");

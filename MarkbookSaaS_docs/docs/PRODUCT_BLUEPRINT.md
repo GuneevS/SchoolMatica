@@ -202,7 +202,7 @@ Threads have:
 
 - Next.js 14 (App Router) with TypeScript.
 - Tailwind + shadcn/ui for UI.
-- Prisma + SQLite now; Postgres-ready schema.
+- Prisma + PostgreSQL with full containerization.
 - Domain logic in `/lib/domain/*`.
 - API in `app/api/**`.
 - Tests for core calculations.

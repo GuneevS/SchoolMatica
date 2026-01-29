@@ -44,7 +44,7 @@ The idea is to keep Codex **focused** and **incremental**, avoiding big-bang pro
 
 > You are acting as Agent 0 from AGENTS.md.  
 > Read AGENTS.md and docs/PRODUCT_BLUEPRINT.md.  
-> Initialise a Next.js 14 + TypeScript + Tailwind + shadcn/ui + Prisma + SQLite project in this repo.  
+> Initialise a Next.js 16 + TypeScript + Tailwind + shadcn/ui + Prisma + PostgreSQL + Docker project in this repo.  
 > Create the basic folder structure and a placeholder README.md.  
 > Do not yet implement the Prisma schema – leave it empty.
 

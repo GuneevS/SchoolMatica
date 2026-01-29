@@ -46,8 +46,8 @@ SchoolMatica is a modern, user-friendly platform designed to streamline assessme
 
 ### Prerequisites
 
-- Node.js 18+ and npm
-- SQLite (included) or PostgreSQL (production)
+- Node.js 20+ and npm
+- PostgreSQL 15+ (included via Docker)
 
 ### Installation
 
@@ -77,14 +77,20 @@ Visit `http://localhost:44777` to see the application.
 Create a `.env` file in the root directory:
 
 ```env
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="postgresql://schoolmatica:dev_password_only@localhost:13808/schoolmatica?schema=public"
+NEXTAUTH_SECRET="development-secret-change-in-production"
+NEXTAUTH_URL="http://localhost:13807"
+AUTH_TRUST_HOST="true"
 NODE_ENV="development"
 ```
 
-For production with PostgreSQL:
+For production:
 
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/schoolmatica"
+DATABASE_URL="postgresql://schoolmatica:CHANGE_PASSWORD@postgres:5432/schoolmatica?schema=public"
+NEXTAUTH_SECRET="CHANGE_THIS_TO_SECURE_SECRET"
+NEXTAUTH_URL="https://yourdomain.com"
+REDIS_URL="redis://redis:6379"
 NODE_ENV="production"
 ```
 
@@ -108,9 +114,9 @@ NODE_ENV="production"
 
 ### Backend
 - **Prisma**: Type-safe ORM
-- **SQLite**: Development database
-- **PostgreSQL**: Production database (optional)
+- **PostgreSQL**: Production-grade database (containerized)
 - **Zod**: Runtime validation
+- **Docker**: Full containerization for all environments
 
 ### State Management
 - **Zustand**: Lightweight state management
@@ -160,12 +166,16 @@ npm start
 ### Docker (Recommended)
 
 ```bash
-# Build image
-docker build -t schoolmatica .
+# Development (with hot-reload)
+docker compose -f docker-compose.dev.yml up -d
 
-# Run container
-docker run -p 3000:3000 -e DATABASE_URL="..." schoolmatica
+# Production
+docker compose -f docker-compose.prod.yml up -d
+
+# Access application at http://localhost:13807
 ```
+
+For detailed Docker setup instructions, see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
 
 ### Manual Deployment
 

@@ -32,7 +32,7 @@ Use the following stack **exactly**:
 - **Styling:** Tailwind CSS + shadcn/ui components
 - **Forms & validation:** React Hook Form + Zod
 - **ORM:** Prisma
-- **Database:** SQLite (for dev), but schema must be Postgres-friendly
+- **Database:** PostgreSQL (containerized for all environments)
 - **API:** Next.js route handlers under `app/api/**` using REST-style JSON
 
 ---

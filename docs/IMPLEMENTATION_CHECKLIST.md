@@ -6,7 +6,9 @@
 - [x] Next.js 14 with App Router setup
 - [x] TypeScript configuration
 - [x] Tailwind CSS with custom theme
-- [x] Prisma ORM with SQLite
+- [x] Prisma ORM with PostgreSQL
+- [x] Fully containerized with Docker
+- [x] Multi-environment Docker Compose files (dev/prod)
 - [x] Database schema with all models
 - [x] Seed data for testing
 - [x] API routes for all entities

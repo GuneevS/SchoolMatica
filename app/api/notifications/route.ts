@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         body: notificationBody,
         actionUrl,
         schoolId,
-        data: data ? JSON.stringify(data) : null,
+        data: data ? JSON.stringify(data) : undefined,
       },
     });
 

@@ -153,7 +153,10 @@
 ### Technical Features
 
 #### 20. Database Schema
-- Prisma ORM with SQLite (Postgres-ready)
+- Prisma ORM with PostgreSQL
+- Fully containerized application
+- Docker Compose for multi-environment deployment
+- Database migrations with Prisma
 - Normalized data model
 - Referential integrity
 - Efficient queries with proper indexes

@@ -111,21 +111,22 @@ export async function POST(request: NextRequest, { params }: Params) {
       });
 
       if (participants.length > 0) {
-        await createBulkNotifications({
-          prisma,
-          schoolId,
-          userIds: participants.map(p => p.id),
-          type: "system",
-          title: "New Moderation Comment",
-          body: `${parsed.data.authorRole} added a comment to the moderation discussion for "${planName}"`,
-          actionUrl: `/assessment-plans/${planId}`,
-          data: { 
-            threadId, 
-            commentId: comment.id,
-            authorRole: parsed.data.authorRole,
-            planId,
-          },
-        });
+        await createBulkNotifications(
+          participants.map(p => p.id),
+          {
+            schoolId,
+            type: "system",
+            title: "New Moderation Comment",
+            body: `${parsed.data.authorRole} added a comment to the moderation discussion for "${planName}"`,
+            actionUrl: `/assessment-plans/${planId}`,
+            data: { 
+              threadId, 
+              commentId: comment.id,
+              authorRole: parsed.data.authorRole,
+              planId,
+            },
+          }
+        );
       }
     }
   } catch (notificationError) {

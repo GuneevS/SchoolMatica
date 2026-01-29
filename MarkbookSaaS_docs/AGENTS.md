@@ -29,7 +29,7 @@ The goal: produce a **production-grade, fully functional** implementation of the
   - `npx create-next-app@latest` (or equivalent) with TypeScript & App Router.
   - Add Tailwind CSS.
   - Add shadcn/ui and a base theme.
-  - Add Prisma and configure SQLite as default.
+  - Add Prisma and configure PostgreSQL with Docker.
 - Create initial folder structure:
   - `/app`, `/app/api`, `/components`, `/lib`, `/docs`, `/prisma`.
 - Place the provided docs in `/docs`:
@@ -69,7 +69,8 @@ The goal: produce a **production-grade, fully functional** implementation of the
        `ModerationThread`, `ModerationComment`.
    - Ensure relations, indexes where sensible (e.g. on foreign keys).
 3. Configure:
-   - `DATABASE_URL` for SQLite in `.env`.
+   - `DATABASE_URL` for PostgreSQL in `.env`.
+   - Docker Compose configuration for local development.
    - `npx prisma migrate dev` support.
 4. Create `prisma/seed.ts`:
    - Seed:

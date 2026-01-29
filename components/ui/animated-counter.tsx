@@ -56,7 +56,7 @@ export function AnimatedCounter({
   const [displayValue, setDisplayValue] = useState("0");
   const [hasStarted, setHasStarted] = useState(false);
   const elementRef = useRef<HTMLSpanElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     const element = elementRef.current;

@@ -247,8 +247,9 @@ export function BulkMessageComposer({
   };
 
   const handleSend = () => {
-    const scheduleTime = isScheduled && scheduleDate && scheduleDate
-      ? new Date(`${scheduleDate}T${scheduleTime || "09:00"}`)
+    const timeValue = scheduleTime || "09:00";
+    const scheduledDateTime = isScheduled && scheduleDate
+      ? new Date(`${scheduleDate}T${timeValue}`)
       : undefined;
 
     onSend({
@@ -256,7 +257,7 @@ export function BulkMessageComposer({
       subject,
       body,
       channels,
-      scheduleTime,
+      scheduleTime: scheduledDateTime,
     });
   };
 

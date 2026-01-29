@@ -163,13 +163,13 @@ export async function POST(request: NextRequest) {
     });
 
     // Record audit log
+    const actorRole = auth.user.roleAssignments[0]?.role.key || "Unknown";
     await recordAuditLog({
-      prisma,
       schoolId: effectiveSchoolId,
       entityType: "BehaviorIncident",
       entityId: incident.id,
       action: "INCIDENT_CREATED",
-      actorRole: auth.role || "Unknown",
+      actorRole: actorRole,
       actorName: auth.user.displayName || "System",
       metadata: {
         type: incident.type,
@@ -181,28 +181,16 @@ export async function POST(request: NextRequest) {
     });
 
     // Trigger parent notifications
-    const studentWithParents = await prisma.student.findUnique({
-      where: { id: studentId },
-      include: {
-        parents: { where: { primary: true } },
-        user: true,
-      },
-    });
-
-    if (studentWithParents?.parents && studentWithParents.parents.length > 0) {
-      const primaryParent = studentWithParents.parents[0];
-      
-      try {
-        await notifyParentsOfBehaviorIncident({
-          incident,
-          student: studentWithParents,
-          school: { id: effectiveSchoolId, name: "School" }, // Will be fetched in notification function
-          parentContact: primaryParent,
-        });
-      } catch (notifError) {
-        // Log error but don't fail the incident creation
-        console.error("Failed to send parent notification:", notifError);
-      }
+    try {
+      await notifyParentsOfBehaviorIncident(
+        studentId,
+        type as "Merit" | "Demerit",
+        points,
+        description
+      );
+    } catch (notifError) {
+      // Log error but don't fail the incident creation
+      console.error("Failed to send parent notification:", notifError);
     }
 
     // Check if student has crossed any thresholds
@@ -251,7 +239,6 @@ export async function POST(request: NextRequest) {
 
               // Log threshold crossing
               await recordAuditLog({
-                prisma,
                 schoolId: effectiveSchoolId,
                 entityType: "BehaviorThresholdTrigger",
                 entityId: studentId,

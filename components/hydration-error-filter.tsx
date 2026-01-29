@@ -17,6 +17,17 @@ export function HydrationErrorFilter() {
 
     // Override console.error to filter out specific hydration warnings
     console.error = (...args) => {
+      // Convert all args to string for comprehensive checking
+      const fullErrorString = args.map(arg => {
+        if (typeof arg === 'string') return arg;
+        if (arg?.toString) return arg.toString();
+        try {
+          return JSON.stringify(arg);
+        } catch {
+          return String(arg);
+        }
+      }).join(' ');
+      
       const errorMessage = args[0]?.toString() || "";
       
       // Filter out Radix UI aria-controls hydration mismatches
@@ -35,28 +46,32 @@ export function HydrationErrorFilter() {
         return; // Suppress this error
       }
 
-      // Filter out browser extension attribute mismatches (NordPass, 1Password, etc.)
-      // These extensions add data-np-*, data-1p-*, data-lpignore, etc. after SSR
+      // Filter out browser extension attribute mismatches (comprehensive check)
+      // Norton, NordPass, 1Password, LastPass, Bitwarden, Dashlane, etc.
       if (
-        errorMessage.includes("Hydration") &&
-        (errorMessage.includes("data-np-") ||
-         errorMessage.includes("data-1p-") ||
-         errorMessage.includes("data-lp") ||
-         errorMessage.includes("data-bitwarden") ||
-         errorMessage.includes("data-dashlane") ||
-         errorMessage.includes("data-lastpass") ||
-         errorMessage.includes("autofill"))
+        (errorMessage.includes("Hydration") || errorMessage.includes("hydrated")) &&
+        (fullErrorString.includes("data-np-") ||
+         fullErrorString.includes("data-1p-") ||
+         fullErrorString.includes("data-lp") ||
+         fullErrorString.includes("data-bitwarden") ||
+         fullErrorString.includes("data-dashlane") ||
+         fullErrorString.includes("data-lastpass") ||
+         fullErrorString.includes("autofill-form-type") ||
+         fullErrorString.includes("autofill-field-type") ||
+         fullErrorString.includes("data-np-mark") ||
+         fullErrorString.includes("data-np-checked") ||
+         fullErrorString.includes("data-np-autofill"))
       ) {
         return; // Suppress browser extension hydration errors
       }
 
       // Filter out hydration mismatches on form elements (common with browser autofill)
       if (
-        errorMessage.includes("Hydration") &&
+        (errorMessage.includes("Hydration") || errorMessage.includes("hydrated")) &&
         (errorMessage.includes("<input") ||
          errorMessage.includes("<form") ||
-         errorMessage.includes("autofill-form-type") ||
-         errorMessage.includes("autofill-field-type"))
+         errorMessage.includes("Input") ||
+         errorMessage.includes("autofill"))
       ) {
         return; // Suppress form-related hydration errors
       }

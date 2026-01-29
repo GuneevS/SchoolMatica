@@ -35,16 +35,16 @@ export async function GET(request: NextRequest) {
         overallStatus = "unhealthy";
     }
 
-    // 2. Memory check (warn if over 90% of heap used)
+    // 2. Memory check (warn if over 95% of heap used)
     try {
         const memoryUsage = process.memoryUsage();
         const heapUsedPercent = (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100;
         
         checks.memory = {
-            status: heapUsedPercent < 90 ? "healthy" : "unhealthy",
+            status: heapUsedPercent < 95 ? "healthy" : "unhealthy",
         };
         
-        if (heapUsedPercent >= 90) {
+        if (heapUsedPercent >= 95) {
             overallStatus = "unhealthy";
         }
     } catch (error) {

@@ -2,6 +2,102 @@
 
 All notable changes to SchoolMatica are documented in this file.
 
+## [2.2.0] - 2026-01-29 - Comprehensive Platform Enhancement
+
+### Platform Admin Login
+- Added "Platform Admin" tab to the login form for super admin access
+- Platform admin redirects directly to `/super-admin` dashboard
+- School selector is hidden when Platform Admin role is selected
+- Appropriate placeholder text and messaging for platform admin login
+
+### UI/UX Improvements
+- **Forced Light Mode**: Removed all dark mode CSS and enforced light-only theme
+- Updated `ThemeProvider` to always force light mode
+- Disabled `ThemeToggle` component (returns null)
+- Cleaned up `globals.css` by removing `.dark` class definitions
+- Updated `layout.tsx` theme initialization script to always set light mode
+
+### Finance Module - SA Compliant Accounting System
+
+#### API Endpoints
+- `POST/GET /api/fees/invoices` - Create and list invoices with INV-YYYY-XXXXX format
+- `GET/PATCH/DELETE /api/fees/invoices/[invoiceId]` - Manage individual invoices
+- `POST/GET /api/fees/payments` - Record payments with PAY-YYYY-XXXXX format
+- `GET/POST /api/fees/ledger/[studentId]` - Account ledger with adjustment entries
+- `POST/GET /api/fees/reconcile` - Reconciliation with overdue marking and collection stats
+
+#### Parent Portal Finance Features
+- New `/parent/fees` page with account statement view
+- Summary cards showing outstanding balance, paid, and total invoiced
+- Multi-child support with selector when parent has multiple children
+- Tabbed interface: Overview, Invoices, and Statement views
+- Transaction history with debit/credit ledger entries
+
+#### PDF Statement Generation
+- API endpoint `/api/parent/statements/[studentId]/pdf`
+- Professional HTML statement with school branding
+- Transaction history table with running balances
+- Payment information for outstanding balances
+
+#### Payment Gateway Integration
+- PayFast integration for South African payments
+- API endpoint `/api/parent/payments/initiate` for payment initiation
+- Webhook handler `/api/parent/payments/webhook` for ITN processing
+- Support for EFT, Card, SnapScan, and PayFast methods
+- Automatic invoice and ledger updates on successful payment
+
+### Pricing Updates
+- Updated Starter tier: R50,000/year (R4,167/month) - Up to 500 learners
+- Updated Professional tier: R75,000/year (R6,250/month) - Up to 1,500 learners
+- Updated Enterprise tier: R125,000/year (R10,417/month) - Unlimited
+- Added new features to pricing plans: fee management, online payments, accounting
+
+### Behavior Management - Configurable Demerit Thresholds
+
+#### Threshold Configuration
+- New `ThresholdConfig` component for school admin configuration
+- Visual timeline showing threshold points (5, 10, 15, 20 demerits)
+- Configurable recipients per threshold: Parent, HOD, Principal
+- Configurable actions: Warning, Parent Meeting, Detention, Suspension Warning, Hearing
+- Email notification toggle per threshold
+
+#### Automatic Notifications
+- Added `checkDemeritThresholds` function in notifications library
+- Automatic detection when student crosses threshold points
+- Creates `BehaviorThresholdTrigger` records for tracking
+- Sends bulk notifications to configured recipients
+
+#### API Endpoints
+- `POST/GET/PUT /api/behavior/policies` - Manage behavior policies with thresholds
+
+### Assessment Resource Library
+- New `/resources` page for browsing assessment documents
+- Resource browser component with grid and list views
+- Filtering by subject, grade, category (Rubric, Memo, Question Paper)
+- Search functionality across file names and assessment names
+- Download tracking with direct file access
+- API endpoint `/api/resources` for listing and searching
+
+### Learner Registration Enhancement
+- Added SA standard document requirements checklist
+- Required documents: Birth Certificate, Parent ID, Proof of Residence, Immunization Card, Passport Photo
+- Optional documents: Transfer Card, Previous School Report, Medical Certificate
+- Visual progress indicator showing completion percentage
+- Document status workflow: Missing → Submitted → Verified
+- Inline verification actions for administrators
+
+### Access Control
+- Added finance permission check to `/fees` page
+- Finance access granted to: super admin, school admin, bursar, finance_admin, accountant
+- Permission-based access using `finance:read`, `finance:write`, `fees:manage`
+
+### Bug Fixes & Improvements
+- Updated behavior incidents API to call `checkDemeritThresholds` on new demerits
+- Fixed theme provider to use simpler light-mode-only logic
+- All new components follow established patterns and use shadcn/ui components
+
+---
+
 ## [2.1.0] - 2026-01-29 - Deep Feature Implementation & Docker Deployment
 
 ### Homework System - Complete Implementation

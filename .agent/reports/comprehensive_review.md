@@ -72,9 +72,28 @@ Added parent portal integration:
 | Feature | Status |
 |---------|--------|
 | Super Admin user | ✅ Created (guneev66@gmail.com / Admin@2025) |
+| Platform Admin login tab | ✅ Added to login form |
 | Strong password requirements | ✅ Implemented |
 | Login rate limiting | ✅ 5 attempts per 15 minutes |
 | Session handling | ⚠️ Needs debugging in Docker |
+
+### 7. Platform Enhancement (v2.2.0) ✅ NEW
+
+| Feature | Status |
+|---------|--------|
+| Platform Admin login tab | ✅ Added with super admin redirect |
+| Light mode only UI | ✅ Dark mode removed |
+| Finance module - Invoicing | ✅ Full CRUD with INV-YYYY-XXXXX format |
+| Finance module - Payments | ✅ Recording with PAY-YYYY-XXXXX format |
+| Finance module - Ledger | ✅ Account ledger with adjustments |
+| Finance module - Reconciliation | ✅ Overdue marking, collection stats |
+| Parent fee statements | ✅ Full statement page with PDF generation |
+| PayFast integration | ✅ Payment initiation and webhook |
+| Pricing update | ✅ R50,000 PA minimum tier |
+| Demerit thresholds | ✅ Configurable with auto-notifications |
+| Resource library | ✅ Assessment documents with filtering |
+| Registration documents | ✅ SA standard checklist with verification |
+| Fees page permissions | ✅ Finance role required |
 
 ---
 

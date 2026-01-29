@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { authorizeWithSchool, hasSchoolAccess } from "@/lib/auth";
-import { notifyParentsOfBehaviorIncident } from "@/lib/notifications";
+import { notifyParentsOfBehaviorIncident, checkDemeritThresholds } from "@/lib/notifications";
 import { recordAuditLog } from "@/lib/domain/audit";
 
 export const dynamic = "force-dynamic";
@@ -191,6 +191,15 @@ export async function POST(request: NextRequest) {
     } catch (notifError) {
       // Log error but don't fail the incident creation
       console.error("Failed to send parent notification:", notifError);
+    }
+
+    // Check demerit thresholds and send notifications for crossed thresholds
+    if (type === "Demerit") {
+      try {
+        await checkDemeritThresholds(studentId, effectiveSchoolId, updatedBalance.demeritTotal);
+      } catch (thresholdError) {
+        console.error("Failed to check demerit thresholds:", thresholdError);
+      }
     }
 
     // Check if student has crossed any thresholds

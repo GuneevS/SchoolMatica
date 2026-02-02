@@ -77,7 +77,7 @@ const getFileIcon = (mimeType: string) => {
 const getCategoryColor = (category: string) => {
   switch (category) {
     case "Rubric":
-      return "bg-violet-100 text-violet-700";
+      return "bg-[hsl(var(--accent-violet))/0.12] text-[hsl(var(--accent-violet))]";
     case "Memo":
       return "bg-emerald-100 text-emerald-700";
     case "Question Paper":
@@ -277,7 +277,7 @@ export function ResourceBrowser({ resources, subjects, gradeLevels }: ResourceBr
           {Object.entries(groupedResources).map(([subject, subjectResources]) => (
             <div key={subject}>
               <div className="flex items-center gap-2 mb-4">
-                <BookOpen className="h-5 w-5 text-violet-500" />
+                <BookOpen className="h-5 w-5 text-[hsl(var(--accent-violet))]" />
                 <h2 className="text-lg font-semibold">{subject}</h2>
                 <Badge variant="outline">{subjectResources.length}</Badge>
               </div>
@@ -291,8 +291,8 @@ export function ResourceBrowser({ resources, subjects, gradeLevels }: ResourceBr
                     >
                       <CardContent className="p-4">
                         <div className="flex items-start gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-violet-100 flex items-center justify-center flex-shrink-0">
-                            <FileIcon className="h-5 w-5 text-violet-600" />
+                          <div className="h-10 w-10 rounded-lg bg-[hsl(var(--accent-violet))/0.12] flex items-center justify-center flex-shrink-0">
+                            <FileIcon className="h-5 w-5 text-[hsl(var(--accent-violet))]" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium truncate" title={resource.label}>
@@ -358,8 +358,8 @@ export function ResourceBrowser({ resources, subjects, gradeLevels }: ResourceBr
                   <TableRow key={resource.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-violet-100 flex items-center justify-center">
-                          <FileIcon className="h-4 w-4 text-violet-600" />
+                        <div className="h-8 w-8 rounded-lg bg-[hsl(var(--accent-violet))/0.12] flex items-center justify-center">
+                          <FileIcon className="h-4 w-4 text-[hsl(var(--accent-violet))]" />
                         </div>
                         <div>
                           <p className="font-medium">{resource.label}</p>

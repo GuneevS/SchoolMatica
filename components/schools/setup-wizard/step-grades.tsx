@@ -8,10 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { CheckCircle2 } from "lucide-react";
 
 const PHASE_COLORS: Record<string, string> = {
-    Foundation: "bg-emerald-100 dark:bg-emerald-950/30 border-emerald-300 text-emerald-700",
-    Intermediate: "bg-blue-100 dark:bg-blue-950/30 border-blue-300 text-blue-700",
-    Senior: "bg-purple-100 dark:bg-purple-950/30 border-purple-300 text-purple-700",
-    FET: "bg-amber-100 dark:bg-amber-950/30 border-amber-300 text-amber-700",
+    Foundation: "bg-[hsl(var(--accent-mint))/0.15] border-[hsl(var(--accent-mint))/0.35] text-[hsl(var(--accent-mint))]",
+    Intermediate: "bg-[hsl(var(--accent-cobalt))/0.15] border-[hsl(var(--accent-cobalt))/0.35] text-[hsl(var(--accent-cobalt))]",
+    Senior: "bg-[hsl(var(--accent-iris))/0.15] border-[hsl(var(--accent-iris))/0.35] text-[hsl(var(--accent-iris))]",
+    FET: "bg-[hsl(var(--accent-gold))/0.15] border-[hsl(var(--accent-gold))/0.35] text-[hsl(var(--accent-gold))]",
 };
 
 export function StepGrades() {

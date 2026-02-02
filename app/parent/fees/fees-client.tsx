@@ -165,8 +165,8 @@ export function ParentFeesClient({ childrenData }: ParentFeesClientProps) {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-2xl bg-violet-100 flex items-center justify-center">
-                <FileText className="h-6 w-6 text-violet-600" />
+              <div className="h-12 w-12 rounded-2xl bg-[hsl(var(--accent-violet))/0.12] flex items-center justify-center">
+                <FileText className="h-6 w-6 text-[hsl(var(--accent-violet))]" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Invoices</p>
@@ -223,7 +223,7 @@ export function ParentFeesClient({ childrenData }: ParentFeesClientProps) {
                 Download Statement
               </Button>
               {summary.totalOutstanding > 0 && (
-                <Button className="gap-2 bg-violet-500 hover:bg-violet-600">
+                <Button className="gap-2 bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]">
                   <CreditCard className="h-4 w-4" />
                   Pay Now
                 </Button>

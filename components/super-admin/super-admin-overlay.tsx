@@ -163,8 +163,8 @@ export function SuperAdminOverlay({
           "fixed bottom-4 right-4 z-50",
           "flex items-center justify-center",
           "h-12 w-12 rounded-full",
-          "bg-violet-600 text-white shadow-lg shadow-violet-500/30",
-          "hover:bg-violet-700 transition-all duration-200",
+          "bg-[hsl(var(--accent-violet))] text-white shadow-lg shadow-[0_12px_24px_-12px_hsl(var(--accent-violet)/0.35)]",
+          "hover:bg-[hsl(var(--accent-violet))/0.9] transition-all duration-200",
           "ring-2 ring-white/20"
         )}
         title="Expand Super Admin Panel"
@@ -205,8 +205,8 @@ export function SuperAdminOverlay({
           )}
           onClick={() => setIsExpanded(!isExpanded)}
         >
-          <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-violet-600/20">
-            <Shield className="h-4 w-4 text-violet-400" />
+          <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-[hsl(var(--accent-violet))/0.2]">
+            <Shield className="h-4 w-4 text-[hsl(var(--accent-violet))]" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-white truncate">
@@ -310,7 +310,7 @@ export function SuperAdminOverlay({
                         "w-full flex items-center gap-3 px-3 py-2 rounded-lg",
                         "text-sm text-left transition-colors",
                         isActive
-                          ? "bg-violet-600/20 text-violet-300"
+                          ? "bg-[hsl(var(--accent-violet))/0.2] text-[hsl(var(--accent-violet))]"
                           : "text-gray-300 hover:bg-white/5 hover:text-white"
                       )}
                     >
@@ -369,7 +369,7 @@ export function SuperAdminOverlay({
                   className={cn(
                     "p-2 rounded-lg transition-colors",
                     isActive
-                      ? "bg-violet-600/20 text-violet-300"
+                      ? "bg-[hsl(var(--accent-violet))/0.2] text-[hsl(var(--accent-violet))]"
                       : "text-gray-400 hover:bg-white/5 hover:text-white"
                   )}
                   title={action.label}

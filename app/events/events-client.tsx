@@ -62,7 +62,7 @@ const eventTypeIcons: Record<string, React.ReactNode> = {
 };
 
 const eventTypeColors: Record<string, string> = {
-  Meeting: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+  Meeting: "bg-[hsl(var(--accent-violet))/0.12] text-[hsl(var(--accent-violet))] dark:bg-[hsl(var(--accent-violet))/0.28] dark:text-[hsl(var(--accent-violet))]",
   Sports: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   Exam: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
   Cultural: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
@@ -220,7 +220,7 @@ END:VCALENDAR`;
                 Calendar
               </Button>
             </div>
-            <Button className="bg-violet-500 hover:bg-violet-600">
+            <Button className="bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]">
               <Plus className="h-4 w-4 mr-2" />
               Add Event
             </Button>
@@ -250,7 +250,7 @@ END:VCALENDAR`;
                   <div
                     className={cn(
                       "w-2 shrink-0",
-                      event.color === "violet" && "bg-violet-500",
+                      event.color === "violet" && "bg-[hsl(var(--accent-violet))]",
                       event.color === "emerald" && "bg-emerald-500",
                       event.color === "red" && "bg-red-500",
                       event.color === "amber" && "bg-amber-500",

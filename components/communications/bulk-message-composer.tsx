@@ -266,7 +266,7 @@ export function BulkMessageComposer({
       <Card className="lg:col-span-1">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-violet-500" />
+            <Users className="h-5 w-5 text-[hsl(var(--accent-violet))]" />
             Recipients
           </CardTitle>
           <CardDescription>
@@ -309,8 +309,8 @@ export function BulkMessageComposer({
           </div>
 
           {/* Selected Count */}
-          <div className="flex items-center gap-2 p-2 bg-violet-50 dark:bg-violet-900/20 rounded-lg">
-            <CheckCircle className="h-4 w-4 text-violet-500" />
+          <div className="flex items-center gap-2 p-2 bg-[hsl(var(--accent-violet))/0.06] dark:bg-[hsl(var(--accent-violet))/0.2] rounded-lg">
+            <CheckCircle className="h-4 w-4 text-[hsl(var(--accent-violet))]" />
             <span className="text-sm font-medium">
               {selectedRecipients.length} recipients selected
             </span>
@@ -319,29 +319,41 @@ export function BulkMessageComposer({
           {/* Recipients List */}
           <ScrollArea className="h-[300px] border rounded-lg">
             <div className="p-2 space-y-1">
-              {filteredRecipients.map((recipient) => (
-                <button
-                  key={recipient.id}
-                  onClick={() => toggleRecipient(recipient)}
-                  className={cn(
-                    "w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors",
-                    selectedRecipients.find(r => r.id === recipient.id)
-                      ? "bg-violet-100 dark:bg-violet-900/30"
-                      : "hover:bg-slate-100 dark:hover:bg-slate-800"
-                  )}
-                >
-                  <Checkbox
-                    checked={!!selectedRecipients.find(r => r.id === recipient.id)}
-                    className="pointer-events-none"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{recipient.name}</p>
-                    <p className="text-xs text-slate-500 truncate">
-                      {recipient.childName} • {recipient.className}
-                    </p>
+              {filteredRecipients.map((recipient) => {
+                const isSelected = selectedRecipients.some((r) => r.id === recipient.id);
+                return (
+                  <div
+                    key={recipient.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={isSelected}
+                    onClick={() => toggleRecipient(recipient)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        toggleRecipient(recipient);
+                      }
+                    }}
+                    className={cn(
+                      "w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors",
+                      isSelected
+                        ? "bg-[hsl(var(--accent-violet))/0.12] dark:bg-[hsl(var(--accent-violet))/0.28]"
+                        : "hover:bg-slate-100 dark:hover:bg-slate-800"
+                    )}
+                  >
+                    <Checkbox
+                      checked={isSelected}
+                      className="pointer-events-none"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{recipient.name}</p>
+                      <p className="text-xs text-slate-500 truncate">
+                        {recipient.childName} • {recipient.className}
+                      </p>
+                    </div>
                   </div>
-                </button>
-              ))}
+                );
+              })}
             </div>
           </ScrollArea>
         </CardContent>
@@ -351,7 +363,7 @@ export function BulkMessageComposer({
       <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-violet-500" />
+            <MessageSquare className="h-5 w-5 text-[hsl(var(--accent-violet))]" />
             Compose Message
           </CardTitle>
           <CardDescription>
@@ -433,7 +445,7 @@ export function BulkMessageComposer({
                   className={cn(
                     "flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors",
                     channels.includes(channel.id as "app" | "email" | "sms")
-                      ? "border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300"
+                      ? "border-[hsl(var(--accent-violet))] bg-[hsl(var(--accent-violet))/0.06] dark:bg-[hsl(var(--accent-violet))/0.2] text-[hsl(var(--accent-violet))] dark:text-[hsl(var(--accent-violet))]"
                       : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
                   )}
                 >
@@ -519,7 +531,7 @@ export function BulkMessageComposer({
             <Button
               onClick={handleSend}
               disabled={isLoading || !selectedRecipients.length || !body || !channels.length}
-              className="bg-violet-500 hover:bg-violet-600"
+              className="bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]"
             >
               {isScheduled ? (
                 <>

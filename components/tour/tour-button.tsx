@@ -19,7 +19,7 @@ export function TourButton({ steps, className }: TourButtonProps) {
       size="lg"
       onClick={() => startTour(steps)}
       className={cn(
-        "group border-2 border-primary bg-gradient-to-r from-primary/10 to-purple-500/10 hover:from-primary/20 hover:to-purple-500/20 hover:scale-105 transition-all duration-200 animate-pulse shadow-lg shadow-primary/20",
+        "group border-2 border-primary bg-gradient-to-r from-primary/10 to-[hsl(var(--accent-violet))]/10 hover:from-primary/20 hover:to-[hsl(var(--accent-violet))]/20 hover:scale-105 transition-all duration-200 animate-pulse shadow-lg shadow-primary/20",
         className,
       )}
     >

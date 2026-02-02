@@ -549,14 +549,14 @@ export default async function ParentDashboard() {
                               notification.type === "grade"
                                 ? "bg-blue-500/20"
                                 : notification.type === "message"
-                                ? "bg-violet-500/20"
+                                ? "bg-[hsl(var(--accent-violet))/0.2]"
                                 : "bg-emerald-500/20"
                             }`}
                           >
                             {notification.type === "grade" ? (
                               <TrendingUp className="h-5 w-5 text-blue-500" />
                             ) : notification.type === "message" ? (
-                              <MessageSquare className="h-5 w-5 text-violet-500" />
+                              <MessageSquare className="h-5 w-5 text-[hsl(var(--accent-violet))]" />
                             ) : (
                               <Award className="h-5 w-5 text-emerald-500" />
                             )}
@@ -687,8 +687,8 @@ export default async function ParentDashboard() {
           <Link href="/parent/messages">
             <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
               <CardContent className="flex items-center gap-4 p-6">
-                <div className="h-12 w-12 rounded-2xl bg-violet-500/10 flex items-center justify-center">
-                  <MessageSquare className="h-6 w-6 text-violet-500" />
+                <div className="h-12 w-12 rounded-2xl bg-[hsl(var(--accent-violet))/0.1] flex items-center justify-center">
+                  <MessageSquare className="h-6 w-6 text-[hsl(var(--accent-violet))]" />
                 </div>
                 <div>
                   <p className="font-medium">Messages</p>

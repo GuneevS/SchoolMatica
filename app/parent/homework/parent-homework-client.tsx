@@ -116,7 +116,7 @@ const getStatusBadge = (status: Homework["status"], isOverdue: boolean) => {
   }
   if (status === "excused") {
     return {
-      className: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+      className: "bg-[hsl(var(--accent-violet))/0.12] text-[hsl(var(--accent-violet))] dark:bg-[hsl(var(--accent-violet))/0.28] dark:text-[hsl(var(--accent-violet))]",
       label: "Excused",
       icon: CheckCircle,
     };

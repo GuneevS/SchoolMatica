@@ -266,7 +266,7 @@ export function AddStudentDialog({ classId, teachers }: Props) {
             <Button
               type="submit"
               disabled={isPending || success}
-              className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
+              className="bg-gradient-to-r from-primary to-[hsl(var(--accent-violet))] hover:from-primary/90 hover:to-[hsl(var(--accent-violet))]/90"
             >
               {isPending ? "Adding..." : success ? "Added!" : "Save learner"}
             </Button>

@@ -7,6 +7,7 @@ import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 import { Users } from "lucide-react";
 import { getAuthorizedActiveSchool, getServerAuthContext } from "@/lib/auth-server";
 import { AssignTeacherDialog } from "@/components/classes/assign-teacher-dialog";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 // Force dynamic rendering - requires auth and database
 export const dynamic = "force-dynamic";
@@ -93,8 +94,10 @@ export default async function ClassesPage() {
         }
       />
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {classes.map((classGroup) => (
+      <div className="grid gap-6 md:grid-cols-2 stagger-grid">
+        {classes.map((classGroup) => {
+          const planStatus = classGroup.assessmentPlans[0]?.status ?? "Draft";
+          return (
           <Card key={classGroup.id} className="surface-panel rounded-[24px] border border-[hsl(var(--border-strong))/0.5] shadow-ambient">
             <CardHeader className="border-b border-[hsl(var(--border))/0.5] pb-4">
               <div className="flex items-start justify-between gap-4">
@@ -103,9 +106,12 @@ export default async function ClassesPage() {
                   <CardTitle className="mt-1 text-2xl">{classGroup.name}</CardTitle>
                   <p className="text-sm text-muted-foreground">{classGroup.subject?.name ?? "No Subject"}</p>
                 </div>
-                <Button asChild size="sm" variant="ghost">
-                  <Link href={`/classes/${classGroup.id}`}>Open</Link>
-                </Button>
+                <div className="flex flex-col items-end gap-2">
+                  <StatusBadge status={planStatus} />
+                  <Button asChild size="sm" variant="ghost">
+                    <Link href={`/classes/${classGroup.id}`}>Open</Link>
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4 pt-4">
@@ -116,7 +122,7 @@ export default async function ClassesPage() {
                 </div>
                 <div className="rounded-2xl border border-[hsl(var(--border))/0.4] bg-white/5 p-3 text-center dark:bg-white/5">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">Plan status</p>
-                  <p className="text-2xl font-semibold text-foreground">{classGroup.assessmentPlans[0]?.status ?? "Draft"}</p>
+                  <p className="text-2xl font-semibold text-foreground">{planStatus}</p>
                 </div>
                 <div className="rounded-2xl border border-[hsl(var(--border))/0.4] bg-white/5 p-3 text-center dark:bg-white/5">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">Teachers</p>
@@ -154,7 +160,8 @@ export default async function ClassesPage() {
               </div>
             </CardContent>
           </Card>
-        ))}
+        );
+        })}
       </div>
     </div>
   );

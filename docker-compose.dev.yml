@@ -75,9 +75,10 @@ services:
       # No target specified - we mount source code and use npm run dev for hot-reload
     container_name: schoolmatica_app_dev
     ports:
-      - "13807:3000"
+      - "13807:44777"
     environment:
       NODE_ENV: development
+      NEXT_PUBLIC_SHOW_DEMO_LOGIN: "true"
       DATABASE_URL: "postgresql://schoolmatica:dev_password_only@postgres:5432/schoolmatica?schema=public"
       NEXTAUTH_SECRET: "dev_secret_key_change_in_production"
       NEXTAUTH_URL: "http://localhost:13807"
@@ -94,10 +95,16 @@ services:
     working_dir: /app
     # Override entrypoint from Dockerfile since we mount source directly
     entrypoint: [""]
-    command: ["sh", "-c", "npm install && npx prisma generate && npx prisma db push --skip-generate && npm run dev"]
+    command: ["sh", "-c", "npm ci --include=dev && npx prisma generate && npx prisma db push --skip-generate && npm run dev"]
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:44777/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
     restart: unless-stopped
     networks:
       - schoolmatica_dev_network

@@ -2,6 +2,27 @@ import { redirect } from "next/navigation";
 import { getServerAuthContext } from "@/lib/auth-server";
 import { ParentShell } from "@/components/parent/parent-shell";
 import { prisma } from "@/lib/prisma";
+import { type SchoolBranding } from "@/lib/branding";
+
+const normaliseParticipantIds = (value: unknown): string[] => {
+  if (!value) return [];
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      return normaliseParticipantIds(parsed);
+    } catch {
+      return [];
+    }
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) return [];
+    if (typeof value[0] === "string") {
+      return value as string[];
+    }
+    return (value as Array<{ id?: string }>).map((p) => p.id).filter(Boolean) as string[];
+  }
+  return [];
+};
 
 export default async function ParentLayout({
   children,
@@ -20,7 +41,15 @@ export default async function ParentLayout({
     include: {
       contacts: {
         include: {
-          student: true,
+          student: {
+            include: {
+              classGroup: {
+                include: {
+                  school: true,
+                },
+              },
+            },
+          },
         },
       },
     },
@@ -47,10 +76,7 @@ export default async function ParentLayout({
 
     // Filter threads where the user is a participant (JSON array)
     const userThreadIds = threads
-      .filter((t) => {
-        const participants = t.participants as string[];
-        return Array.isArray(participants) && participants.includes(auth.user.id);
-      })
+      .filter((t) => normaliseParticipantIds(t.participants).includes(auth.user.id))
       .map((t) => t.id);
 
     if (userThreadIds.length > 0) {
@@ -68,8 +94,8 @@ export default async function ParentLayout({
 
       // Count messages where user hasn't read (not in readBy array)
       unreadMessageCount = messages.filter((m) => {
-        const readBy = m.readBy as string[];
-        return !Array.isArray(readBy) || !readBy.includes(auth.user.id);
+        const readBy = normaliseParticipantIds(m.readBy);
+        return !readBy.includes(auth.user.id);
       }).length;
     }
   } catch (error) {
@@ -79,6 +105,14 @@ export default async function ParentLayout({
 
   // Get child names for display
   const childNames = parentUser.contacts.map((c) => c.student.firstName);
+
+  const schools = parentUser.contacts
+    .map((c) => c.student.classGroup?.school)
+    .filter((school): school is NonNullable<typeof school> => Boolean(school));
+  const primarySchool = schools[0];
+  const uniqueSchoolNames = Array.from(new Set(schools.map((school) => school.name)));
+  const schoolName = uniqueSchoolNames.length === 1 ? uniqueSchoolNames[0] : "Multiple schools";
+  const schoolBranding = (primarySchool?.branding as SchoolBranding | null) ?? null;
 
   // Get homework counts for badge display
   const childrenIds = parentUser.contacts.map((c) => c.student.id);
@@ -138,6 +172,8 @@ export default async function ParentLayout({
         email: auth.user.email || "",
         displayName: auth.user.displayName,
       }}
+      schoolName={schoolName}
+      branding={schoolBranding}
       unreadMessageCount={unreadMessageCount}
       homeworkCount={homeworkCount}
       childNames={childNames}

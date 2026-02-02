@@ -3,39 +3,49 @@ import { CheckCircle2, Clock, Lock, AlertCircle, XCircle, FileText } from "lucid
 
 const statusConfig = {
   Draft: {
-    color: "bg-slate-100 text-slate-700 border-slate-200",
+    color: "bg-[hsl(var(--status-draft))/0.2] text-[hsl(var(--text-muted-strong))] border-[hsl(var(--status-draft))/0.4]",
     icon: FileText,
-    glow: "hover:shadow-slate-200/50",
+    glow: "hover:shadow-[0_12px_20px_hsl(var(--status-draft)/0.4)]",
   },
   PendingApproval: {
-    color: "bg-amber-100 text-amber-700 border-amber-200",
+    color: "bg-[hsl(var(--status-pending))/0.18] text-[hsl(var(--status-pending))] border-[hsl(var(--status-pending))/0.35]",
     icon: Clock,
-    glow: "hover:shadow-amber-200/50",
+    glow: "hover:shadow-[0_12px_20px_hsl(var(--status-pending)/0.35)]",
   },
   Approved: {
-    color: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    color: "bg-[hsl(var(--status-approved))/0.18] text-[hsl(var(--status-approved))] border-[hsl(var(--status-approved))/0.35]",
     icon: CheckCircle2,
-    glow: "hover:shadow-emerald-200/50",
+    glow: "hover:shadow-[0_12px_20px_hsl(var(--status-approved)/0.35)]",
   },
   Locked: {
-    color: "bg-blue-100 text-blue-700 border-blue-200",
+    color: "bg-[hsl(var(--status-locked))/0.18] text-[hsl(var(--status-locked))] border-[hsl(var(--status-locked))/0.35]",
     icon: Lock,
-    glow: "hover:shadow-blue-200/50",
+    glow: "hover:shadow-[0_12px_20px_hsl(var(--status-locked)/0.35)]",
   },
   Rejected: {
-    color: "bg-rose-100 text-rose-700 border-rose-200",
+    color: "bg-[hsl(var(--status-rejected))/0.18] text-[hsl(var(--status-rejected))] border-[hsl(var(--status-rejected))/0.35]",
     icon: XCircle,
-    glow: "hover:shadow-rose-200/50",
+    glow: "hover:shadow-[0_12px_20px_hsl(var(--status-rejected)/0.35)]",
   },
   InReview: {
-    color: "bg-purple-100 text-purple-700 border-purple-200",
+    color: "bg-[hsl(var(--accent-cobalt))/0.18] text-[hsl(var(--accent-cobalt))] border-[hsl(var(--accent-cobalt))/0.35]",
     icon: AlertCircle,
-    glow: "hover:shadow-purple-200/50",
+    glow: "hover:shadow-[0_12px_20px_hsl(var(--accent-cobalt)/0.35)]",
   },
   Submitted: {
-    color: "bg-cyan-100 text-cyan-700 border-cyan-200",
+    color: "bg-[hsl(var(--accent-iris))/0.18] text-[hsl(var(--accent-iris))] border-[hsl(var(--accent-iris))/0.35]",
     icon: Clock,
-    glow: "hover:shadow-cyan-200/50",
+    glow: "hover:shadow-[0_12px_20px_hsl(var(--accent-iris)/0.35)]",
+  },
+  Published: {
+    color: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
+    icon: CheckCircle2,
+    glow: "hover:shadow-[0_12px_20px_rgba(16,185,129,0.35)]",
+  },
+  Finalized: {
+    color: "bg-[hsl(var(--accent-cobalt))/0.18] text-[hsl(var(--accent-cobalt))] border-[hsl(var(--accent-cobalt))/0.35]",
+    icon: Lock,
+    glow: "hover:shadow-[0_12px_20px_hsl(var(--accent-cobalt)/0.35)]",
   },
 };
 

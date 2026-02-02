@@ -2,9 +2,9 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { Building2, GraduationCap, Users, UserCircle, ShieldCheck } from "lucide-react";
+import { Building2, GraduationCap, Users, UserCircle, ShieldCheck, Crown, Briefcase } from "lucide-react";
 
-export type LoginRole = "school" | "teacher" | "parent" | "student" | "platform";
+export type LoginRole = "school" | "teacher" | "parent" | "student" | "platform" | "hod" | "smt";
 
 interface RoleOption {
   id: LoginRole;
@@ -31,6 +31,22 @@ const roleOptions: RoleOption[] = [
     icon: Building2,
     activeGradient: "from-[hsl(var(--accent-violet))] to-[hsl(var(--accent-iris))]",
     iconBg: "bg-[hsl(var(--accent-violet))]/10 text-[hsl(var(--accent-violet))]",
+  },
+  {
+    id: "smt",
+    label: "SMT",
+    description: "Senior leadership",
+    icon: Briefcase,
+    activeGradient: "from-[hsl(var(--accent-gold))] to-[hsl(var(--accent-iris))]",
+    iconBg: "bg-[hsl(var(--accent-gold))]/10 text-[hsl(var(--accent-gold))]",
+  },
+  {
+    id: "hod",
+    label: "HOD",
+    description: "Department head",
+    icon: Crown,
+    activeGradient: "from-[hsl(var(--accent-cobalt))] to-[hsl(var(--accent-mint))]",
+    iconBg: "bg-[hsl(var(--accent-cobalt))]/10 text-[hsl(var(--accent-cobalt))]",
   },
   {
     id: "teacher",
@@ -68,7 +84,7 @@ export function RoleLoginTabs({ value, onChange, className }: RoleLoginTabsProps
   return (
     <div className={cn("w-full", className)}>
       {/* Desktop tabs - SOLID BACKGROUND */}
-      <div className="hidden sm:grid sm:grid-cols-5 gap-2 p-2 rounded-2xl bg-[hsl(var(--surface-strong))] border border-[hsl(var(--border-strong))] shadow-lg">
+      <div className="hidden sm:grid sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 gap-2 p-2 rounded-2xl bg-[hsl(var(--surface-strong))] border border-[hsl(var(--border-strong))] shadow-lg">
         {roleOptions.map((role) => {
           const Icon = role.icon;
           const isActive = value === role.id;

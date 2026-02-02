@@ -189,7 +189,7 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts }:
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
-            <Button className="bg-violet-500 hover:bg-violet-600">
+            <Button className="bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]">
               <Plus className="h-4 w-4 mr-2" />
               New Invoice
             </Button>
@@ -241,8 +241,8 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts }:
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                    <TrendingUp className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+                  <div className="h-12 w-12 rounded-2xl bg-[hsl(var(--accent-violet))/0.12] dark:bg-[hsl(var(--accent-violet))/0.28] flex items-center justify-center">
+                    <TrendingUp className="h-6 w-6 text-[hsl(var(--accent-violet))] dark:text-[hsl(var(--accent-violet))]" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Collection Rate</p>
@@ -366,7 +366,7 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts }:
                           <p className="font-semibold text-red-600">
                             {formatCurrency(invoice.balance)}
                           </p>
-                          <Button variant="ghost" size="sm" className="text-violet-500 p-0 h-auto">
+                          <Button variant="ghost" size="sm" className="text-[hsl(var(--accent-violet))] p-0 h-auto">
                             Send Reminder
                           </Button>
                         </div>
@@ -481,7 +481,7 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts }:
                   <CardTitle>Payment History</CardTitle>
                   <CardDescription>All payment transactions</CardDescription>
                 </div>
-                <Button className="bg-violet-500 hover:bg-violet-600">
+                <Button className="bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]">
                   <Plus className="h-4 w-4 mr-2" />
                   Record Payment
                 </Button>
@@ -571,7 +571,7 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts }:
                   <CardTitle>Fee Structures</CardTitle>
                   <CardDescription>Define fee structures for different grades and terms</CardDescription>
                 </div>
-                <Button className="bg-violet-500 hover:bg-violet-600">
+                <Button className="bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Structure
                 </Button>
@@ -589,8 +589,8 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts }:
                   {feeStructures.map((structure) => (
                     <div key={structure.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                          <FileText className="h-6 w-6 text-violet-600" />
+                        <div className="h-12 w-12 rounded-2xl bg-[hsl(var(--accent-violet))/0.12] dark:bg-[hsl(var(--accent-violet))/0.28] flex items-center justify-center">
+                          <FileText className="h-6 w-6 text-[hsl(var(--accent-violet))]" />
                         </div>
                         <div>
                           <p className="font-medium">{structure.name}</p>
@@ -620,7 +620,7 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts }:
                   <CardTitle>Discounts & Bursaries</CardTitle>
                   <CardDescription>Manage fee reductions and financial assistance</CardDescription>
                 </div>
-                <Button className="bg-violet-500 hover:bg-violet-600">
+                <Button className="bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Discount
                 </Button>

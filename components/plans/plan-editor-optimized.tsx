@@ -196,8 +196,8 @@ export function PlanEditorOptimized({ plan, threads, weightInsights }: Props) {
           </div>
         </CardHeader>
         <CardContent>
-          <Alert className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-purple-200">
-            <Info className="h-4 w-4 text-purple-600" />
+          <Alert className="bg-gradient-to-r from-[hsl(var(--accent-iris))/0.08] to-[hsl(var(--accent-cobalt))/0.08] border-[hsl(var(--accent-iris))/0.25]">
+            <Info className="h-4 w-4 text-[hsl(var(--accent-iris))]" />
             <AlertDescription className="text-sm">
               <strong>Key Concept:</strong> Assessment <strong>total marks</strong> and <strong>weight percentage</strong> are independent!
               <br />

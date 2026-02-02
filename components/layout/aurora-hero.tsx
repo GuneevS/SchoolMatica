@@ -26,19 +26,31 @@ interface AuroraHeroProps {
 export function AuroraHero({ eyebrow, title, description, badges, actions, aside, className }: AuroraHeroProps) {
   const hasAside = Boolean(aside);
   return (
-    <section className={cn("relative overflow-hidden rounded-[32px] border border-[hsl(var(--border-strong))/0.7] shadow-ambient aurora-panel", className)}>
-      <div className="absolute inset-0 opacity-60" aria-hidden />
-      <div className={cn("relative grid gap-10 p-8 md:p-10", hasAside ? "md:grid-cols-[2fr,minmax(280px,1fr)]" : "")}>
+    <section
+      className={cn(
+        "relative overflow-hidden rounded-[36px] border border-[hsl(var(--border-strong))/0.7] shadow-ambient aurora-panel animate-rise",
+        className,
+      )}
+    >
+      <div className="absolute inset-0 opacity-70" aria-hidden />
+      <div className="pointer-events-none absolute -left-16 top-6 h-40 w-40 rounded-full bg-[hsl(var(--accent-iris))/0.25] blur-3xl" aria-hidden />
+      <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-[hsl(var(--accent-gold))/0.2] blur-3xl" aria-hidden />
+      <div
+        className={cn(
+          "relative grid gap-10 p-8 md:p-10",
+          hasAside ? "md:grid-cols-[2.1fr,minmax(280px,1fr)]" : "",
+        )}
+      >
         <div>
           <p className="text-[0.65rem] font-semibold uppercase tracking-[0.5em] text-muted-foreground/80">{eyebrow}</p>
-          <h1 className="mt-4 text-4xl font-black text-foreground md:text-5xl leading-[1.1]">{title}</h1>
+          <h1 className="mt-4 text-4xl font-black text-foreground md:text-5xl leading-[1.05]">{title}</h1>
           {description && <p className="mt-4 max-w-2xl text-base text-muted-foreground">{description}</p>}
           {badges && badges.length > 0 && (
             <div className="mt-6 flex flex-wrap gap-3">
               {badges.map((badge) => (
                 <span
                   key={badge.label}
-                  className="inline-flex items-center gap-2 rounded-full border border-[hsl(var(--border-strong))/0.55] bg-[hsl(var(--surface-strong))/0.85] px-4 py-2 text-sm font-medium text-muted-foreground shadow-ambient-sm backdrop-blur"
+                  className="inline-flex items-center gap-2 rounded-full border border-[hsl(var(--border-strong))/0.55] bg-[hsl(var(--surface-strong))/0.85] px-4 py-2 text-sm font-semibold text-muted-foreground shadow-ambient-sm backdrop-blur"
                 >
                   {badge.color && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: badge.color }} />}
                   {badge.label}
@@ -48,7 +60,11 @@ export function AuroraHero({ eyebrow, title, description, badges, actions, aside
           )}
           {actions && <div className="mt-6 flex flex-wrap gap-3">{actions}</div>}
         </div>
-        {hasAside && <div className="rounded-[28px] border border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))/0.85] p-6 shadow-ambient-sm backdrop-blur">{aside}</div>}
+        {hasAside && (
+          <div className="rounded-[28px] border border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))/0.9] p-6 shadow-ambient-sm backdrop-blur">
+            {aside}
+          </div>
+        )}
       </div>
     </section>
   );

@@ -82,7 +82,7 @@ export function TermWeightConfig({ termCount, initialWeights = {}, onSave, readO
   return (
     <TooltipProvider>
       <Card className="border-2 border-primary/20 shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-fuchsia-500/10">
+        <CardHeader className="bg-gradient-to-r from-[hsl(var(--accent-cobalt))/0.12] via-[hsl(var(--accent-iris))/0.12] to-[hsl(var(--accent-flamingo))/0.12]">
           <div className="flex items-start justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
@@ -111,28 +111,28 @@ export function TermWeightConfig({ termCount, initialWeights = {}, onSave, readO
         </CardHeader>
         <CardContent className="space-y-6 pt-6">
           <div className="grid gap-4 md:grid-cols-2">
-            <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20">
+            <Card className="bg-gradient-to-br from-[hsl(var(--accent-iris))/0.12] to-[hsl(var(--accent-flamingo))/0.12] border-[hsl(var(--accent-iris))/0.25]">
               <CardContent className="pt-6">
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">Total Weight</p>
-                  <p className="text-3xl font-bold text-purple-600">{totalWeight.toFixed(2)}%</p>
+                  <p className="text-3xl font-bold text-[hsl(var(--accent-iris))]">{totalWeight.toFixed(2)}%</p>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border-emerald-500/20">
+            <Card className="bg-gradient-to-br from-[hsl(var(--accent-mint))/0.12] to-[hsl(var(--accent-iris))/0.12] border-[hsl(var(--accent-mint))/0.25]">
               <CardContent className="pt-6">
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">Status</p>
                   <div className="flex items-center justify-center gap-2 mt-1">
                     {isValid ? (
                       <>
-                        <CheckCircle2 className="h-6 w-6 text-emerald-600" />
-                        <p className="text-lg font-semibold text-emerald-600">Valid</p>
+                        <CheckCircle2 className="h-6 w-6 text-[hsl(var(--accent-mint))]" />
+                        <p className="text-lg font-semibold text-[hsl(var(--accent-mint))]">Valid</p>
                       </>
                     ) : (
                       <>
-                        <AlertCircle className="h-6 w-6 text-amber-600" />
-                        <p className="text-lg font-semibold text-amber-600">Invalid</p>
+                        <AlertCircle className="h-6 w-6 text-[hsl(var(--accent-gold))]" />
+                        <p className="text-lg font-semibold text-[hsl(var(--accent-gold))]">Invalid</p>
                       </>
                     )}
                   </div>
@@ -142,9 +142,9 @@ export function TermWeightConfig({ termCount, initialWeights = {}, onSave, readO
           </div>
 
           {!isValid && (
-            <Alert className="bg-amber-50 border-amber-200">
-              <AlertCircle className="h-4 w-4 text-amber-600" />
-              <AlertDescription className="text-amber-800">
+            <Alert className="bg-[hsl(var(--accent-gold))/0.12] border-[hsl(var(--accent-gold))/0.3]">
+              <AlertCircle className="h-4 w-4 text-[hsl(var(--accent-gold))]" />
+              <AlertDescription className="text-[hsl(var(--accent-gold))]">
                 Term weights must sum to exactly 100%. Current total: {totalWeight.toFixed(2)}%
               </AlertDescription>
             </Alert>
@@ -207,7 +207,7 @@ export function TermWeightConfig({ termCount, initialWeights = {}, onSave, readO
 
                       <div className="relative h-2 bg-muted rounded-full overflow-hidden">
                         <div
-                          className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-purple-500 transition-all duration-300 rounded-full"
+                          className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-[hsl(var(--accent-violet))] transition-all duration-300 rounded-full"
                           style={{ width: `${weight}%` }}
                         />
                       </div>
@@ -231,7 +231,7 @@ export function TermWeightConfig({ termCount, initialWeights = {}, onSave, readO
               <Button
                 onClick={handleSave}
                 disabled={!hasChanges || !isValid || saving}
-                className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
+                className="bg-gradient-to-r from-primary to-[hsl(var(--accent-violet))] hover:from-primary/90 hover:to-[hsl(var(--accent-violet))]/90"
               >
                 {saving ? "Saving..." : "Save Weights"}
               </Button>

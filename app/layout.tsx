@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Manrope, Sora } from "next/font/google";
 import { AppShell } from "@/components/layout/app-shell";
 import { Providers } from "@/components/providers";
 import { HydrationErrorFilter } from "@/components/hydration-error-filter";
 import { getActiveSchool } from "@/lib/school";
 import { getServerAuthContext } from "@/lib/auth-server";
+import { type SchoolBranding } from "@/lib/branding";
 import "./globals.css";
 
 // Force light mode only - dark mode disabled
@@ -21,13 +22,13 @@ const themeInitScript = `
 })();
 `;
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const sora = Sora({
+  variable: "--font-display",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const manrope = Manrope({
+  variable: "--font-body",
   subsets: ["latin"],
 });
 
@@ -58,10 +59,10 @@ export default async function RootLayout({
   }
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${sora.variable} ${manrope.variable} antialiased`}>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <HydrationErrorFilter />
-        <Providers>
+        <Providers initialBranding={activeSchool?.branding as SchoolBranding | null | undefined}>
           <AppShell
             initialSchool={
               activeSchool

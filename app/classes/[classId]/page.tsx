@@ -159,15 +159,17 @@ export default async function ClassMarkbookPage({ params, searchParams }: Props)
                     </Card>
                 ) : (
                     <>
-                        <MarkbookSummary stats={markbook.stats} plan={currentPlan} />
-                        <Card>
-                            <CardHeader>
-                            <CardTitle>SBA distribution</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                            <DistributionChart payload={markbook} />
-                            </CardContent>
-                        </Card>
+                        <div className="grid gap-6 lg:grid-cols-[1.2fr,0.8fr]">
+                          <MarkbookSummary stats={markbook.stats} plan={currentPlan} />
+                          <Card>
+                              <CardHeader>
+                              <CardTitle>SBA distribution</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                              <DistributionChart payload={markbook} />
+                              </CardContent>
+                          </Card>
+                        </div>
                         <MarkbookGrid key={currentPlan.id} payload={markbook} />
                     </>
                 )}

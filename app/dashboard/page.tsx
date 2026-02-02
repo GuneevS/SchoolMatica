@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
 import { getDashboardData } from "@/lib/dashboard";
 import { ClassPerformanceChart } from "@/components/dashboard/class-performance-chart";
 import { HelpPanel } from "@/components/help/help-panel";
@@ -93,7 +93,7 @@ export default async function DashboardPage() {
 
           <RolePersonalizedHighlights data={data} />
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" data-tour="summary-stats">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 stagger-grid" data-tour="summary-stats">
             <SummaryStat
               label="Classes"
               value={data.totals.classes.toString()}
@@ -140,44 +140,44 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-[28px] border border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))] shadow-ambient" data-tour="class-table">
-            <CardHeader className="border-b border-[hsl(var(--border))/0.6] pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
-                <Users className="h-5 w-5 text-primary" />
-                Class overview
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow className="text-muted-foreground">
-                    <TableHead>Class</TableHead>
-                    <TableHead>Subject</TableHead>
-                    <TableHead>Learners</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Avg SBA</TableHead>
-                    <TableHead>At-risk</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.classSummaries.map((summary) => (
-                    <TableRow key={summary.id} className="last:border-b-0">
-                      <TableCell className="font-semibold">{summary.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{summary.subject}</TableCell>
-                      <TableCell>{summary.totalStudents}</TableCell>
-                      <TableCell>
-                        <span className="rounded-full border border-[hsl(var(--border))/0.65] px-3 py-1 text-xs font-semibold text-muted-foreground">
-                          {summary.planStatus}
+          <div className="space-y-4" data-tour="class-table">
+            <div className="flex items-center gap-2 text-lg font-semibold text-foreground">
+              <Users className="h-5 w-5 text-primary" />
+              Class overview
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 stagger-grid">
+              {data.classSummaries.map((summary) => {
+                const average = summary.averageSba ?? 0;
+                return (
+                  <Card key={summary.id} className="rounded-[24px] border border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))] shadow-ambient-sm">
+                    <CardHeader className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="text-lg">{summary.name}</CardTitle>
+                          <p className="text-sm text-muted-foreground">{summary.subject}</p>
+                        </div>
+                        <StatusBadge status={summary.planStatus} />
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{summary.totalStudents} learners</span>
+                        <span className="h-1 w-1 rounded-full bg-muted-foreground/40" />
+                        <span>{summary.atRiskCount} at risk</span>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Average SBA</span>
+                        <span className="font-semibold text-foreground">
+                          {summary.averageSba === null ? "—" : `${average.toFixed(1)}%`}
                         </span>
-                      </TableCell>
-                      <TableCell>{summary.averageSba === null ? "—" : `${summary.averageSba.toFixed(1)}%`}</TableCell>
-                      <TableCell>{summary.atRiskCount}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                      </div>
+                      <Progress value={average} className="h-2" />
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Card className="rounded-[28px] border border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))] shadow-ambient" data-tour="recent-plans">

@@ -100,7 +100,7 @@ export function InteractiveModerationDemo({ onInteraction }: InteractiveModerati
       case "Teacher":
         return "bg-blue-500";
       case "HOD":
-        return "bg-purple-500";
+        return "bg-[hsl(var(--accent-iris))]";
       case "SMT":
         return "bg-green-500";
       default:

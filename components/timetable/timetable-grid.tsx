@@ -25,11 +25,17 @@ interface TimetableGridProps {
     slots: TimetableSlotWithRelations[];
   };
   onSlotClick?: (slot: TimetableSlotWithRelations) => void;
+  onEmptySlotClick?: (period: TimetablePeriod) => void;
 }
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+const isBreakPeriod = (period?: TimetablePeriod | null) => {
+  if (!period?.name) return false;
+  const lower = period.name.toLowerCase();
+  return lower.includes("break") || lower.includes("lunch");
+};
 
-export function TimetableGrid({ timetable, onSlotClick }: TimetableGridProps) {
+export function TimetableGrid({ timetable, onSlotClick, onEmptySlotClick }: TimetableGridProps) {
   const [viewMode, setViewMode] = useState<"day" | "week">("week");
   const [selectedDay, setSelectedDay] = useState(0);
 
@@ -133,6 +139,8 @@ export function TimetableGrid({ timetable, onSlotClick }: TimetableGridProps) {
                                          const period = getPeriod(dayIndex, pNum);
                                          const slot = period ? getSlotForPeriod(period.id) : null;
                                          
+                                         const isBreak = isBreakPeriod(period);
+
                                          return (
                                              <div key={dayIndex} className="p-2 border-r last:border-0 min-h-[120px] relative group/cell">
                                                  {slot ? (
@@ -166,9 +174,28 @@ export function TimetableGrid({ timetable, onSlotClick }: TimetableGridProps) {
                                                      </div>
                                                  ) : (
                                                      period ? (
-                                                         <div className="h-full w-full flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-opacity">
-                                                             <span className="text-xs text-muted-foreground/40 font-medium uppercase tracking-wider">Free</span>
-                                                         </div>
+                                                         isBreak ? (
+                                                           <div className="h-full w-full rounded-lg border border-dashed border-amber-400/40 bg-amber-500/10 flex items-center justify-center">
+                                                             <span className="text-xs font-semibold uppercase tracking-wider text-amber-600">
+                                                               {period.name}
+                                                             </span>
+                                                           </div>
+                                                         ) : (
+                                                           <button
+                                                             type="button"
+                                                             onClick={() => onEmptySlotClick?.(period)}
+                                                             className={cn(
+                                                               "h-full w-full rounded-lg border border-dashed border-transparent flex items-center justify-center transition",
+                                                               onEmptySlotClick
+                                                                 ? "hover:border-primary/40 hover:bg-primary/5 text-primary/80"
+                                                                 : "text-muted-foreground/40"
+                                                             )}
+                                                           >
+                                                             <span className="text-xs font-medium uppercase tracking-wider">
+                                                               {onEmptySlotClick ? "Add class" : "Free"}
+                                                             </span>
+                                                           </button>
+                                                         )
                                                      ) : (
                                                          <div className="h-full w-full bg-muted/10 pattern-diagonal-lines pattern-muted/20"></div>
                                                      )
@@ -202,15 +229,22 @@ export function TimetableGrid({ timetable, onSlotClick }: TimetableGridProps) {
             <div className="grid gap-4">
                 {periodsByDay[selectedDay]?.map((period) => {
                 const slot = getSlotForPeriod(period.id);
+                const isBreak = isBreakPeriod(period);
                 
                 return (
                     <Card
                     key={period.id}
                     className={cn(
                         "transition-all hover:shadow-md border-l-4",
-                        slot ? "cursor-pointer border-l-primary" : "border-l-transparent border-dashed opacity-70"
+                        slot && !isBreak ? "cursor-pointer border-l-primary" : "border-l-transparent border-dashed opacity-70"
                     )}
-                    onClick={() => slot && onSlotClick?.(slot)}
+                    onClick={() => {
+                      if (slot) {
+                        onSlotClick?.(slot);
+                      } else if (!isBreak) {
+                        onEmptySlotClick?.(period);
+                      }
+                    }}
                     >
                     <CardContent className="p-6">
                         <div className="flex items-start gap-6">
@@ -220,7 +254,11 @@ export function TimetableGrid({ timetable, onSlotClick }: TimetableGridProps) {
                             </div>
 
                         <div className="flex-1 space-y-3">
-                            {slot ? (
+                            {isBreak ? (
+                              <div className="rounded-xl border border-dashed border-amber-400/50 bg-amber-500/10 px-4 py-3 text-sm text-amber-700">
+                                {period.name}
+                              </div>
+                            ) : slot ? (
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between">
                                     <div>
@@ -230,7 +268,7 @@ export function TimetableGrid({ timetable, onSlotClick }: TimetableGridProps) {
                                         <p className="text-sm text-muted-foreground">{slot.classGroup.name}</p>
                                     </div>
                                     {slot.assessmentPlan && (
-                                        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                                        <Badge variant="outline" className="bg-[hsl(var(--accent-iris))/0.12] text-[hsl(var(--accent-iris))] border-[hsl(var(--accent-iris))/0.3]">
                                             Assessment
                                         </Badge>
                                     )}
@@ -262,7 +300,7 @@ export function TimetableGrid({ timetable, onSlotClick }: TimetableGridProps) {
                             </div>
                             ) : (
                             <div className="py-4 text-muted-foreground">
-                                <p className="text-sm">No class scheduled</p>
+                                <p className="text-sm">{onEmptySlotClick ? "Click to add a class" : "No class scheduled"}</p>
                             </div>
                             )}
                         </div>

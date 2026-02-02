@@ -237,7 +237,7 @@ export function CommunicationsPageClient({
               Scheduled
             </TabsTrigger>
           </TabsList>
-          <Button className="bg-violet-500 hover:bg-violet-600">
+          <Button className="bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]">
             <Plus className="h-4 w-4 mr-2" />
             New Message
           </Button>
@@ -252,7 +252,7 @@ export function CommunicationsPageClient({
                 <p className="text-sm text-muted-foreground mt-1">
                   Start a new conversation to connect with parents or staff
                 </p>
-                <Button className="mt-4 bg-violet-500 hover:bg-violet-600">
+                <Button className="mt-4 bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]">
                   <Plus className="h-4 w-4 mr-2" />
                   Start Conversation
                 </Button>
@@ -285,7 +285,7 @@ export function CommunicationsPageClient({
                     Create and manage school-wide announcements
                   </CardDescription>
                 </div>
-                <Button className="bg-violet-500 hover:bg-violet-600">
+                <Button className="bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]">
                   <Plus className="h-4 w-4 mr-2" />
                   Create Announcement
                 </Button>
@@ -294,8 +294,8 @@ export function CommunicationsPageClient({
             <CardContent>
               {announcements.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="h-16 w-16 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mb-4">
-                    <Megaphone className="h-8 w-8 text-violet-500" />
+                  <div className="h-16 w-16 rounded-full bg-[hsl(var(--accent-violet))/0.12] dark:bg-[hsl(var(--accent-violet))/0.28] flex items-center justify-center mb-4">
+                    <Megaphone className="h-8 w-8 text-[hsl(var(--accent-violet))]" />
                   </div>
                   <h3 className="text-lg font-medium mb-2">No Announcements</h3>
                   <p className="text-sm text-slate-500 max-w-md mb-4">
@@ -315,21 +315,21 @@ export function CommunicationsPageClient({
                           ? "bg-red-100 dark:bg-red-900/30" 
                           : announcement.priority === "High"
                           ? "bg-amber-100 dark:bg-amber-900/30"
-                          : "bg-violet-100 dark:bg-violet-900/30"
+                          : "bg-[hsl(var(--accent-violet))/0.12] dark:bg-[hsl(var(--accent-violet))/0.28]"
                       }`}>
                         <Megaphone className={`h-5 w-5 ${
                           announcement.priority === "Urgent" 
                             ? "text-red-600" 
                             : announcement.priority === "High"
                             ? "text-amber-600"
-                            : "text-violet-600"
+                            : "text-[hsl(var(--accent-violet))]"
                         }`} />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="font-medium">{announcement.title}</h4>
                           {announcement.isPinned && (
-                            <Pin className="h-4 w-4 text-violet-500" />
+                            <Pin className="h-4 w-4 text-[hsl(var(--accent-violet))]" />
                           )}
                           <Badge variant="outline" className="text-xs">
                             {announcement.priority}

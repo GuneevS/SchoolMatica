@@ -202,7 +202,7 @@ export function AssessmentConfigCard({
           </div>
           <div className="relative h-2 bg-muted rounded-full overflow-hidden">
             <div
-              className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-purple-500 transition-all duration-300"
+              className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-[hsl(var(--accent-violet))] transition-all duration-300"
               style={{ width: `${Math.min(assessment.weightPercent, 100)}%` }}
             />
           </div>

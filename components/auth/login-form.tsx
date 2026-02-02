@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RoleLoginTabs, LoginRole } from "./role-login-tabs";
+import { RoleLoginTabs, LoginRole, roleOptions } from "./role-login-tabs";
 import { SchoolSelector } from "./school-selector";
 import {
   Loader2,
@@ -44,6 +44,9 @@ export function LoginForm() {
   const [error, setError] = React.useState<string | null>(null);
   const [selectedRole, setSelectedRole] = React.useState<LoginRole>("teacher");
   const [showPassword, setShowPassword] = React.useState(false);
+  const showQuickAccess =
+    process.env.NODE_ENV !== "production" ||
+    process.env.NEXT_PUBLIC_SHOW_DEMO_LOGIN === "true";
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -58,43 +61,115 @@ export function LoginForm() {
   // Determine if school selector should be shown (hidden for School Admin and Platform Admin)
   const showSchoolSelector = selectedRole !== "school" && selectedRole !== "platform";
 
-  async function onSubmit(values: FormData) {
-    setIsLoading(true);
-    setError(null);
+  const resolveRedirect = React.useCallback(
+    (role: LoginRole) => {
+      if (role === "platform") return "/super-admin";
+      if (role === "parent") return "/parent";
+      if (role === "student") return "/student";
+      return callbackUrl;
+    },
+    [callbackUrl],
+  );
 
-    try {
-      const result = await signIn("credentials", {
-        email: values.email,
-        password: values.password,
-        redirect: false,
-        callbackUrl: callbackUrl,
-      });
+  const performLogin = React.useCallback(
+    async (email: string, password: string, roleOverride?: LoginRole) => {
+      const role = roleOverride ?? selectedRole;
+      setIsLoading(true);
+      setError(null);
 
-      if (result?.error) {
-        if (result.error.includes("locked")) {
-          setError("Your account has been temporarily locked. Please try again later or reset your password.");
+      try {
+        const result = await signIn("credentials", {
+          email,
+          password,
+          redirect: false,
+          callbackUrl: callbackUrl,
+        });
+
+        if (result?.error) {
+          if (result.error.includes("locked")) {
+            setError("Your account has been temporarily locked. Please try again later or reset your password.");
+          } else {
+            setError("Invalid email or password. Please check your credentials and try again.");
+          }
+          setIsLoading(false);
         } else {
-          setError("Invalid email or password. Please check your credentials and try again.");
+          router.push(resolveRedirect(role));
+          router.refresh();
         }
+      } catch {
+        setError("An unexpected error occurred. Please try again.");
         setIsLoading(false);
-      } else {
-        // Successful login, redirect based on role
-        let redirectUrl = callbackUrl;
-        if (selectedRole === "platform") {
-          redirectUrl = "/super-admin";
-        } else if (selectedRole === "parent") {
-          redirectUrl = "/parent";
-        } else if (selectedRole === "student") {
-          redirectUrl = "/student";
-        }
-        router.push(redirectUrl);
-        router.refresh();
       }
-    } catch (err) {
-      setError("An unexpected error occurred. Please try again.");
-      setIsLoading(false);
-    }
+    },
+    [callbackUrl, resolveRedirect, router, selectedRole],
+  );
+
+  const quickLogins = React.useMemo(
+    () => [
+      {
+        id: "platform",
+        label: "Platform Admin",
+        role: "platform" as LoginRole,
+        email: "platform@schoolmatica.dev",
+        password: "Password123!",
+      },
+      {
+        id: "school-admin",
+        label: "School Admin",
+        role: "school" as LoginRole,
+        email: "admin@nimbus.edu",
+        password: "Password123!",
+      },
+      {
+        id: "hod",
+        label: "HOD",
+        role: "hod" as LoginRole,
+        email: "hod@nimbus.edu",
+        password: "Password123!",
+      },
+      {
+        id: "teacher",
+        label: "Teacher",
+        role: "teacher" as LoginRole,
+        email: "teacher@nimbus.edu",
+        password: "Password123!",
+      },
+      {
+        id: "smt",
+        label: "SMT",
+        role: "smt" as LoginRole,
+        email: "smt@nimbus.edu",
+        password: "Password123!",
+      },
+      {
+        id: "parent",
+        label: "Parent",
+        role: "parent" as LoginRole,
+        email: "parent@nimbus.edu",
+        password: "Password123!",
+      },
+      {
+        id: "student",
+        label: "Student",
+        role: "student" as LoginRole,
+        email: "student@nimbus.edu",
+        password: "Password123!",
+      },
+    ],
+    [],
+  );
+
+  async function onSubmit(values: FormData) {
+    await performLogin(values.email, values.password, selectedRole);
   }
+
+  const handleQuickLogin = async (preset: (typeof quickLogins)[number]) => {
+    setSelectedRole(preset.role);
+    form.setValue("email", preset.email);
+    form.setValue("password", preset.password);
+    await performLogin(preset.email, preset.password, preset.role);
+  };
+  
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -160,6 +235,10 @@ export function LoginForm() {
                       ? "superadmin@schoolmatica.co.za"
                       : selectedRole === "school"
                       ? "admin@school.co.za"
+                      : selectedRole === "smt"
+                      ? "smt@school.co.za"
+                      : selectedRole === "hod"
+                      ? "hod@school.co.za"
                       : selectedRole === "teacher"
                       ? "teacher@school.co.za"
                       : selectedRole === "parent"
@@ -268,6 +347,58 @@ export function LoginForm() {
                 </>
               )}
             </Button>
+
+            {showQuickAccess && (
+              <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--surface-soft))] p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                    Quick access
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Password: <span className="font-medium text-foreground">Password123!</span>
+                  </p>
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {quickLogins.map((preset) => {
+                    const roleMeta = roleOptions.find((role) => role.id === preset.role);
+                    const Icon = roleMeta?.icon ?? Mail;
+                    return (
+                      <Button
+                        key={preset.id}
+                        type="button"
+                        variant="outline"
+                        disabled={isLoading}
+                        onClick={() => handleQuickLogin(preset)}
+                        className="h-auto justify-between border-[hsl(var(--border))] bg-[hsl(var(--surface-strong))] px-3 py-2 text-left hover:border-[hsl(var(--accent-violet))/0.4]"
+                      >
+                        <span className="flex items-center gap-3">
+                          <span
+                            className={cn(
+                              "flex h-9 w-9 items-center justify-center rounded-xl",
+                              roleMeta?.iconBg ?? "bg-[hsl(var(--accent-violet))]/10 text-[hsl(var(--accent-violet))]"
+                            )}
+                          >
+                            <Icon className="h-4 w-4" />
+                          </span>
+                          <span>
+                            <span className="block text-sm font-semibold text-foreground">
+                              {preset.label}
+                            </span>
+                            <span className="block text-xs text-muted-foreground">
+                              {preset.email}
+                            </span>
+                          </span>
+                        </span>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    );
+                  })}
+                </div>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Demo accounts are tied to <span className="font-medium text-foreground">Nimbus Academy</span>.
+                </p>
+              </div>
+            )}
           </form>
 
           {/* Divider */}

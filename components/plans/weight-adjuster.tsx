@@ -67,7 +67,7 @@ export function WeightAdjuster({ assessments, onSave, readOnly = false }: Props)
   return (
     <TooltipProvider>
       <Card className="border-2 border-primary/20 shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10">
+        <CardHeader className="bg-gradient-to-r from-[hsl(var(--accent-cobalt))/0.12] via-[hsl(var(--accent-iris))/0.12] to-[hsl(var(--accent-flamingo))/0.12]">
           <CardTitle className="flex items-center gap-2">
             <Scale className="h-5 w-5 text-primary" />
             Assessment Weight Distribution
@@ -89,36 +89,36 @@ export function WeightAdjuster({ assessments, onSave, readOnly = false }: Props)
         <CardContent className="space-y-6 pt-6">
           {/* Summary Stats */}
           <div className="grid gap-4 md:grid-cols-3">
-            <Card className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20">
+            <Card className="bg-gradient-to-br from-[hsl(var(--accent-cobalt))/0.12] to-[hsl(var(--accent-iris))/0.12] border-[hsl(var(--accent-cobalt))/0.25]">
               <CardContent className="pt-6">
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">Total Raw Weight</p>
-                  <p className="text-3xl font-bold text-blue-600">{totalRaw.toFixed(1)}</p>
+                  <p className="text-3xl font-bold text-[hsl(var(--accent-cobalt))]">{totalRaw.toFixed(1)}</p>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20">
+            <Card className="bg-gradient-to-br from-[hsl(var(--accent-iris))/0.12] to-[hsl(var(--accent-flamingo))/0.12] border-[hsl(var(--accent-iris))/0.25]">
               <CardContent className="pt-6">
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">Normalized Total</p>
-                  <p className="text-3xl font-bold text-purple-600">{totalPercent.toFixed(2)}%</p>
+                  <p className="text-3xl font-bold text-[hsl(var(--accent-iris))]">{totalPercent.toFixed(2)}%</p>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border-emerald-500/20">
+            <Card className="bg-gradient-to-br from-[hsl(var(--accent-mint))/0.12] to-[hsl(var(--accent-iris))/0.12] border-[hsl(var(--accent-mint))/0.25]">
               <CardContent className="pt-6">
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">Status</p>
                   <div className="flex items-center justify-center gap-2 mt-1">
                     {isValid ? (
                       <>
-                        <CheckCircle2 className="h-6 w-6 text-emerald-600" />
-                        <p className="text-lg font-semibold text-emerald-600">Valid</p>
+                        <CheckCircle2 className="h-6 w-6 text-[hsl(var(--accent-mint))]" />
+                        <p className="text-lg font-semibold text-[hsl(var(--accent-mint))]">Valid</p>
                       </>
                     ) : (
                       <>
-                        <AlertCircle className="h-6 w-6 text-amber-600" />
-                        <p className="text-lg font-semibold text-amber-600">Adjusting</p>
+                        <AlertCircle className="h-6 w-6 text-[hsl(var(--accent-gold))]" />
+                        <p className="text-lg font-semibold text-[hsl(var(--accent-gold))]">Adjusting</p>
                       </>
                     )}
                   </div>
@@ -128,9 +128,9 @@ export function WeightAdjuster({ assessments, onSave, readOnly = false }: Props)
           </div>
 
           {!isValid && (
-            <Alert className="bg-amber-50 border-amber-200">
-              <AlertCircle className="h-4 w-4 text-amber-600" />
-              <AlertDescription className="text-amber-800">
+            <Alert className="bg-[hsl(var(--accent-gold))/0.12] border-[hsl(var(--accent-gold))/0.3]">
+              <AlertCircle className="h-4 w-4 text-[hsl(var(--accent-gold))]" />
+              <AlertDescription className="text-[hsl(var(--accent-gold))]">
                 Weights are being automatically normalized. The system ensures all percentages sum to exactly 100%.
               </AlertDescription>
             </Alert>
@@ -158,7 +158,7 @@ export function WeightAdjuster({ assessments, onSave, readOnly = false }: Props)
                           <div className="flex items-center gap-2">
                             <Label className="font-semibold text-base">{assessment.taskName}</Label>
                             {assessment.isPatComponent && (
-                              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">
+                              <span className="text-xs bg-[hsl(var(--accent-iris))/0.15] text-[hsl(var(--accent-iris))] px-2 py-0.5 rounded-full font-medium">
                                 PAT
                               </span>
                             )}
@@ -211,7 +211,7 @@ export function WeightAdjuster({ assessments, onSave, readOnly = false }: Props)
                       {/* Visual Bar */}
                       <div className="relative h-3 bg-muted rounded-full overflow-hidden">
                         <div
-                          className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-purple-500 transition-all duration-300 rounded-full"
+                          className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-[hsl(var(--accent-violet))] transition-all duration-300 rounded-full"
                           style={{ width: `${assessment.weightPercent}%` }}
                         />
                       </div>
@@ -231,7 +231,7 @@ export function WeightAdjuster({ assessments, onSave, readOnly = false }: Props)
               <Button
                 onClick={handleSave}
                 disabled={!hasChanges || saving}
-                className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
+                className="bg-gradient-to-r from-primary to-[hsl(var(--accent-violet))] hover:from-primary/90 hover:to-[hsl(var(--accent-violet))]/90"
               >
                 {saving ? "Saving..." : "Save Weights"}
               </Button>

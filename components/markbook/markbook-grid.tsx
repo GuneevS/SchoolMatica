@@ -11,8 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info, TrendingUp, Flame } from "lucide-react";
-import { useRoleStore } from "@/lib/stores/role-store";
-import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/lib/hooks/use-auth";
 
 interface Props {
   payload: MarkbookPayload;
@@ -26,8 +25,8 @@ export function MarkbookGrid({ payload }: Props) {
   const [showTermTotals, setShowTermTotals] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState(payload.rows[0]?.student.id ?? "");
   const [isPending, startTransition] = useTransition();
-  const role = useRoleStore((state) => state.role);
-  const canEdit = role === "Teacher";
+  const { permissions, isAdmin, isSuperAdmin, isLoading: isAuthLoading } = useAuth();
+  const canEdit = !isAuthLoading && (isAdmin || isSuperAdmin || permissions.includes("mark:update") || permissions.includes("mark:create"));
   const [draftMarks, setDraftMarks] = useState<Record<string, Record<string, string>>>({});
 
   const rows = payload.rows;
@@ -191,7 +190,10 @@ export function MarkbookGrid({ payload }: Props) {
             </div>
             <div className="text-right">
               {isPending && canEdit && <p className="text-xs text-muted-foreground">Saving…</p>}
-              {!canEdit && <p className="text-xs text-muted-foreground">Switch to Teacher role to edit marks.</p>}
+              {isAuthLoading && <p className="text-xs text-muted-foreground">Loading permissions…</p>}
+              {!isAuthLoading && !canEdit && (
+                <p className="text-xs text-muted-foreground">You don't have permission to edit marks.</p>
+              )}
             </div>
           </div>
           

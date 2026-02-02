@@ -7,9 +7,6 @@ import {
   MessageSquare,
   Search,
   Plus,
-  User,
-  Clock,
-  ChevronRight,
   Send,
   Inbox,
 } from "lucide-react";
@@ -47,6 +44,47 @@ function getInitials(name: string): string {
     .join("")
     .toUpperCase();
 }
+
+const normaliseParticipants = (
+  value: unknown,
+): Array<{ id: string; type?: string; name?: string; role?: string }> => {
+  if (!value) return [];
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      return normaliseParticipants(parsed);
+    } catch {
+      return [];
+    }
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) return [];
+    if (typeof value[0] === "string") {
+      return (value as string[]).map((id) => ({ id }));
+    }
+    return value as Array<{ id: string; type?: string; name?: string; role?: string }>;
+  }
+  return [];
+};
+
+const normaliseReadBy = (value: unknown): string[] => {
+  if (!value) return [];
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      return normaliseReadBy(parsed);
+    } catch {
+      return [];
+    }
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) return [];
+    if (typeof value[0] === "string") {
+      return value as string[];
+    }
+  }
+  return [];
+};
 
 export default async function MessagesPage() {
   const auth = await getAuthContext();
@@ -104,15 +142,14 @@ export default async function MessagesPage() {
   });
 
   // Filter threads where current user is a participant
-  const userThreads = messageThreads.filter((thread) => {
-    const participants = thread.participants as Array<{ id: string; type: string }>;
-    return participants?.some((p) => p.id === auth.user.id);
-  });
+  const userThreads = messageThreads.filter((thread) =>
+    normaliseParticipants(thread.participants).some((p) => p.id === auth.user.id),
+  );
 
   // Process conversations for display
   const conversations = await Promise.all(
     userThreads.map(async (thread) => {
-      const participants = thread.participants as Array<{ id: string; type: string; name?: string; role?: string }>;
+      const participants = normaliseParticipants(thread.participants);
       
       // Find the other participant (not the current user)
       const otherParticipant = participants.find((p) => p.id !== auth.user.id);
@@ -138,7 +175,7 @@ export default async function MessagesPage() {
       }
 
       const lastMessage = thread.messages[0];
-      const readByArray = (lastMessage?.readBy as string[]) || [];
+      const readByArray = normaliseReadBy(lastMessage?.readBy);
       const isUnread = lastMessage && !readByArray.includes(auth.user.id);
 
       return {

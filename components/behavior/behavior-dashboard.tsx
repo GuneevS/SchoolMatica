@@ -129,7 +129,7 @@ export function BehaviorDashboard({ stats, schoolId }: BehaviorDashboardProps) {
         </Button>
         <Button
           variant="outline"
-          className="border-violet-500/50 text-violet-600 hover:bg-violet-500/10"
+          className="border-[hsl(var(--accent-violet))/0.5] text-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.12]"
           onClick={() => setNotifyDialogOpen(true)}
         >
           <Bell className="h-4 w-4 mr-2" />
@@ -404,7 +404,7 @@ export function BehaviorDashboard({ stats, schoolId }: BehaviorDashboardProps) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-violet-600 hover:bg-violet-500/10"
+                            className="text-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.12]"
                             onClick={() => {
                               setSelectedStudents([balance.student.id]);
                               setNotifyDialogOpen(true);
@@ -429,7 +429,7 @@ export function BehaviorDashboard({ stats, schoolId }: BehaviorDashboardProps) {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <History className="h-5 w-5 text-violet-500" />
+                <History className="h-5 w-5 text-[hsl(var(--accent-violet))]" />
                 Recent Notifications
               </CardTitle>
               <CardDescription>
@@ -477,8 +477,8 @@ export function BehaviorDashboard({ stats, schoolId }: BehaviorDashboardProps) {
                 key={notification.id}
                 className="flex items-center gap-3 p-3 border rounded-lg"
               >
-                <div className="h-10 w-10 rounded-full bg-violet-500/10 flex items-center justify-center">
-                  <Bell className="h-5 w-5 text-violet-500" />
+                <div className="h-10 w-10 rounded-full bg-[hsl(var(--accent-violet))/0.1] flex items-center justify-center">
+                  <Bell className="h-5 w-5 text-[hsl(var(--accent-violet))]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium">{notification.student}</p>
@@ -552,7 +552,7 @@ export function BehaviorDashboard({ stats, schoolId }: BehaviorDashboardProps) {
                         className={cn(
                           "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors",
                           selectedStudents.includes(balance.student.id)
-                            ? "bg-violet-500/10"
+                            ? "bg-[hsl(var(--accent-violet))/0.1]"
                             : "hover:bg-slate-100 dark:hover:bg-slate-800"
                         )}
                         onClick={() => toggleStudentSelection(balance.student.id)}
@@ -627,7 +627,7 @@ export function BehaviorDashboard({ stats, schoolId }: BehaviorDashboardProps) {
               Cancel
             </Button>
             <Button
-              className="bg-violet-500 hover:bg-violet-600"
+              className="bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]"
               onClick={handleNotifyParents}
               disabled={selectedStudents.length === 0}
             >

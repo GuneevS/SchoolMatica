@@ -3,6 +3,7 @@ import { GradingForm } from "@/components/settings/grading-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 import { Ruler } from "lucide-react";
+import { SettingsNav } from "@/components/settings/settings-nav";
 
 // Force dynamic rendering - requires database
 export const dynamic = "force-dynamic";
@@ -37,6 +38,7 @@ export default async function GradingSettingsPage() {
           />
         }
       />
+      <SettingsNav />
       <Card className="rounded-[28px] border border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))] shadow-ambient">
         <CardHeader>
           <CardTitle>Grading bands</CardTitle>

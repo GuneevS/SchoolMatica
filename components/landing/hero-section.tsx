@@ -25,7 +25,7 @@ const metrics = [
 // Platform features showcase
 const platformFeatures = [
   { icon: BookOpen, label: "Academics", color: "text-blue-500" },
-  { icon: Users, label: "Administration", color: "text-violet-500" },
+  { icon: Users, label: "Administration", color: "text-[hsl(var(--accent-violet))]" },
   { icon: Award, label: "Behaviour", color: "text-emerald-500" },
   { icon: MessageSquare, label: "Communication", color: "text-amber-500" },
 ];
@@ -213,7 +213,7 @@ export function HeroSection() {
             >
               <Button
                 size="lg"
-                className="w-full sm:w-auto group relative overflow-hidden bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white shadow-lg shadow-violet-500/30 hover:shadow-xl hover:shadow-violet-500/40 transition-all duration-300"
+                className="w-full sm:w-auto group relative overflow-hidden bg-gradient-to-r from-[hsl(var(--brand-primary))] to-[hsl(var(--brand-accent))] hover:from-[hsl(var(--brand-primary))]/90 hover:to-[hsl(var(--brand-accent))]/90 text-white shadow-lg shadow-[hsl(var(--brand-primary))/0.3] hover:shadow-xl hover:shadow-[hsl(var(--brand-primary))/0.35] transition-all duration-300"
                 asChild
               >
                 <Link
@@ -335,7 +335,7 @@ export function HeroSection() {
                       <div className="col-span-3 grid grid-cols-4 gap-2">
                         {[
                           { label: "Classes", color: "from-blue-500 to-cyan-500" },
-                          { label: "Students", color: "from-violet-500 to-purple-500" },
+                          { label: "Students", color: "from-[hsl(var(--brand-primary))] to-[hsl(var(--brand-accent))]" },
                           { label: "Merits", color: "from-emerald-500 to-green-500" },
                           { label: "Messages", color: "from-amber-500 to-orange-500" },
                         ].map((stat, i) => (

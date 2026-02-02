@@ -419,6 +419,28 @@ function normaliseWeights(seed = assessmentSeed) {
  *   - Force re-seed: FORCE_SEED=true npx prisma db seed
  */
 const FORCE_SEED = process.env.FORCE_SEED === "true";
+const SEED_DEMO_ACCOUNTS = process.env.SEED_DEMO_ACCOUNTS === "true";
+
+const QUICK_LOGIN_PASSWORD = "Password123!";
+const QUICK_LOGIN_SCHOOL = {
+  name: "Nimbus Academy",
+  shortCode: "NIM",
+  branding: {
+    logoUrl: null,
+    primary: "#1b4f72",
+    secondary: "#f0b429",
+    accent: "#f06b5b",
+  },
+};
+const QUICK_LOGIN_EMAILS = {
+  platform: "platform@schoolmatica.dev",
+  admin: "admin@nimbus.edu",
+  hod: "hod@nimbus.edu",
+  smt: "smt@nimbus.edu",
+  teacher: "teacher@nimbus.edu",
+  parent: "parent@nimbus.edu",
+  student: "student@nimbus.edu",
+};
 
 async function clearAllData() {
   console.log("⚠️  FORCE_SEED is enabled - clearing all existing data...");
@@ -472,14 +494,825 @@ async function checkDatabaseHasData(): Promise<boolean> {
   return schoolCount > 0 || userCount > 0 || roleCount > 0;
 }
 
+async function ensureBaseRolesAndPermissions() {
+  await prisma.permissionDefinition.createMany({
+    data: permissionSeeds,
+    skipDuplicates: true,
+  });
+  await prisma.roleDefinition.createMany({
+    data: roleSeeds,
+    skipDuplicates: true,
+  });
+
+  const permissions = await prisma.permissionDefinition.findMany();
+  const roles = await prisma.roleDefinition.findMany();
+
+  const permissionByKey = new Map<string, (typeof permissions)[number]>(
+    permissions.map((permission) => [permission.key, permission]),
+  );
+  const roleByKey = new Map<string, (typeof roles)[number]>(
+    roles.map((role) => [role.key, role]),
+  );
+
+  for (const [roleKey, permissionKeys] of Object.entries(rolePermissionMatrix)) {
+    const role = roleByKey.get(roleKey);
+    if (!role) continue;
+    const rolePermissionData: { roleId: string; permissionId: string }[] = [];
+    for (const permissionKey of permissionKeys) {
+      const permission = permissionByKey.get(permissionKey);
+      if (!permission) continue;
+      rolePermissionData.push({ roleId: role.id, permissionId: permission.id });
+    }
+    if (rolePermissionData.length) {
+      await prisma.rolePermission.createMany({
+        data: rolePermissionData,
+        skipDuplicates: true,
+      });
+    }
+  }
+
+  return { roleByKey };
+}
+
+async function ensureRoleAssignment(args: {
+  userId: string;
+  roleId: string;
+  scopeSchoolId: string | null;
+}) {
+  const existing = await prisma.userRoleAssignment.findFirst({
+    where: { userId: args.userId, roleId: args.roleId },
+  });
+
+  if (!existing) {
+    await prisma.userRoleAssignment.create({
+      data: args,
+    });
+  }
+}
+
+async function ensureQuickLoginSchool() {
+  const quickPasswordHash = await bcrypt.hash(QUICK_LOGIN_PASSWORD, 10);
+
+  const existingSchool = await prisma.school.findUnique({
+    where: { shortCode: QUICK_LOGIN_SCHOOL.shortCode },
+  });
+
+  let school = existingSchool;
+  let gradingConfigId = school?.gradingConfigId ?? null;
+
+  if (!school) {
+    const gradingConfig = await prisma.gradingConfig.create({
+      data: {
+        name: "Nimbus Default",
+        phasesJson: {
+          FET: gradingBands,
+        },
+      },
+    });
+
+    gradingConfigId = gradingConfig.id;
+
+    school = await prisma.school.create({
+      data: {
+        name: QUICK_LOGIN_SCHOOL.name,
+        shortCode: QUICK_LOGIN_SCHOOL.shortCode,
+        branding: QUICK_LOGIN_SCHOOL.branding,
+        gradingConfig: {
+          connect: { id: gradingConfig.id },
+        },
+      },
+    });
+  } else if (!gradingConfigId) {
+    const gradingConfig = await prisma.gradingConfig.create({
+      data: {
+        name: "Nimbus Default",
+        phasesJson: {
+          FET: gradingBands,
+        },
+      },
+    });
+    gradingConfigId = gradingConfig.id;
+    await prisma.school.update({
+      where: { id: school.id },
+      data: {
+        gradingConfig: {
+          connect: { id: gradingConfig.id },
+        },
+      },
+    });
+  }
+
+  if (!school) {
+    throw new Error("Failed to create or fetch Nimbus Academy");
+  }
+
+  const gradeLevel =
+    (await prisma.gradeLevel.findFirst({
+      where: { schoolId: school.id, name: "Grade 10" },
+    })) ??
+    (await prisma.gradeLevel.create({
+      data: {
+        name: "Grade 10",
+        order: 10,
+        schoolId: school.id,
+      },
+    }));
+
+  const subject =
+    (await prisma.subject.findFirst({
+      where: { schoolId: school.id, code: "MTH" },
+    })) ??
+    (await prisma.subject.create({
+      data: {
+        name: "Mathematics",
+        code: "MTH",
+        phase: "FET",
+        schoolId: school.id,
+      },
+    }));
+
+  const teacher = await prisma.teacher.upsert({
+    where: { email: QUICK_LOGIN_EMAILS.teacher },
+    update: {
+      firstName: "Aisha",
+      lastName: "Patel",
+      phone: "+27 82 555 0101",
+      role: "Teacher",
+      schoolId: school.id,
+      bio: "Grade 10 Mathematics educator",
+    },
+    create: {
+      firstName: "Aisha",
+      lastName: "Patel",
+      email: QUICK_LOGIN_EMAILS.teacher,
+      phone: "+27 82 555 0101",
+      role: "Teacher",
+      schoolId: school.id,
+      bio: "Grade 10 Mathematics educator",
+    },
+  });
+
+  const hodTeacher = await prisma.teacher.upsert({
+    where: { email: QUICK_LOGIN_EMAILS.hod },
+    update: {
+      firstName: "Sipho",
+      lastName: "Maseko",
+      phone: "+27 82 555 0202",
+      role: "HOD",
+      schoolId: school.id,
+      bio: "Mathematics department head",
+    },
+    create: {
+      firstName: "Sipho",
+      lastName: "Maseko",
+      email: QUICK_LOGIN_EMAILS.hod,
+      phone: "+27 82 555 0202",
+      role: "HOD",
+      schoolId: school.id,
+      bio: "Mathematics department head",
+    },
+  });
+
+  const smtTeacher = await prisma.teacher.upsert({
+    where: { email: QUICK_LOGIN_EMAILS.smt },
+    update: {
+      firstName: "Lerato",
+      lastName: "Botha",
+      phone: "+27 82 555 0303",
+      role: "SMT",
+      schoolId: school.id,
+      bio: "Deputy Principal",
+    },
+    create: {
+      firstName: "Lerato",
+      lastName: "Botha",
+      email: QUICK_LOGIN_EMAILS.smt,
+      phone: "+27 82 555 0303",
+      role: "SMT",
+      schoolId: school.id,
+      bio: "Deputy Principal",
+    },
+  });
+
+  const currentYear = new Date().getFullYear();
+  const classGroup =
+    (await prisma.classGroup.findFirst({
+      where: { schoolId: school.id, name: "Grade 10A Mathematics" },
+    })) ??
+    (await prisma.classGroup.create({
+      data: {
+        name: "Grade 10A Mathematics",
+        grade: 10,
+        year: currentYear,
+        classType: "Subject",
+        subjectId: subject.id,
+        schoolId: school.id,
+        gradeLevelId: gradeLevel.id,
+        primaryTeacherId: teacher.id,
+        teacherAssignments: {
+          create: [
+            {
+              teacherId: teacher.id,
+              role: "Lead",
+              subjectId: subject.id,
+            },
+            {
+              teacherId: hodTeacher.id,
+              role: "HOD",
+              subjectId: subject.id,
+            },
+          ],
+        },
+      },
+    }));
+
+  const student =
+    (await prisma.student.findFirst({
+      where: {
+        admissionNumber: "NIM-10-001",
+        classGroup: { schoolId: school.id },
+      },
+    })) ??
+    (await prisma.student.create({
+      data: {
+        admissionNumber: "NIM-10-001",
+        firstName: "Maya",
+        lastName: "Naidoo",
+        gender: "F",
+        classGroupId: classGroup.id,
+        advisorTeacherId: teacher.id,
+      },
+    }));
+
+  const parentContact =
+    (await prisma.parentContact.findFirst({
+      where: {
+        email: QUICK_LOGIN_EMAILS.parent,
+        studentId: student.id,
+      },
+    })) ??
+    (await prisma.parentContact.create({
+      data: {
+        studentId: student.id,
+        fullName: "Raj Naidoo",
+        relationship: "Guardian",
+        email: QUICK_LOGIN_EMAILS.parent,
+        phone: "+27 82 555 0404",
+        primary: true,
+      },
+    }));
+
+  const adminUser = await prisma.appUser.upsert({
+    where: { email: QUICK_LOGIN_EMAILS.admin },
+    update: {
+      displayName: "Nimbus Admin",
+      schoolId: school.id,
+      passwordHash: quickPasswordHash,
+    },
+    create: {
+      email: QUICK_LOGIN_EMAILS.admin,
+      displayName: "Nimbus Admin",
+      schoolId: school.id,
+      passwordHash: quickPasswordHash,
+    },
+  });
+
+  const teacherUser = await prisma.appUser.upsert({
+    where: { email: QUICK_LOGIN_EMAILS.teacher },
+    update: {
+      displayName: `${teacher.firstName} ${teacher.lastName}`,
+      schoolId: school.id,
+      teacherId: teacher.id,
+      passwordHash: quickPasswordHash,
+    },
+    create: {
+      email: QUICK_LOGIN_EMAILS.teacher,
+      displayName: `${teacher.firstName} ${teacher.lastName}`,
+      schoolId: school.id,
+      teacherId: teacher.id,
+      passwordHash: quickPasswordHash,
+    },
+  });
+
+  const hodUser = await prisma.appUser.upsert({
+    where: { email: QUICK_LOGIN_EMAILS.hod },
+    update: {
+      displayName: `${hodTeacher.firstName} ${hodTeacher.lastName}`,
+      schoolId: school.id,
+      teacherId: hodTeacher.id,
+      passwordHash: quickPasswordHash,
+    },
+    create: {
+      email: QUICK_LOGIN_EMAILS.hod,
+      displayName: `${hodTeacher.firstName} ${hodTeacher.lastName}`,
+      schoolId: school.id,
+      teacherId: hodTeacher.id,
+      passwordHash: quickPasswordHash,
+    },
+  });
+
+  const smtUser = await prisma.appUser.upsert({
+    where: { email: QUICK_LOGIN_EMAILS.smt },
+    update: {
+      displayName: `${smtTeacher.firstName} ${smtTeacher.lastName}`,
+      schoolId: school.id,
+      teacherId: smtTeacher.id,
+      passwordHash: quickPasswordHash,
+    },
+    create: {
+      email: QUICK_LOGIN_EMAILS.smt,
+      displayName: `${smtTeacher.firstName} ${smtTeacher.lastName}`,
+      schoolId: school.id,
+      teacherId: smtTeacher.id,
+      passwordHash: quickPasswordHash,
+    },
+  });
+
+  const parentUser = await prisma.appUser.upsert({
+    where: { email: QUICK_LOGIN_EMAILS.parent },
+    update: {
+      displayName: "Raj Naidoo",
+      schoolId: school.id,
+      passwordHash: quickPasswordHash,
+    },
+    create: {
+      email: QUICK_LOGIN_EMAILS.parent,
+      displayName: "Raj Naidoo",
+      schoolId: school.id,
+      passwordHash: quickPasswordHash,
+    },
+  });
+
+  const studentUser = await prisma.appUser.upsert({
+    where: { email: QUICK_LOGIN_EMAILS.student },
+    update: {
+      displayName: "Maya Naidoo",
+      schoolId: school.id,
+      passwordHash: quickPasswordHash,
+    },
+    create: {
+      email: QUICK_LOGIN_EMAILS.student,
+      displayName: "Maya Naidoo",
+      schoolId: school.id,
+      passwordHash: quickPasswordHash,
+    },
+  });
+
+  const platformUser = await prisma.appUser.upsert({
+    where: { email: QUICK_LOGIN_EMAILS.platform },
+    update: {
+      displayName: "Platform Admin",
+      schoolId: null,
+      passwordHash: quickPasswordHash,
+    },
+    create: {
+      email: QUICK_LOGIN_EMAILS.platform,
+      displayName: "Platform Admin",
+      schoolId: null,
+      passwordHash: quickPasswordHash,
+    },
+  });
+
+  const parentUserLink =
+    (await prisma.parentUser.findUnique({ where: { userId: parentUser.id } })) ??
+    (await prisma.parentUser.create({
+      data: {
+        userId: parentUser.id,
+      },
+    }));
+
+  if (!parentContact.parentUserId) {
+    await prisma.parentContact.update({
+      where: { id: parentContact.id },
+      data: { parentUserId: parentUserLink.id },
+    });
+  }
+
+  const existingStudentUser = await prisma.studentUser.findUnique({
+    where: { userId: studentUser.id },
+  });
+  if (!existingStudentUser) {
+    await prisma.studentUser.create({
+      data: {
+        userId: studentUser.id,
+        studentId: student.id,
+      },
+    });
+  }
+
+  const { roleByKey } = await ensureBaseRolesAndPermissions();
+  const teacherRole = roleByKey.get("teacher");
+  const hodRole = roleByKey.get("hod");
+  const smtRole = roleByKey.get("smt");
+  const adminRole = roleByKey.get("admin");
+  const superAdminRole = roleByKey.get("super_admin");
+
+  if (teacherRole) {
+    await ensureRoleAssignment({
+      userId: teacherUser.id,
+      roleId: teacherRole.id,
+      scopeSchoolId: school.id,
+    });
+  }
+  if (hodRole) {
+    await ensureRoleAssignment({
+      userId: hodUser.id,
+      roleId: hodRole.id,
+      scopeSchoolId: school.id,
+    });
+  }
+  if (smtRole) {
+    await ensureRoleAssignment({
+      userId: smtUser.id,
+      roleId: smtRole.id,
+      scopeSchoolId: school.id,
+    });
+  }
+  if (adminRole) {
+    await ensureRoleAssignment({
+      userId: adminUser.id,
+      roleId: adminRole.id,
+      scopeSchoolId: school.id,
+    });
+  }
+  if (superAdminRole) {
+    await ensureRoleAssignment({
+      userId: platformUser.id,
+      roleId: superAdminRole.id,
+      scopeSchoolId: null,
+    });
+  }
+
+  const now = new Date();
+  const addDays = (days: number) => new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+
+  let demoPlan = await prisma.assessmentPlan.findFirst({
+    where: { classGroupId: classGroup.id, name: "Nimbus Term Plan" },
+    include: { assessments: true },
+  });
+
+  if (!demoPlan) {
+    demoPlan = await prisma.assessmentPlan.create({
+      data: {
+        name: "Nimbus Term Plan",
+        year: currentYear,
+        termCount: 4,
+        status: "Active",
+        termWeights: { T1: 25, T2: 25, T3: 25, T4: 25 },
+        classGroupId: classGroup.id,
+        assessments: {
+          create: [
+            {
+              taskName: "Algebra Quiz",
+              term: "T1",
+              totalMark: 20,
+              rawWeight: 10,
+              weightPercent: 50,
+              sequence: 1,
+              type: "Quiz",
+              status: "Active",
+            },
+            {
+              taskName: "Geometry Assignment",
+              term: "T1",
+              totalMark: 30,
+              rawWeight: 10,
+              weightPercent: 50,
+              sequence: 2,
+              type: "Assignment",
+              status: "Active",
+            },
+          ],
+        },
+      },
+      include: { assessments: true },
+    });
+  }
+
+  if (demoPlan.assessments.length === 0) {
+    await prisma.assessment.createMany({
+      data: [
+        {
+          assessmentPlanId: demoPlan.id,
+          taskName: "Algebra Quiz",
+          term: "T1",
+          totalMark: 20,
+          rawWeight: 10,
+          weightPercent: 50,
+          sequence: 1,
+          type: "Quiz",
+          status: "Active",
+        },
+        {
+          assessmentPlanId: demoPlan.id,
+          taskName: "Geometry Assignment",
+          term: "T1",
+          totalMark: 30,
+          rawWeight: 10,
+          weightPercent: 50,
+          sequence: 2,
+          type: "Assignment",
+          status: "Active",
+        },
+      ],
+    });
+    demoPlan = await prisma.assessmentPlan.findUnique({
+      where: { id: demoPlan.id },
+      include: { assessments: true },
+    });
+  }
+
+  if (demoPlan) {
+    for (const assessment of demoPlan.assessments) {
+      const rawMark = assessment.taskName.includes("Algebra") ? 17 : 24;
+      await prisma.mark.upsert({
+        where: {
+          assessmentId_studentId: {
+            assessmentId: assessment.id,
+            studentId: student.id,
+          },
+        },
+        update: {
+          rawMark,
+          status: "Draft",
+        },
+        create: {
+          assessmentId: assessment.id,
+          studentId: student.id,
+          rawMark,
+          status: "Draft",
+        },
+      });
+    }
+  }
+
+  const existingReport = await prisma.reportCard.findFirst({
+    where: { studentId: student.id, term: "T1", year: currentYear },
+  });
+  if (!existingReport) {
+    await prisma.reportCard.create({
+      data: {
+        studentId: student.id,
+        classGroupId: classGroup.id,
+        term: "T1",
+        year: currentYear,
+        status: "Published",
+        overallGrade: "B+",
+        overallPercentage: 78,
+        achievementLevel: 5,
+        teacherComment: "Strong effort and consistent participation.",
+        hodComment: "Keep pushing for distinction.",
+        publishedAt: now,
+      },
+    });
+  }
+
+  await prisma.behaviorBalance.upsert({
+    where: { studentId: student.id },
+    update: {
+      meritTotal: 15,
+      demeritTotal: 4,
+      netBalance: 11,
+      lastResetAt: null,
+    },
+    create: {
+      studentId: student.id,
+      meritTotal: 15,
+      demeritTotal: 4,
+      netBalance: 11,
+    },
+  });
+
+  const incidentSeeds = [
+    {
+      type: "Merit",
+      points: 5,
+      category: "Leadership",
+      description: "Peer tutoring session",
+      issuedById: teacherUser.id,
+    },
+    {
+      type: "Demerit",
+      points: 2,
+      category: "Conduct",
+      description: "Late to class",
+      issuedById: teacherUser.id,
+    },
+    {
+      type: "Merit",
+      points: 4,
+      category: "Academic",
+      description: "Top score in algebra quiz",
+      issuedById: hodUser.id,
+    },
+  ];
+
+  for (const incident of incidentSeeds) {
+    const existingIncident = await prisma.behaviorIncident.findFirst({
+      where: {
+        studentId: student.id,
+        description: incident.description,
+      },
+    });
+    if (!existingIncident) {
+      await prisma.behaviorIncident.create({
+        data: {
+          studentId: student.id,
+          schoolId: school.id,
+          type: incident.type,
+          points: incident.points,
+          category: incident.category,
+          description: incident.description,
+          issuedById: incident.issuedById,
+          term: "T1",
+          year: currentYear,
+          status: "Active",
+        },
+      });
+    }
+  }
+
+  const feeStructure =
+    (await prisma.feeStructure.findFirst({
+      where: { schoolId: school.id, name: `Grade 10 Annual Fees ${currentYear}` },
+    })) ??
+    (await prisma.feeStructure.create({
+      data: {
+        schoolId: school.id,
+        name: `Grade 10 Annual Fees ${currentYear}`,
+        description: "Nimbus Academy annual tuition",
+        grade: 10,
+        year: currentYear,
+        term: "Annual",
+        baseAmount: 18500,
+        components: [
+          { name: "Tuition", amount: 16000, optional: false },
+          { name: "Activities", amount: 2500, optional: false },
+        ],
+      },
+    }));
+
+  const invoiceNumber = `NIM-${currentYear}-001`;
+  const existingInvoice = await prisma.invoice.findFirst({
+    where: { invoiceNumber },
+  });
+  if (!existingInvoice) {
+    await prisma.invoice.create({
+      data: {
+        invoiceNumber,
+        schoolId: school.id,
+        studentId: student.id,
+        feeStructureId: feeStructure.id,
+        parentContactId: parentContact.id,
+        term: "T1",
+        year: currentYear,
+        subtotal: 18500,
+        discountAmount: 0,
+        taxAmount: 0,
+        totalAmount: 18500,
+        paidAmount: 5000,
+        balanceDue: 13500,
+        status: "Partially Paid",
+        dueDate: addDays(20),
+        lineItems: [
+          { name: "Annual Fees", amount: 18500 },
+        ],
+      },
+    });
+  }
+
+  const existingEvent = await prisma.schoolEvent.findFirst({
+    where: { schoolId: school.id, title: "Maths Olympiad Qualifier" },
+  });
+  if (!existingEvent) {
+    await prisma.schoolEvent.create({
+      data: {
+        schoolId: school.id,
+        title: "Maths Olympiad Qualifier",
+        description: "Round one of the annual mathematics competition.",
+        eventType: "Academic",
+        startDate: addDays(5),
+        endDate: addDays(5),
+        startTime: "14:00",
+        endTime: "16:00",
+        location: "Hall A",
+        isAllDay: false,
+        audience: ["all"],
+        createdBy: adminUser.id,
+        status: "Active",
+      },
+    });
+  }
+
+  const homeworkSeeds = [
+    {
+      title: "Algebra practice set",
+      description: "Complete the worksheet and submit your answers.",
+      dueOffset: 3,
+      points: 20,
+      submissionStatus: "Submitted" as const,
+    },
+    {
+      title: "Geometry worksheet",
+      description: "Focus on triangles and angle proofs.",
+      dueOffset: -2,
+      points: 15,
+      submissionStatus: null,
+    },
+    {
+      title: "Trigonometry challenge",
+      description: "Solve the applied trig problems in the pack.",
+      dueOffset: 9,
+      points: 25,
+      submissionStatus: null,
+    },
+  ];
+
+  for (const seed of homeworkSeeds) {
+    const existingHomework = await prisma.homework.findFirst({
+      where: { classGroupId: classGroup.id, title: seed.title },
+    });
+    const homeworkRecord =
+      existingHomework ??
+      (await prisma.homework.create({
+        data: {
+          schoolId: school.id,
+          classGroupId: classGroup.id,
+          teacherId: teacher.id,
+          title: seed.title,
+          description: seed.description,
+          subject: subject.name,
+          dueDate: addDays(seed.dueOffset),
+          assignedDate: now,
+          points: seed.points,
+          status: "Active",
+        },
+      }));
+
+    if (seed.submissionStatus) {
+      await prisma.homeworkSubmission.upsert({
+        where: {
+          homeworkId_studentId: {
+            homeworkId: homeworkRecord.id,
+            studentId: student.id,
+          },
+        },
+        update: {
+          status: seed.submissionStatus,
+          submittedAt: addDays(seed.dueOffset - 1),
+        },
+        create: {
+          homeworkId: homeworkRecord.id,
+          studentId: student.id,
+          status: seed.submissionStatus,
+          submittedAt: addDays(seed.dueOffset - 1),
+        },
+      });
+    }
+  }
+
+  const existingThread = await prisma.messageThread.findFirst({
+    where: { schoolId: school.id, subject: "Welcome to Nimbus" },
+  });
+  if (!existingThread) {
+    await prisma.messageThread.create({
+      data: {
+        schoolId: school.id,
+        type: "Direct",
+        subject: "Welcome to Nimbus",
+        participants: [
+          { id: studentUser.id, type: "student", name: "Maya Naidoo", role: "Student" },
+          { id: teacherUser.id, type: "teacher", name: `${teacher.firstName} ${teacher.lastName}`, role: "Teacher" },
+        ],
+        lastMessageAt: now,
+        createdBy: teacherUser.id,
+        messages: {
+          create: {
+            senderId: teacherUser.id,
+            content: "Welcome to Grade 10 Mathematics! Let me know if you need help.",
+            readBy: [teacherUser.id],
+          },
+        },
+      },
+    });
+  }
+}
+
 async function seed() {
   // Check if we should run the seed
   const hasData = await checkDatabaseHasData();
   
   if (hasData && !FORCE_SEED) {
+    if (SEED_DEMO_ACCOUNTS) {
+      console.log("✨ Database already contains data. Seeding demo login accounts only.");
+      await ensureQuickLoginSchool();
+      console.log("✅ Demo login accounts ready.");
+      return;
+    }
     console.log("📦 Database already contains data. Skipping seed to preserve existing data.");
+    console.log("   To seed demo accounts only, run with SEED_DEMO_ACCOUNTS=true");
     console.log("   To force re-seed (WILL DELETE ALL DATA), run with FORCE_SEED=true");
-    console.log("   Example: FORCE_SEED=true npx prisma db seed");
+    console.log("   Example: SEED_DEMO_ACCOUNTS=true npx prisma db seed");
     return;
   }
   
@@ -502,6 +1335,12 @@ async function seed() {
     data: {
       name: "SchoolMatica High",
       shortCode: "SMH",
+      branding: {
+        logoUrl: null,
+        primary: "#1f8679",
+        secondary: "#f28c28",
+        accent: "#ff6b5b",
+      },
       gradingConfig: {
         connect: { id: gradingConfig.id },
       },
@@ -916,6 +1755,9 @@ async function seed() {
   console.log("   - Created super admin: guneev66@gmail.com (password: Admin@2025)");
   console.log("   - Created school admin: admin@schoolmatica.com (password: password123)");
   console.log("   - Created sample teachers, students, and assessments");
+
+  await ensureQuickLoginSchool();
+  console.log("✅ Quick login school and demo accounts created (Nimbus Academy)");
 }
 
 seed()

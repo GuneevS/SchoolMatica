@@ -3,7 +3,26 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Shield } from "lucide-react";
+import {
+  BarChart3,
+  BookOpenCheck,
+  Building2,
+  CalendarClock,
+  CalendarDays,
+  ClipboardList,
+  CreditCard,
+  FilePlus,
+  Flame,
+  GraduationCap,
+  LayoutGrid,
+  MessageSquare,
+  Menu,
+  NotebookPen,
+  Settings,
+  Shield,
+  UserSquare2,
+  Users2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RoleSwitcher } from "@/components/role-switcher";
 import { HelpButton } from "@/components/help/help-button";
@@ -11,7 +30,11 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { SchoolSwitcher } from "@/components/school-switcher";
 import { SuperAdminOverlay } from "@/components/super-admin/super-admin-overlay";
 import { UnifiedLogo } from "@/components/brand/unified-logo";
+import { SchoolMark } from "@/components/brand/school-mark";
+import { useBranding } from "@/components/brand/branding-provider";
 import { NotificationDropdown } from "@/components/notifications";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/lib/hooks/use-auth";
 import {
   hasPermission,
@@ -25,6 +48,7 @@ import {
 interface NavItem {
   label: string;
   href: string;
+  icon: React.ComponentType<{ className?: string }>;
   /**
    * Permission check function - returns true if the user can see this nav item
    * If undefined, the item is visible to all authenticated users
@@ -45,12 +69,13 @@ function hasRoleKey(auth: ClientAuthContext | null, roleKeys: string[]): boolean
  */
 const navItems: NavItem[] = [
   // Dashboard: Everyone authenticated
-  { label: "Dashboard", href: "/dashboard" },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutGrid },
   
   // Classes: class:read permission
   {
     label: "Classes",
     href: "/classes",
+    icon: Users2,
     canAccess: (auth) => hasPermission(auth, "class:read"),
   },
   
@@ -58,6 +83,7 @@ const navItems: NavItem[] = [
   {
     label: "Assessment Plans",
     href: "/assessment-plans",
+    icon: ClipboardList,
     canAccess: (auth) => hasPermission(auth, "assessmentPlan:read"),
   },
   
@@ -65,6 +91,7 @@ const navItems: NavItem[] = [
   {
     label: "Markbook",
     href: "/markbook",
+    icon: BookOpenCheck,
     canAccess: (auth) => hasPermission(auth, "mark:read"),
   },
   
@@ -72,6 +99,7 @@ const navItems: NavItem[] = [
   {
     label: "Behaviour",
     href: "/behavior",
+    icon: Flame,
     canAccess: (auth) =>
       hasRoleKey(auth, ["teacher", "hod", "deputy", "principal", "admin", "smt"]) ||
       hasAnyPermission(auth, ["student:update", "class:manage"]),
@@ -81,6 +109,7 @@ const navItems: NavItem[] = [
   {
     label: "Communications",
     href: "/communications",
+    icon: MessageSquare,
     canAccess: (auth) =>
       hasRoleKey(auth, ["teacher", "hod", "deputy", "principal", "admin", "smt", "clerk", "secretary"]) ||
       hasAnyPermission(auth, ["class:read", "student:read"]),
@@ -90,6 +119,7 @@ const navItems: NavItem[] = [
   {
     label: "Fees & Accounts",
     href: "/fees",
+    icon: CreditCard,
     canAccess: (auth) =>
       hasRoleKey(auth, ["admin", "principal", "deputy", "bursar", "finance"]) ||
       auth?.isAdmin === true,
@@ -99,16 +129,18 @@ const navItems: NavItem[] = [
   {
     label: "Timetables",
     href: "/timetables",
+    icon: CalendarClock,
     canAccess: (auth) => hasPermission(auth, "timetable:read"),
   },
   
   // Events: Visible to all authenticated users
-  { label: "Events", href: "/events" },
+  { label: "Events", href: "/events", icon: CalendarDays },
   
   // Homework: Teachers and above
   {
     label: "Homework",
     href: "/homework",
+    icon: NotebookPen,
     canAccess: (auth) =>
       hasRoleKey(auth, ["teacher", "hod", "deputy", "principal", "admin", "smt"]) ||
       hasPermission(auth, "class:manage"),
@@ -118,6 +150,7 @@ const navItems: NavItem[] = [
   {
     label: "Reports",
     href: "/reports",
+    icon: BarChart3,
     canAccess: (auth) => hasPermission(auth, "report:read"),
   },
   
@@ -125,6 +158,7 @@ const navItems: NavItem[] = [
   {
     label: "Registrations",
     href: "/registrations",
+    icon: FilePlus,
     canAccess: (auth) => hasPermission(auth, "registration:read"),
   },
   
@@ -132,6 +166,7 @@ const navItems: NavItem[] = [
   {
     label: "Students",
     href: "/students",
+    icon: GraduationCap,
     canAccess: (auth) => hasPermission(auth, "student:read"),
   },
   
@@ -139,6 +174,7 @@ const navItems: NavItem[] = [
   {
     label: "Teachers",
     href: "/teachers",
+    icon: UserSquare2,
     canAccess: (auth) => hasPermission(auth, "teacher:read"),
   },
   
@@ -146,6 +182,7 @@ const navItems: NavItem[] = [
   {
     label: "Schools",
     href: "/schools",
+    icon: Building2,
     canAccess: (auth) =>
       hasAnyPermission(auth, ["school:manage", "school:create", "system:admin"]) ||
       auth?.isAdmin === true,
@@ -154,7 +191,8 @@ const navItems: NavItem[] = [
   // Settings: school:manage or grading:read permission
   {
     label: "Settings",
-    href: "/settings/grading",
+    href: "/settings",
+    icon: Settings,
     canAccess: (auth) =>
       hasAnyPermission(auth, ["school:manage", "gradingConfig:read", "gradingConfig:update"]),
   },
@@ -186,6 +224,9 @@ const superAdminPaths = ["/super-admin"];
 // Parent portal has its own shell
 const parentPortalPaths = ["/parent"];
 
+// Student portal has its own shell
+const studentPortalPaths = ["/student"];
+
 interface Props {
   children: React.ReactNode;
   initialSchool: {
@@ -204,6 +245,7 @@ interface Props {
 export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminProp = false, user }: Props) {
   const pathname = usePathname();
   const { user: authUser, permissions, isAdmin, isSuperAdmin: isSuperAdminFromHook, schoolIds, isLoading } = useAuth();
+  const { branding } = useBranding();
 
   // Build the client auth context for permission checks
   const clientAuth: ClientAuthContext | null = useMemo(() => {
@@ -235,6 +277,13 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
     [clientAuth, isSuperAdminFromHook, isSuperAdminProp]
   );
 
+  const navItemsToRender = useMemo(() => {
+    if (filteredNavItems.length === 0 && hasSuperAdminAccess) {
+      return navItems;
+    }
+    return filteredNavItems;
+  }, [filteredNavItems, hasSuperAdminAccess]);
+
   // For marketing pages, render children directly without the app shell chrome
   const isMarketingPage = pathname && marketingPaths.includes(pathname);
   if (isMarketingPage) {
@@ -258,59 +307,97 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
   if (isParentPortal) {
     return <>{children}</>;
   }
+
+  // Student portal pages have their own shell
+  const isStudentPortal = pathname && studentPortalPaths.some(p => pathname.startsWith(p));
+  if (isStudentPortal) {
+    return <>{children}</>;
+  }
   return (
     <div className="relative flex min-h-screen bg-canvas text-foreground">
       <div
-        className="pointer-events-none absolute inset-y-0 right-0 z-0 w-2/3 translate-x-1/4 opacity-70 blur-3xl"
+        className="pointer-events-none absolute inset-0 z-0 opacity-70 blur-3xl"
         style={{
           background:
-            "radial-gradient(circle at 30% 20%, var(--shell-glow-a), transparent 55%), radial-gradient(circle at 80% 0%, var(--shell-glow-b), transparent 60%), radial-gradient(circle at 60% 80%, var(--shell-glow-c), transparent 60%)",
+            "radial-gradient(circle at 20% 10%, var(--shell-glow-a), transparent 55%), radial-gradient(circle at 85% 0%, var(--shell-glow-b), transparent 60%), radial-gradient(circle at 70% 85%, var(--shell-glow-c), transparent 60%)",
         }}
         aria-hidden
       />
-      <aside className="relative z-10 hidden w-64 flex-col border-r border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))/0.9] px-6 py-8 shadow-ambient-sm backdrop-blur lg:flex xl:w-72">
-        <Link href="/dashboard" className="mb-10 block hover:opacity-90 transition-opacity">
-          <UnifiedLogo variant="full" size="sm" colorScheme="gradient" />
-          <p className="text-xs font-normal text-muted-foreground mt-1 ml-[52px]">Assessment Suite</p>
+      <aside className="relative z-10 hidden w-72 flex-col border-r border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))/0.9] px-6 py-8 shadow-ambient-sm backdrop-blur lg:flex">
+        <Link href="/dashboard" className="mb-8 flex items-center gap-3 transition-opacity hover:opacity-90">
+          <UnifiedLogo variant="icon" size="sm" colorScheme="gradient" />
+          <div>
+            <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground/70">SchoolMatica</p>
+            <p className="text-sm font-semibold text-foreground">Assessment Studio</p>
+          </div>
         </Link>
-        <nav className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
+
+        <div className="rounded-3xl border border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-soft))] p-4 shadow-ambient-sm">
+          <div className="flex items-center gap-3">
+            <SchoolMark
+              name={initialSchool?.name ?? "School"}
+              logoUrl={branding.logoUrl}
+              size="sm"
+              className="shadow-ambient-sm"
+            />
+            <div>
+              <p className="text-[0.6rem] font-semibold uppercase tracking-[0.35em] text-muted-foreground/70">
+                Active school
+              </p>
+              <p className="text-base font-semibold text-foreground">
+                {initialSchool?.name ?? "No school configured"}
+              </p>
+              {initialSchool?.shortCode && (
+                <p className="text-xs text-muted-foreground">{initialSchool.shortCode}</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <nav className="mt-6 flex flex-col gap-1.5 text-sm font-semibold text-muted-foreground">
           {isLoading ? (
-            // Show skeleton loading state while permissions are being fetched
             <div className="space-y-2">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div
-                  key={i}
-                  className="h-9 rounded-2xl bg-[hsl(var(--surface-soft))] animate-pulse"
-                />
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="h-10 rounded-2xl bg-[hsl(var(--surface-soft))] animate-pulse" />
               ))}
             </div>
           ) : (
-            filteredNavItems.map((item) => {
+            navItemsToRender.map((item) => {
               const isActive = pathname?.startsWith(item.href);
+              const Icon = item.icon;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "rounded-2xl px-4 py-2 transition-all duration-200",
+                    "group flex items-center gap-3 rounded-2xl px-3 py-2 transition-all duration-200",
                     isActive
                       ? "bg-[hsl(var(--accent-iris))/0.12] text-foreground shadow-ambient-sm"
                       : "hover:text-foreground hover:bg-[hsl(var(--surface-soft))]",
                   )}
                 >
-                  {item.label}
+                  <span
+                    className={cn(
+                      "flex h-8 w-8 items-center justify-center rounded-2xl border border-transparent",
+                      isActive
+                        ? "bg-[hsl(var(--accent-iris))/0.12] text-[hsl(var(--accent-iris))]"
+                        : "bg-[hsl(var(--surface-strong))] text-muted-foreground group-hover:text-foreground",
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <span>{item.label}</span>
                 </Link>
               );
             })
           )}
         </nav>
 
-        {/* Super Admin Link - ONLY visible to users with superadmin:access permission */}
         {hasSuperAdminAccess && (
-          <div className="mt-auto pt-4 border-t border-[hsl(var(--border))/0.5]">
+          <div className="mt-auto pt-6">
             <Link
               href="/super-admin"
-              className="flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-medium text-[hsl(var(--accent-violet))] transition-all duration-200 hover:bg-[hsl(var(--accent-violet))/0.12]"
+              className="flex items-center gap-2 rounded-2xl border border-[hsl(var(--accent-violet))/0.3] px-4 py-2 text-sm font-medium text-[hsl(var(--accent-violet))] transition-all duration-200 hover:bg-[hsl(var(--accent-violet))/0.12]"
             >
               <Shield className="h-4 w-4" />
               Super Admin
@@ -319,19 +406,76 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
         )}
       </aside>
       <div className="relative z-10 flex flex-1 flex-col">
-        <header className="sticky top-0 z-20 border-b border-[hsl(var(--border))/0.5] bg-[hsl(var(--surface-strong))/0.85] px-6 py-4 backdrop-blur-xl">
+        <header className="sticky top-0 z-20 border-b border-[hsl(var(--border))/0.5] bg-[hsl(var(--surface-strong))/0.9] px-6 py-4 backdrop-blur-xl">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-6">
-            <div>
-              <p className="text-[0.6rem] font-semibold uppercase tracking-[0.4em] text-muted-foreground/70">
-                Active school
-              </p>
-              <p className="text-xl font-semibold text-foreground">
-                {initialSchool?.name ?? "No school configured"}
-              </p>
+            <div className="flex items-center gap-3">
+              <div className="lg:hidden">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <Menu className="h-5 w-5" />
+                      <span className="sr-only">Open navigation</span>
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="bg-[hsl(var(--surface-strong))]">
+                    <SheetHeader>
+                      <SheetTitle className="flex items-center gap-2">
+                        <UnifiedLogo variant="icon" size="sm" colorScheme="gradient" />
+                        SchoolMatica
+                      </SheetTitle>
+                      <SheetDescription>Navigate your workspace</SheetDescription>
+                    </SheetHeader>
+                    <div className="px-4">
+                      <SchoolSwitcher initialSchool={initialSchool} className="w-full" />
+                    </div>
+                    <div className="flex flex-col gap-2 px-4">
+                      {navItemsToRender.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            className={cn(
+                              "flex items-center gap-3 rounded-2xl border border-[hsl(var(--border))/0.6] px-3 py-2 text-sm font-semibold text-muted-foreground transition hover:text-foreground hover:bg-[hsl(var(--surface-soft))]",
+                              pathname?.startsWith(item.href) && "bg-[hsl(var(--accent-iris))/0.12] text-foreground",
+                            )}
+                          >
+                            <Icon className="h-4 w-4" />
+                            {item.label}
+                          </Link>
+                        );
+                      })}
+                      {hasSuperAdminAccess && (
+                        <Link
+                          href="/super-admin"
+                          className="flex items-center gap-2 rounded-2xl border border-[hsl(var(--accent-violet))/0.3] px-3 py-2 text-sm font-semibold text-[hsl(var(--accent-violet))] transition hover:bg-[hsl(var(--accent-violet))/0.12]"
+                        >
+                          <Shield className="h-4 w-4" />
+                          Super Admin
+                        </Link>
+                      )}
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
+              <SchoolMark
+                name={initialSchool?.name ?? "School"}
+                logoUrl={branding.logoUrl}
+                size="sm"
+                className="hidden md:inline-flex"
+              />
+              <div>
+                <p className="text-[0.6rem] font-semibold uppercase tracking-[0.35em] text-muted-foreground/70">
+                  Active school
+                </p>
+                <p className="text-lg font-semibold text-foreground">
+                  {initialSchool?.name ?? "No school configured"}
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <NotificationDropdown />
-              <SchoolSwitcher initialSchool={initialSchool} />
+              <SchoolSwitcher initialSchool={initialSchool} className="hidden md:flex" />
               <ThemeToggle />
               <RoleSwitcher />
             </div>
@@ -346,7 +490,6 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
         className="border border-[hsl(var(--border-strong))/0.55] bg-[hsl(var(--surface-strong))/0.95] text-foreground shadow-ambient-sm backdrop-blur hover:shadow-ambient"
       />
 
-      {/* Super Admin Overlay - only visible to users with superadmin:access permission */}
       {hasSuperAdminAccess && user && (
         <SuperAdminOverlay
           user={user}

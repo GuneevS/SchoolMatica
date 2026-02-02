@@ -21,6 +21,10 @@ import { Badge } from "@/components/ui/badge";
 import { NotificationDropdown } from "@/components/notifications";
 import { signOut } from "next-auth/react";
 import { UnifiedLogo } from "@/components/brand/unified-logo";
+import { SchoolMark } from "@/components/brand/school-mark";
+import { useBranding } from "@/components/brand/branding-provider";
+import { type SchoolBranding } from "@/lib/branding";
+import { useEffect } from "react";
 
 interface Props {
   children: React.ReactNode;
@@ -29,6 +33,8 @@ interface Props {
     email: string;
     displayName: string | null;
   };
+  schoolName?: string;
+  branding?: SchoolBranding | null;
   unreadMessageCount?: number;
   homeworkCount?: {
     upcoming: number;
@@ -55,18 +61,33 @@ function getNavItems(unreadMessageCount: number, homeworkCount?: { upcoming: num
   ];
 }
 
-export function ParentShell({ children, user, unreadMessageCount = 0, homeworkCount, childNames = [] }: Props) {
+export function ParentShell({
+  children,
+  user,
+  schoolName,
+  branding,
+  unreadMessageCount = 0,
+  homeworkCount,
+  childNames = [],
+}: Props) {
   const pathname = usePathname();
   const navItems = getNavItems(unreadMessageCount, homeworkCount);
+  const { setBranding } = useBranding();
+
+  useEffect(() => {
+    if (branding) {
+      setBranding(branding);
+    }
+  }, [branding, setBranding]);
 
   return (
     <div className="relative flex min-h-screen bg-canvas text-foreground">
       {/* Gradient background */}
       <div
-        className="pointer-events-none absolute inset-y-0 right-0 z-0 w-2/3 translate-x-1/4 opacity-50 blur-3xl"
+        className="pointer-events-none absolute inset-0 z-0 opacity-60 blur-3xl"
         style={{
           background:
-            "radial-gradient(circle at 30% 20%, hsl(var(--accent-iris) / 0.2), transparent 55%), radial-gradient(circle at 80% 0%, hsl(var(--accent-mint) / 0.15), transparent 60%), radial-gradient(circle at 60% 80%, hsl(var(--accent-violet) / 0.2), transparent 60%)",
+            "radial-gradient(circle at 20% 10%, var(--shell-glow-a), transparent 55%), radial-gradient(circle at 85% 0%, var(--shell-glow-b), transparent 60%), radial-gradient(circle at 70% 85%, var(--shell-glow-c), transparent 60%)",
         }}
         aria-hidden
       />
@@ -74,10 +95,25 @@ export function ParentShell({ children, user, unreadMessageCount = 0, homeworkCo
       {/* Sidebar */}
       <aside className="relative z-10 hidden w-64 flex-col border-r border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))/0.9] px-6 py-8 shadow-ambient-sm backdrop-blur lg:flex xl:w-72">
         {/* Logo */}
-        <Link href="/parent" className="mb-10 block hover:opacity-90 transition-opacity">
-          <UnifiedLogo variant="full" size="sm" colorScheme="gradient" />
-          <p className="text-xs font-normal text-muted-foreground mt-1 ml-[52px]">Parent Portal</p>
+        <Link href="/parent" className="mb-8 flex items-center gap-3 hover:opacity-90 transition-opacity">
+          <UnifiedLogo variant="icon" size="sm" colorScheme="gradient" />
+          <div>
+            <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground/70">Parent Portal</p>
+            <p className="text-sm font-semibold text-foreground">{schoolName ?? "SchoolMatica"}</p>
+          </div>
         </Link>
+
+        <div className="rounded-3xl border border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-soft))] p-4 shadow-ambient-sm">
+          <div className="flex items-center gap-3">
+            <SchoolMark name={schoolName ?? "School"} logoUrl={branding?.logoUrl} size="sm" />
+            <div>
+              <p className="text-[0.6rem] font-semibold uppercase tracking-[0.35em] text-muted-foreground/70">
+                School
+              </p>
+              <p className="text-base font-semibold text-foreground">{schoolName ?? "SchoolMatica"}</p>
+            </div>
+          </div>
+        </div>
 
         {/* Navigation */}
         <nav className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
@@ -94,7 +130,7 @@ export function ParentShell({ children, user, unreadMessageCount = 0, homeworkCo
                 className={cn(
                   "flex items-center justify-between rounded-2xl px-4 py-2.5 transition-all duration-200",
                   isActive
-                    ? "bg-[hsl(var(--accent-mint))]/12 text-foreground shadow-ambient-sm"
+                    ? "bg-[hsl(var(--accent-iris))]/12 text-foreground shadow-ambient-sm"
                     : "hover:text-foreground hover:bg-[hsl(var(--surface-soft))]",
                 )}
               >
@@ -129,6 +165,23 @@ export function ParentShell({ children, user, unreadMessageCount = 0, homeworkCo
             <p className="truncate text-xs text-muted-foreground">{user.email}</p>
           </div>
 
+          {childNames.length > 0 && (
+            <div className="rounded-2xl border border-[hsl(var(--border))/0.6] bg-[hsl(var(--surface-soft))] p-4">
+              <p className="text-xs font-medium text-muted-foreground">Children</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {childNames.map((name) => (
+                  <Badge
+                    key={name}
+                    variant="outline"
+                    className="border-[hsl(var(--accent-iris))/0.35] text-[hsl(var(--accent-iris))]"
+                  >
+                    {name}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
             className="flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-[hsl(var(--surface-soft))] hover:text-foreground"
@@ -144,13 +197,16 @@ export function ParentShell({ children, user, unreadMessageCount = 0, homeworkCo
         {/* Header */}
         <header className="sticky top-0 z-20 border-b border-[hsl(var(--border))/0.5] bg-[hsl(var(--surface-strong))/0.85] px-6 py-4 backdrop-blur-xl">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-6">
-            <div>
-              <p className="text-[0.6rem] font-semibold uppercase tracking-[0.4em] text-muted-foreground/70">
-                Parent Portal
-              </p>
-              <p className="text-xl font-semibold text-foreground">
-                Welcome, {user.displayName || "Parent"}
-              </p>
+            <div className="flex items-center gap-3">
+              <SchoolMark name={schoolName ?? "School"} logoUrl={branding?.logoUrl} size="sm" className="hidden md:inline-flex" />
+              <div>
+                <p className="text-[0.6rem] font-semibold uppercase tracking-[0.4em] text-muted-foreground/70">
+                  Parent Portal · {schoolName ?? "SchoolMatica"}
+                </p>
+                <p className="text-xl font-semibold text-foreground">
+                  Welcome, {user.displayName || "Parent"}
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <NotificationDropdown />

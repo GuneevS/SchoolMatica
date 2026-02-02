@@ -98,7 +98,7 @@ const getStatusBadge = (status: string) => {
     case "Completed":
       return "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400";
     case "Excused":
-      return "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400";
+      return "bg-[hsl(var(--accent-violet))/0.12] text-[hsl(var(--accent-violet))] dark:bg-[hsl(var(--accent-violet))/0.28] dark:text-[hsl(var(--accent-violet))]";
     default:
       return "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400";
   }
@@ -180,7 +180,7 @@ export function HomeworkPageClient({ homework, submissions }: HomeworkPageClient
           </TabsList>
           <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
             <DialogTrigger asChild>
-              <Button className="bg-violet-500 hover:bg-violet-600">
+              <Button className="bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]">
                 <Plus className="h-4 w-4 mr-2" />
                 New Assignment
               </Button>
@@ -263,7 +263,7 @@ export function HomeworkPageClient({ homework, submissions }: HomeworkPageClient
                 <Button variant="outline" onClick={() => setShowNewDialog(false)}>
                   Cancel
                 </Button>
-                <Button className="bg-violet-500 hover:bg-violet-600">
+                <Button className="bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]">
                   Create Assignment
                 </Button>
               </div>

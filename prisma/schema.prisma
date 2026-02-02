@@ -151,6 +151,7 @@ model School {
   schoolPhase String? // primary, secondary, combined, intermediate
   province    String? // SA province code
   district    String? // Education district
+  branding    Json?   // UI branding: logoUrl, primary, secondary, accent
 
   gradingConfig        GradingConfig?        @relation("SchoolGradingConfig", fields: [gradingConfigId], references: [id])
   gradingConfigId      String?               @unique

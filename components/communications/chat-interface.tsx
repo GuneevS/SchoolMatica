@@ -149,12 +149,12 @@ export function ChatInterface({
                 "w-full flex items-start gap-3 p-4 text-left transition-colors",
                 "hover:bg-slate-50 dark:hover:bg-slate-800",
                 activeConversation?.id === conversation.id &&
-                  "bg-violet-50 dark:bg-violet-900/20 border-l-2 border-violet-500"
+                  "bg-[hsl(var(--accent-violet))/0.06] dark:bg-[hsl(var(--accent-violet))/0.2] border-l-2 border-[hsl(var(--accent-violet))]"
               )}
             >
               <div className="relative">
                 <Avatar className="h-12 w-12">
-                  <AvatarFallback className="bg-gradient-to-br from-violet-500 to-purple-600 text-white font-semibold">
+                  <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--accent-iris))] to-[hsl(var(--accent-flamingo))] text-white font-semibold">
                     {conversation.participantInitials}
                   </AvatarFallback>
                 </Avatar>
@@ -180,7 +180,7 @@ export function ChatInterface({
                 </p>
               </div>
               {conversation.unreadCount > 0 && (
-                <Badge className="bg-violet-500 text-white shrink-0">
+                <Badge className="bg-[hsl(var(--accent-violet))] text-white shrink-0">
                   {conversation.unreadCount}
                 </Badge>
               )}
@@ -197,7 +197,7 @@ export function ChatInterface({
             <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900">
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-gradient-to-br from-violet-500 to-purple-600 text-white font-semibold">
+                  <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--accent-iris))] to-[hsl(var(--accent-flamingo))] text-white font-semibold">
                     {activeConversation.participantInitials}
                   </AvatarFallback>
                 </Avatar>
@@ -270,7 +270,7 @@ export function ChatInterface({
                           className={cn(
                             "max-w-[70%] rounded-2xl p-3",
                             message.isOwn
-                              ? "bg-violet-500 text-white rounded-br-md"
+                              ? "bg-[hsl(var(--accent-violet))] text-white rounded-br-md"
                               : "bg-slate-100 dark:bg-slate-800 rounded-bl-md"
                           )}
                         >
@@ -339,7 +339,7 @@ export function ChatInterface({
                 <Button
                   onClick={handleSend}
                   disabled={!messageInput.trim()}
-                  className="shrink-0 bg-violet-500 hover:bg-violet-600"
+                  className="shrink-0 bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]"
                 >
                   <Send className="h-5 w-5" />
                 </Button>

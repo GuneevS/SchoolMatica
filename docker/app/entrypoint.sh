@@ -73,14 +73,23 @@ echo "✅ Database connection established"
 echo ""
 echo "📦 Checking database schema..."
 
-# In production, we expect migrations to be handled externally
-# This is safer and allows for controlled schema updates
+# In production, we expect migrations to be handled externally unless RUN_MIGRATIONS=true
 if [ "$SKIP_MIGRATIONS" = "true" ]; then
     echo "   ⏭️ Skipping migrations (SKIP_MIGRATIONS=true)"
+elif [ "$RUN_MIGRATIONS" = "true" ]; then
+    echo "   🚀 Running Prisma migrations (RUN_MIGRATIONS=true)"
+    if command -v npx >/dev/null 2>&1; then
+        npx prisma migrate deploy 2>&1 || {
+            echo "   ⚠️ Migration deploy failed, continuing anyway..."
+        }
+        echo "   ✅ Migrations deployed"
+    else
+        echo "   ⚠️ npx not available, skipping migration deploy"
+    fi
 elif [ "$NODE_ENV" = "production" ]; then
     echo "   ℹ️ Production mode: Migrations should be run separately"
     echo "   Run: docker exec <container> npx prisma migrate deploy"
-    echo "   Or use a migration job before deploying"
+    echo "   Or set RUN_MIGRATIONS=true to run on startup"
 else
     echo "   Running development schema sync..."
     if command -v npx >/dev/null 2>&1; then

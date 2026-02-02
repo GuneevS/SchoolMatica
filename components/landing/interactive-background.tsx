@@ -274,7 +274,7 @@ export function InteractiveBackground({
       <div
         className={cn(
           "absolute inset-0 pointer-events-none",
-          "bg-gradient-to-br from-violet-500/10 via-transparent to-emerald-500/10",
+          "bg-gradient-to-br from-[hsl(var(--accent-violet))/0.1] via-transparent to-emerald-500/10",
           className
         )}
         aria-hidden="true"

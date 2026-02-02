@@ -113,19 +113,19 @@ function SummaryCard({
   trend?: "up" | "down" | "neutral";
 }) {
   const colorClasses = {
-    blue: "from-blue-500/20 to-cyan-500/20 border-blue-500/30",
-    emerald: "from-emerald-500/20 to-teal-500/20 border-emerald-500/30",
-    amber: "from-amber-500/20 to-orange-500/20 border-amber-500/30",
-    purple: "from-purple-500/20 to-pink-500/20 border-purple-500/30",
-    cyan: "from-cyan-500/20 to-blue-500/20 border-cyan-500/30",
+    blue: "from-[hsl(var(--accent-cobalt))/0.2] to-[hsl(var(--accent-iris))/0.2] border-[hsl(var(--accent-cobalt))/0.35]",
+    emerald: "from-[hsl(var(--accent-mint))/0.2] to-[hsl(var(--accent-iris))/0.2] border-[hsl(var(--accent-mint))/0.35]",
+    amber: "from-[hsl(var(--accent-gold))/0.2] to-[hsl(var(--accent-flamingo))/0.2] border-[hsl(var(--accent-gold))/0.35]",
+    purple: "from-[hsl(var(--accent-iris))/0.2] to-[hsl(var(--accent-cobalt))/0.2] border-[hsl(var(--accent-iris))/0.35]",
+    cyan: "from-[hsl(var(--accent-flamingo))/0.2] to-[hsl(var(--accent-iris))/0.2] border-[hsl(var(--accent-flamingo))/0.35]",
   };
   
   const valueColors = {
-    blue: "text-blue-600",
-    emerald: "text-emerald-600",
-    amber: "text-amber-600",
-    purple: "text-purple-600",
-    cyan: "text-cyan-600",
+    blue: "text-[hsl(var(--accent-cobalt))]",
+    emerald: "text-[hsl(var(--accent-mint))]",
+    amber: "text-[hsl(var(--accent-gold))]",
+    purple: "text-[hsl(var(--accent-iris))]",
+    cyan: "text-[hsl(var(--accent-flamingo))]",
   };
   
   const TrendIcon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : trend === "neutral" ? AlertTriangle : null;

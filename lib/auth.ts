@@ -191,7 +191,10 @@ export type AuthorizationResult = { auth: AuthContext } | { error: NextResponse 
 
 export async function authorize(request: NextRequest, permission: PermissionKey): Promise<AuthorizationResult> {
   const auth = await getAuthContext(request);
-  if (!auth || !auth.permissions.has(permission)) {
+  if (!auth) {
+    return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
+  }
+  if (!auth.permissions.has(permission) && !isSystemAdmin(auth) && !isSuperAdmin(auth)) {
     return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   }
   return { auth };
@@ -304,7 +307,7 @@ export async function authorizeWithSchool(
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
 
-  if (!auth.permissions.has(permission)) {
+  if (!auth.permissions.has(permission) && !isSystemAdmin(auth) && !isSuperAdmin(auth)) {
     return { error: NextResponse.json({ error: "Forbidden - insufficient permissions" }, { status: 403 }) };
   }
 

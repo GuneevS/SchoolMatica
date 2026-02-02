@@ -220,7 +220,7 @@ export function getPrimaryRoleKey(auth: AuthContext): string | null {
  * Check if user is a system admin with cross-school access
  */
 export function isSystemAdmin(auth: AuthContext): boolean {
-  return auth.permissions.has("system:admin");
+  return auth.permissions.has("system:admin") || isSuperAdmin(auth);
 }
 
 /**

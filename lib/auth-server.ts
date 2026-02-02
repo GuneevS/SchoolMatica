@@ -80,17 +80,17 @@ export const getServerAuthContext = cache(async (): Promise<ServerAuthContext | 
       schoolIds.add(user.schoolId);
     }
 
-    // Check if user is a system admin
-    const isAdmin =
-      user.roleAssignments.some((ra) => ra.role.key === "system_admin" || ra.role.key === "admin") ||
-      user.roleAssignments.some((ra) =>
-        ra.role.permissions.some((rp) => rp.permission.key === "system:admin")
-      );
-
     // Check if user is a super admin (platform-level access)
     const isSuperAdmin =
       user.roleAssignments.some((ra) => ra.role.key === "super_admin") ||
       permissions.has("superadmin:access");
+    // Check if user is a system admin (super admins inherit admin access)
+    const isAdmin =
+      isSuperAdmin ||
+      user.roleAssignments.some((ra) => ra.role.key === "system_admin" || ra.role.key === "admin") ||
+      user.roleAssignments.some((ra) =>
+        ra.role.permissions.some((rp) => rp.permission.key === "system:admin")
+      );
 
     return {
       user: {
@@ -133,7 +133,7 @@ export async function hasPermission(permission: string): Promise<boolean> {
 export async function hasServerSchoolAccess(schoolId: string): Promise<boolean> {
   const auth = await getServerAuthContext();
   if (!auth) return false;
-  if (auth.isAdmin) return true;
+  if (auth.isAdmin || auth.isSuperAdmin) return true;
   return auth.schoolIds.includes(schoolId);
 }
 

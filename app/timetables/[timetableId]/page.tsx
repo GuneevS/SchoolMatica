@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { TimetableGrid } from "@/components/timetable/timetable-grid";
+import { TimetableBuilder } from "@/components/timetable/timetable-builder";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -65,6 +65,23 @@ export default async function TimetablePage({ params }: Props) {
     );
   }
 
+  const [classes, teachers, assessmentPlans] = await Promise.all([
+    prisma.classGroup.findMany({
+      where: { schoolId: timetable.schoolId },
+      include: { subject: true },
+      orderBy: [{ grade: "asc" }, { name: "asc" }],
+    }),
+    prisma.teacher.findMany({
+      where: { schoolId: timetable.schoolId },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+    }),
+    prisma.assessmentPlan.findMany({
+      where: { classGroup: { schoolId: timetable.schoolId } },
+      include: { classGroup: { include: { subject: true } } },
+      orderBy: [{ updatedAt: "desc" }],
+    }),
+  ]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -76,7 +93,12 @@ export default async function TimetablePage({ params }: Props) {
         </Button>
       </div>
 
-      <TimetableGrid timetable={timetable} />
+      <TimetableBuilder
+        timetable={timetable}
+        classes={classes}
+        teachers={teachers}
+        assessmentPlans={assessmentPlans}
+      />
     </div>
   );
 }

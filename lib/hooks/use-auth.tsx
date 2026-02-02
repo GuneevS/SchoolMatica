@@ -147,8 +147,8 @@ export function useHasPermission(permission: string): boolean {
 
 // Helper to check if user has access to a specific school
 export function useHasSchoolAccess(schoolId: string): boolean {
-  const { schoolIds, isAdmin } = useAuth();
-  return isAdmin || schoolIds.includes(schoolId);
+  const { schoolIds, isAdmin, isSuperAdmin } = useAuth();
+  return isAdmin || isSuperAdmin || schoolIds.includes(schoolId);
 }
 
 // Helper to get user's role for current school

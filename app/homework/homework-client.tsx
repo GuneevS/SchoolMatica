@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -42,7 +42,6 @@ import {
   MoreVertical,
   Paperclip,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -83,6 +82,8 @@ const heroHighlights = [
   { label: "Parent alerts", color: "hsl(var(--accent-gold))" },
 ];
 
+const REFERENCE_NOW_MS = Date.now();
+
 const getStatusBadge = (status: string) => {
   switch (status) {
     case "Submitted":
@@ -107,15 +108,15 @@ const getStatusBadge = (status: string) => {
 export function HomeworkPageClient({ homework, submissions }: HomeworkPageClientProps) {
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [classFilter, setClassFilter] = useState("");
-  const [subjectFilter, setSubjectFilter] = useState("");
+  const [classFilter, setClassFilter] = useState("all");
+  const [subjectFilter, setSubjectFilter] = useState("all");
   const [showNewDialog, setShowNewDialog] = useState(false);
   const [selectedHomework, setSelectedHomework] = useState<Homework | null>(null);
 
   const filteredHomework = homework.filter((hw) => {
     const matchesSearch = hw.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesClass = !classFilter || hw.class === classFilter;
-    const matchesSubject = !subjectFilter || hw.subject === subjectFilter;
+    const matchesClass = classFilter === "all" || hw.class === classFilter;
+    const matchesSubject = subjectFilter === "all" || hw.subject === subjectFilter;
     const matchesTab = activeTab === "all" || 
       (activeTab === "active" && hw.status === "Active") ||
       (activeTab === "completed" && hw.status === "Completed");
@@ -128,8 +129,8 @@ export function HomeworkPageClient({ homework, submissions }: HomeworkPageClient
   const activeCount = homework.filter(h => h.status === "Active").length;
 
   // Get unique classes and subjects for filters
-  const uniqueClasses = [...new Set(homework.map(hw => hw.class))];
-  const uniqueSubjects = [...new Set(homework.map(hw => hw.subject))];
+  const uniqueClasses = [...new Set(homework.map(hw => hw.class))].filter(Boolean);
+  const uniqueSubjects = [...new Set(homework.map(hw => hw.subject))].filter(Boolean);
 
   // Get submissions for selected homework
   const selectedSubmissions = selectedHomework
@@ -289,7 +290,7 @@ export function HomeworkPageClient({ homework, submissions }: HomeworkPageClient
                   <SelectValue placeholder="Class" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All classes</SelectItem>
+                  <SelectItem value="all">All classes</SelectItem>
                   {uniqueClasses.map(cls => (
                     <SelectItem key={cls} value={cls}>{cls}</SelectItem>
                   ))}
@@ -300,7 +301,7 @@ export function HomeworkPageClient({ homework, submissions }: HomeworkPageClient
                   <SelectValue placeholder="Subject" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All subjects</SelectItem>
+                  <SelectItem value="all">All subjects</SelectItem>
                   {uniqueSubjects.map(sub => (
                     <SelectItem key={sub} value={sub}>{sub}</SelectItem>
                   ))}
@@ -478,8 +479,9 @@ function HomeworkList({
         const completionRate = hw.totalStudents > 0
           ? Math.round((hw.submissions.submitted / hw.totalStudents) * 100)
           : 0;
-        const isDueSoon = new Date(hw.dueDate) <= new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
-        const isOverdue = new Date(hw.dueDate) < new Date();
+        const dueDate = new Date(hw.dueDate);
+        const isDueSoon = dueDate <= new Date(REFERENCE_NOW_MS + 2 * 24 * 60 * 60 * 1000);
+        const isOverdue = dueDate < new Date(REFERENCE_NOW_MS);
 
         return (
           <Card key={hw.id} className="overflow-hidden">

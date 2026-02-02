@@ -26,6 +26,7 @@ interface TimetableGridProps {
   };
   onSlotClick?: (slot: TimetableSlotWithRelations) => void;
   onEmptySlotClick?: (period: TimetablePeriod) => void;
+  highlightClassId?: string;
 }
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
@@ -35,7 +36,7 @@ const isBreakPeriod = (period?: TimetablePeriod | null) => {
   return lower.includes("break") || lower.includes("lunch");
 };
 
-export function TimetableGrid({ timetable, onSlotClick, onEmptySlotClick }: TimetableGridProps) {
+export function TimetableGrid({ timetable, onSlotClick, onEmptySlotClick, highlightClassId }: TimetableGridProps) {
   const [viewMode, setViewMode] = useState<"day" | "week">("week");
   const [selectedDay, setSelectedDay] = useState(0);
 
@@ -140,13 +141,17 @@ export function TimetableGrid({ timetable, onSlotClick, onEmptySlotClick }: Time
                                          const slot = period ? getSlotForPeriod(period.id) : null;
                                          
                                          const isBreak = isBreakPeriod(period);
+                                         const isDimmed = Boolean(highlightClassId && slot && slot.classGroupId !== highlightClassId);
 
                                          return (
                                              <div key={dayIndex} className="p-2 border-r last:border-0 min-h-[120px] relative group/cell">
                                                  {slot ? (
                                                      <div 
                                                        onClick={() => onSlotClick?.(slot)}
-                                                        className="h-full w-full rounded-lg bg-primary/5 border border-primary/10 p-3 cursor-pointer hover:bg-primary/10 hover:border-primary/30 transition-all hover:shadow-sm flex flex-col gap-1"
+                                                        className={cn(
+                                                          "h-full w-full rounded-lg bg-primary/5 border border-primary/10 p-3 cursor-pointer hover:bg-primary/10 hover:border-primary/30 transition-all hover:shadow-sm flex flex-col gap-1",
+                                                          isDimmed && "opacity-50 hover:opacity-80",
+                                                        )}
                                                      >
                                                          <div className="flex items-start justify-between">
                                                             <span className="font-semibold text-sm text-primary line-clamp-1">
@@ -230,13 +235,15 @@ export function TimetableGrid({ timetable, onSlotClick, onEmptySlotClick }: Time
                 {periodsByDay[selectedDay]?.map((period) => {
                 const slot = getSlotForPeriod(period.id);
                 const isBreak = isBreakPeriod(period);
+                const isDimmed = Boolean(highlightClassId && slot && slot.classGroupId !== highlightClassId);
                 
                 return (
                     <Card
                     key={period.id}
                     className={cn(
                         "transition-all hover:shadow-md border-l-4",
-                        slot && !isBreak ? "cursor-pointer border-l-primary" : "border-l-transparent border-dashed opacity-70"
+                        slot && !isBreak ? "cursor-pointer border-l-primary" : "border-l-transparent border-dashed opacity-70",
+                        isDimmed && "opacity-50 hover:opacity-80"
                     )}
                     onClick={() => {
                       if (slot) {

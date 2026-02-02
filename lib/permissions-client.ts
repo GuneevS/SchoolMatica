@@ -66,7 +66,7 @@ export function hasAllPermissions(auth: ClientAuthContext | null, permissions: P
  */
 export function isSystemAdmin(auth: ClientAuthContext | null): boolean {
   if (!auth) return false;
-  return auth.isAdmin;
+  return auth.isAdmin || auth.isSuperAdmin === true;
 }
 
 /**
@@ -74,7 +74,7 @@ export function isSystemAdmin(auth: ClientAuthContext | null): boolean {
  */
 export function hasSchoolAccess(auth: ClientAuthContext | null, schoolId: string): boolean {
   if (!auth) return false;
-  if (auth.isAdmin) return true;
+  if (auth.isAdmin || auth.isSuperAdmin) return true;
   return auth.schoolIds.includes(schoolId);
 }
 

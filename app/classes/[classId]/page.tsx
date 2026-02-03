@@ -100,7 +100,7 @@ export default async function ClassMarkbookPage({ params, searchParams }: Props)
               <span className="gradient-text">{markbook.classGroup.name}</span>
             </>
           }
-          description={`${markbook.classGroup.subject?.name} · ${rosterSize} learners tracked`}
+          description={`${markbook.classGroup.classType === "Homeroom" ? "Homeroom · All subjects" : markbook.classGroup.subject?.name ?? "No subject"} · ${rosterSize} learners tracked`}
           badges={currentPlan ? [
             { label: currentPlan.status, color: "hsl(var(--accent-mint))" },
             { label: `${markbook.availablePlans.length} plans available`, color: "hsl(var(--accent-cobalt))" },

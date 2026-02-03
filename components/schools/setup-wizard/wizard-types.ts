@@ -71,6 +71,63 @@ export const STAFF_ROLES = [
     { value: "admin", label: "Administrator" },
 ] as const;
 
+// South African CAPS subjects by phase
+export const SA_CAPS_SUBJECTS = {
+    Foundation: [
+        { code: "HL", name: "Home Language", isCompulsory: true },
+        { code: "FAL", name: "First Additional Language", isCompulsory: true },
+        { code: "MATH", name: "Mathematics", isCompulsory: true },
+        { code: "LS", name: "Life Skills", isCompulsory: true },
+    ],
+    Intermediate: [
+        { code: "HL", name: "Home Language", isCompulsory: true },
+        { code: "FAL", name: "First Additional Language", isCompulsory: true },
+        { code: "MATH", name: "Mathematics", isCompulsory: true },
+        { code: "NS", name: "Natural Sciences & Technology", isCompulsory: true },
+        { code: "SS", name: "Social Sciences", isCompulsory: true },
+        { code: "LS", name: "Life Skills", isCompulsory: true },
+    ],
+    Senior: [
+        { code: "HL", name: "Home Language", isCompulsory: true },
+        { code: "FAL", name: "First Additional Language", isCompulsory: true },
+        { code: "MATH", name: "Mathematics", isCompulsory: true },
+        { code: "NS", name: "Natural Sciences", isCompulsory: true },
+        { code: "SS", name: "Social Sciences", isCompulsory: true },
+        { code: "TECH", name: "Technology", isCompulsory: true },
+        { code: "EMS", name: "Economic & Management Sciences", isCompulsory: true },
+        { code: "CA", name: "Creative Arts", isCompulsory: true },
+        { code: "LO", name: "Life Orientation", isCompulsory: true },
+    ],
+    FET: [
+        { code: "HL", name: "Home Language", isCompulsory: true },
+        { code: "FAL", name: "First Additional Language", isCompulsory: true },
+        { code: "MATH", name: "Mathematics", isCompulsory: false },
+        { code: "MLIT", name: "Mathematical Literacy", isCompulsory: false },
+        { code: "LO", name: "Life Orientation", isCompulsory: true },
+        { code: "PHYS", name: "Physical Sciences", isCompulsory: false },
+        { code: "LIFE", name: "Life Sciences", isCompulsory: false },
+        { code: "ACC", name: "Accounting", isCompulsory: false },
+        { code: "BUS", name: "Business Studies", isCompulsory: false },
+        { code: "ECON", name: "Economics", isCompulsory: false },
+        { code: "GEO", name: "Geography", isCompulsory: false },
+        { code: "HIST", name: "History", isCompulsory: false },
+        { code: "CAT", name: "Computer Applications Technology", isCompulsory: false },
+        { code: "IT", name: "Information Technology", isCompulsory: false },
+        { code: "EGD", name: "Engineering Graphics & Design", isCompulsory: false },
+        { code: "VA", name: "Visual Arts", isCompulsory: false },
+        { code: "DRAMA", name: "Dramatic Arts", isCompulsory: false },
+        { code: "MUSIC", name: "Music", isCompulsory: false },
+    ],
+} as const;
+
+// Subject config for a grade
+export interface GradeSubjectEntry {
+    code: string;
+    name: string;
+    isCompulsory: boolean;
+    enabled: boolean;
+}
+
 // Class config schema for a single grade
 const classConfigSchema = z.object({
     count: z.number().min(1).max(20),
@@ -84,6 +141,14 @@ const staffInviteSchema = z.object({
     firstName: z.string().min(1, "First name required"),
     lastName: z.string().min(1, "Last name required"),
     role: z.enum(["teacher", "hod", "smt", "admin"]),
+});
+
+// Subject config schema for a phase
+const subjectConfigSchema = z.object({
+    code: z.string(),
+    name: z.string(),
+    isCompulsory: z.boolean(),
+    enabled: z.boolean(),
 });
 
 // Validation schema
@@ -102,7 +167,10 @@ export const wizardSchema = z.object({
     // Step 3: Class Config (Map<GradeId, Config>)
     classesPerGrade: z.record(z.string(), classConfigSchema).optional(),
 
-    // Step 4: Staff Invitations
+    // Step 4: Subject Config (Map<Phase, SubjectConfig[]>)
+    subjectsByPhase: z.record(z.string(), z.array(subjectConfigSchema)).optional(),
+
+    // Step 5: Staff Invitations
     staffInvites: z.array(staffInviteSchema).optional(),
 });
 
@@ -118,8 +186,30 @@ export const defaultWizardValues: WizardValues = {
     selectedGrades: [],
     schoolType: "combined",
     classesPerGrade: {},
+    subjectsByPhase: {},
     staffInvites: [],
 };
+
+// Helper to get default subjects for selected grades
+export function getDefaultSubjectsForGrades(selectedGrades: string[]): Record<string, GradeSubjectEntry[]> {
+    const phases = new Set<string>();
+    selectedGrades.forEach(gradeId => {
+        phases.add(getPhaseForGrade(gradeId));
+    });
+    
+    const result: Record<string, GradeSubjectEntry[]> = {};
+    phases.forEach(phase => {
+        const phaseSubjects = SA_CAPS_SUBJECTS[phase as keyof typeof SA_CAPS_SUBJECTS] || [];
+        result[phase] = phaseSubjects.map(s => ({
+            code: s.code,
+            name: s.name,
+            isCompulsory: s.isCompulsory,
+            enabled: s.isCompulsory, // Enable compulsory subjects by default
+        }));
+    });
+    
+    return result;
+}
 
 // Grade definitions with phase information
 export const DEFAULT_GRADES = [

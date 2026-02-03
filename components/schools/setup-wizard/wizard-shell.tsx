@@ -7,17 +7,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { wizardSchema, WizardValues, defaultWizardValues, DEFAULT_GRADES, DEFAULT_GRADING_BANDS, generateClassNames, NamingPattern } from "./wizard-types";
+import { wizardSchema, WizardValues, defaultWizardValues, DEFAULT_GRADES, DEFAULT_GRADING_BANDS, generateClassNames, NamingPattern, getPhaseForGrade } from "./wizard-types";
 import { StepIdentity } from "./step-identity";
 import { StepGrades } from "./step-grades";
 import { StepClasses } from "./step-classes";
+import { StepSubjects } from "./step-subjects";
 import { StepStaff } from "./step-staff";
-import { Plus, CheckCircle2, Loader2, AlertCircle, School, GraduationCap, Users, UserPlus } from "lucide-react";
+import { Plus, CheckCircle2, Loader2, AlertCircle, School, GraduationCap, Users, UserPlus, BookOpen } from "lucide-react";
 
 const STEPS = [
     { id: "identity", label: "School Identity", icon: School },
     { id: "grades", label: "Grade Levels", icon: GraduationCap },
     { id: "classes", label: "Class Structure", icon: Users },
+    { id: "subjects", label: "Subjects", icon: BookOpen },
     { id: "staff", label: "Staff", icon: UserPlus },
 ];
 
@@ -60,6 +62,9 @@ export function SchoolSetupWizard() {
                 // Classes are optional, auto-fill defaults
                 break;
             case 3:
+                // Subjects - optional configuration
+                break;
+            case 4:
                 // Staff is optional
                 break;
         }
@@ -132,6 +137,16 @@ export function SchoolSetupWizard() {
                           invite.role === "admin" ? "Admin" : "Teacher",
                 }));
 
+                // Collect enabled subjects from all phases
+                const subjects: { code: string; name: string; phase: string }[] = [];
+                if (data.subjectsByPhase) {
+                    Object.entries(data.subjectsByPhase).forEach(([phase, phaseSubjects]) => {
+                        phaseSubjects.filter(s => s.enabled).forEach(s => {
+                            subjects.push({ code: s.code, name: s.name, phase });
+                        });
+                    });
+                }
+
                 // Call the setup endpoint
                 const setupResponse = await fetch(`/api/schools/${school.id}/setup`, {
                     method: "POST",
@@ -139,6 +154,7 @@ export function SchoolSetupWizard() {
                     body: JSON.stringify({
                         gradeLevels,
                         classes,
+                        subjects: subjects.length > 0 ? subjects : undefined,
                         teachers: teachers.length > 0 ? teachers : undefined,
                         updateGradingConfig: true,
                     }),
@@ -236,7 +252,8 @@ export function SchoolSetupWizard() {
                             {step === 0 && <StepIdentity />}
                             {step === 1 && <StepGrades />}
                             {step === 2 && <StepClasses />}
-                            {step === 3 && <StepStaff />}
+                            {step === 3 && <StepSubjects />}
+                            {step === 4 && <StepStaff />}
                         </div>
                     </form>
                 </FormProvider>

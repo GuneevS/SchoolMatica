@@ -2,9 +2,10 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { CreateClassDialog } from "@/components/classes/create-class-dialog";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
-import { Users } from "lucide-react";
+import { Users, Home, BookOpen } from "lucide-react";
 import { getAuthorizedActiveSchool, getServerAuthContext } from "@/lib/auth-server";
 import { AssignTeacherDialog } from "@/components/classes/assign-teacher-dialog";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -102,9 +103,22 @@ export default async function ClassesPage() {
             <CardHeader className="border-b border-[hsl(var(--border))/0.5] pb-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground/70">Grade {classGroup.grade}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground/70">Grade {classGroup.grade}</p>
+                    <Badge variant={classGroup.classType === "Homeroom" ? "secondary" : "outline"} className="text-[10px] h-5">
+                      {classGroup.classType === "Homeroom" ? (
+                        <><Home className="h-3 w-3 mr-1" />Homeroom</>
+                      ) : (
+                        <><BookOpen className="h-3 w-3 mr-1" />Subject</>
+                      )}
+                    </Badge>
+                  </div>
                   <CardTitle className="mt-1 text-2xl">{classGroup.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{classGroup.subject?.name ?? "No Subject"}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {classGroup.classType === "Homeroom" 
+                      ? "All subjects" 
+                      : classGroup.subject?.name ?? "No Subject"}
+                  </p>
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <StatusBadge status={planStatus} />

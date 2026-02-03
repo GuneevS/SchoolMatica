@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { label: "Branding", href: "/settings/branding" },
   { label: "Grading", href: "/settings/grading" },
+  { label: "Subjects", href: "/settings/subjects" },
 ];
 
 export function SettingsNav({ className }: { className?: string }) {

@@ -189,6 +189,9 @@ model School {
   homework     Homework[]
   schoolEvents SchoolEvent[]
 
+  // Subject configuration per grade
+  gradeSubjectConfigs GradeSubjectConfig[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -364,6 +367,22 @@ model GradeLevel {
   subjectConfigs GradeSubjectConfig[]
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
+}
+
+// Configuration for which subjects are offered per grade level
+model GradeSubjectConfig {
+  id           String     @id @default(cuid())
+  school       School     @relation(fields: [schoolId], references: [id])
+  schoolId     String
+  gradeLevel   GradeLevel @relation(fields: [gradeLevelId], references: [id], onDelete: Cascade)
+  gradeLevelId String
+  subject      Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subjectId    String
+  isCompulsory Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+
+  @@unique([gradeLevelId, subjectId])
+  @@index([schoolId])
 }
 
 model AssessmentPlan {

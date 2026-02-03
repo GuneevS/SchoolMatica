@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useCallback, useEffect, useMemo, useState } from "react";
 import { applyBranding, DEFAULT_BRANDING, type SchoolBranding } from "@/lib/branding";
 
 type BrandingContextValue = {
@@ -17,29 +17,27 @@ export function BrandingProvider({
   children: React.ReactNode;
   initialBranding?: SchoolBranding | null;
 }) {
-  const [branding, setBrandingState] = useState<SchoolBranding>({
+  const [branding, setBrandingState] = useState<SchoolBranding>(() => ({
     ...DEFAULT_BRANDING,
     ...(initialBranding ?? {}),
-  });
+  }));
 
-  useEffect(() => {
-    setBrandingState({
-      ...DEFAULT_BRANDING,
-      ...(initialBranding ?? {}),
-    });
-  }, [initialBranding]);
-
+  // Apply branding CSS variables when branding changes
   useEffect(() => {
     applyBranding(branding);
   }, [branding]);
 
+  // Stable setBranding function that doesn't change on every render
+  const setBranding = useCallback((next: SchoolBranding) => {
+    setBrandingState({ ...DEFAULT_BRANDING, ...(next ?? {}) });
+  }, []);
+
   const value = useMemo(
     () => ({
       branding,
-      setBranding: (next: SchoolBranding) =>
-        setBrandingState({ ...DEFAULT_BRANDING, ...(next ?? {}) }),
+      setBranding,
     }),
-    [branding],
+    [branding, setBranding],
   );
 
   return <BrandingContext.Provider value={value}>{children}</BrandingContext.Provider>;

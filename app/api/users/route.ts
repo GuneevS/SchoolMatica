@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { authorizeWithSchool, isSystemAdmin, hasSchoolAccess, getUserSchoolIds } from "@/lib/auth";
 
@@ -19,6 +18,7 @@ const createUserSchema = z.object({
  * GET /api/users - List users
  * Admin: all users
  * Others: only users from their schools
+ * Supports search query for messaging recipient selection
  */
 export async function GET(request: NextRequest) {
   const authResult = await authorizeWithSchool(request, "user:read");
@@ -29,6 +29,8 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const schoolId = searchParams.get("schoolId") ?? undefined;
+  const search = searchParams.get("search") ?? undefined;
+  const limit = parseInt(searchParams.get("limit") ?? "50");
 
   // Validate school access if schoolId is provided
   if (schoolId && !hasSchoolAccess(auth, schoolId)) {
@@ -36,7 +38,10 @@ export async function GET(request: NextRequest) {
   }
 
   // Build where clause
-  let whereClause: Prisma.AppUserWhereInput = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let whereClause: any = {};
+  
+  // School filter
   if (isSystemAdmin(auth)) {
     if (schoolId) {
       whereClause = { schoolId };
@@ -53,17 +58,45 @@ export async function GET(request: NextRequest) {
         };
   }
 
+  // Search filter for recipient selection
+  if (search && search.length >= 2) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const searchFilter: any = {
+      OR: [
+        { displayName: { contains: search, mode: "insensitive" } },
+        { name: { contains: search, mode: "insensitive" } },
+        { email: { contains: search, mode: "insensitive" } },
+        { teacher: { firstName: { contains: search, mode: "insensitive" } } },
+        { teacher: { lastName: { contains: search, mode: "insensitive" } } },
+      ],
+    };
+    
+    whereClause = whereClause.OR 
+      ? { AND: [whereClause, searchFilter] }
+      : { ...whereClause, ...searchFilter };
+  }
+
+  // Exclude the current user from search results (for messaging)
+  if (search) {
+    whereClause = {
+      AND: [
+        whereClause,
+        { id: { not: auth.user.id } },
+      ],
+    };
+  }
+
   const users = await prisma.appUser.findMany({
     where: whereClause,
     select: {
       id: true,
       email: true,
       displayName: true,
+      name: true,
       schoolId: true,
       teacherId: true,
       createdAt: true,
       updatedAt: true,
-      // Explicitly exclude: passwordHash, lastLogin, and other sensitive fields
       roleAssignments: {
         include: {
           role: true,
@@ -74,13 +107,15 @@ export async function GET(request: NextRequest) {
           id: true,
           firstName: true,
           lastName: true,
+          role: true,
         },
       },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: { displayName: "asc" },
+    take: limit,
   });
 
-  return NextResponse.json(users);
+  return NextResponse.json({ users });
 }
 
 /**

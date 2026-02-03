@@ -13,6 +13,7 @@ import {
   CreditCard,
   Calendar,
   BookOpen,
+  ArrowLeftRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -74,11 +75,13 @@ export function ParentShell({
   const navItems = getNavItems(unreadMessageCount, homeworkCount);
   const { setBranding } = useBranding();
 
+  // Set branding once on mount only - empty deps to prevent loops
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (branding) {
       setBranding(branding);
     }
-  }, [branding, setBranding]);
+  }, []);
 
   return (
     <div className="relative flex min-h-screen bg-canvas text-foreground">
@@ -182,6 +185,13 @@ export function ParentShell({
             </div>
           )}
 
+          <Link
+            href="/login"
+            className="flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-[hsl(var(--surface-soft))] hover:text-foreground"
+          >
+            <ArrowLeftRight className="h-4 w-4" />
+            Switch Portal
+          </Link>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
             className="flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-[hsl(var(--surface-soft))] hover:text-foreground"

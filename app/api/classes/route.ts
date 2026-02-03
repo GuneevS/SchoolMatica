@@ -72,9 +72,19 @@ const classSchema = z.object({
   name: z.string().min(3),
   grade: z.number().int(),
   year: z.number().int(),
-  subjectId: z.string(),
+  classType: z.enum(["Homeroom", "Subject"]).default("Subject"),
+  subjectId: z.string().optional(),
   gradeLevelId: z.string().optional(),
   primaryTeacherId: z.string().optional(),
+}).refine((data) => {
+  // Subject is required only for Subject-type classes
+  if (data.classType === "Subject" && !data.subjectId) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Subject is required for subject-specific classes",
+  path: ["subjectId"],
 });
 
 export async function POST(request: NextRequest) {
@@ -91,28 +101,63 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
   }
 
-  const subject = await prisma.subject.findUnique({ where: { id: parsed.data.subjectId } });
-  if (!subject) {
-    return NextResponse.json({ error: "Subject not found" }, { status: 404 });
+  const { classType, subjectId, gradeLevelId, primaryTeacherId } = parsed.data;
+  
+  // Determine schoolId from either subject or gradeLevel
+  let schoolId: string | null = null;
+  let subject = null;
+  
+  if (classType === "Subject" && subjectId) {
+    // Subject-specific class - get schoolId from subject
+    subject = await prisma.subject.findUnique({ where: { id: subjectId } });
+    if (!subject) {
+      return NextResponse.json({ error: "Subject not found" }, { status: 404 });
+    }
+    schoolId = subject.schoolId;
+  } else if (gradeLevelId) {
+    // Homeroom class - get schoolId from gradeLevel
+    const gradeLevel = await prisma.gradeLevel.findUnique({ where: { id: gradeLevelId } });
+    if (!gradeLevel) {
+      return NextResponse.json({ error: "Grade level not found" }, { status: 404 });
+    }
+    schoolId = gradeLevel.schoolId;
+  } else if (primaryTeacherId) {
+    // Fallback - get schoolId from teacher
+    const teacher = await prisma.teacher.findUnique({ where: { id: primaryTeacherId } });
+    if (!teacher) {
+      return NextResponse.json({ error: "Teacher not found" }, { status: 404 });
+    }
+    schoolId = teacher.schoolId;
+  }
+  
+  if (!schoolId) {
+    // Last resort - use user's school
+    const userSchoolIds = getUserSchoolIds(auth);
+    if (userSchoolIds.length === 0) {
+      return NextResponse.json({ error: "No school context available. Please provide a grade level or subject." }, { status: 400 });
+    }
+    schoolId = userSchoolIds[0];
   }
   
   // Verify user has access to this school
-  if (!hasSchoolAccess(auth, subject.schoolId)) {
+  if (!hasSchoolAccess(auth, schoolId)) {
     return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
   }
 
-  if (parsed.data.gradeLevelId) {
+  // Validate gradeLevel belongs to the school
+  if (gradeLevelId) {
     const gradeLevelExists = await prisma.gradeLevel.findFirst({
-      where: { id: parsed.data.gradeLevelId, schoolId: subject.schoolId },
+      where: { id: gradeLevelId, schoolId },
     });
     if (!gradeLevelExists) {
       return NextResponse.json({ error: "Grade level not found for this school" }, { status: 404 });
     }
   }
 
-  if (parsed.data.primaryTeacherId) {
+  // Validate teacher belongs to the school
+  if (primaryTeacherId) {
     const teacherExists = await prisma.teacher.findFirst({
-      where: { id: parsed.data.primaryTeacherId, schoolId: subject.schoolId },
+      where: { id: primaryTeacherId, schoolId },
     });
     if (!teacherExists) {
       return NextResponse.json({ error: "Teacher not found for this school" }, { status: 404 });
@@ -124,21 +169,22 @@ export async function POST(request: NextRequest) {
       name: parsed.data.name,
       grade: parsed.data.grade,
       year: parsed.data.year,
-      subjectId: subject.id,
-      schoolId: subject.schoolId,
-      gradeLevelId: parsed.data.gradeLevelId,
-      primaryTeacherId: parsed.data.primaryTeacherId,
-      teacherAssignments: parsed.data.primaryTeacherId
+      classType: classType,
+      subjectId: subject?.id ?? null,
+      schoolId: schoolId,
+      gradeLevelId: gradeLevelId,
+      primaryTeacherId: primaryTeacherId,
+      teacherAssignments: primaryTeacherId
         ? {
             create: {
-              teacherId: parsed.data.primaryTeacherId,
+              teacherId: primaryTeacherId,
               role: "Lead",
-              subjectId: subject.id,
+              subjectId: subject?.id ?? null,
             },
           }
         : undefined,
     },
-    include: { subject: true },
+    include: { subject: true, gradeLevel: true, primaryTeacher: true },
   });
 
   return NextResponse.json(classGroup, { status: 201 });

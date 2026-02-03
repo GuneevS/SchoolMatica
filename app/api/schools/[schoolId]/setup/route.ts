@@ -80,6 +80,13 @@ const setupSchema = z.object({
         gradeId: z.string(),
     })).optional(),
     
+    // Subjects to create (optional)
+    subjects: z.array(z.object({
+        code: z.string(),
+        name: z.string(),
+        phase: z.string(),
+    })).optional(),
+    
     // Teachers to create (optional)
     teachers: z.array(z.object({
         firstName: z.string(),
@@ -128,11 +135,12 @@ export async function POST(request: NextRequest, { params }: Params) {
         return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
     }
     
-    const { gradeLevels, classes, teachers, updateGradingConfig } = parsed.data;
+    const { gradeLevels, classes, subjects, teachers, updateGradingConfig } = parsed.data;
     
     const results = {
         gradeLevels: [] as any[],
         classes: [] as any[],
+        subjects: [] as any[],
         teachers: [] as any[],
         gradingConfigUpdated: false,
     };
@@ -201,7 +209,38 @@ export async function POST(request: NextRequest, { params }: Params) {
         });
     }
     
-    // 4. Create teachers
+    // 4. Create subjects
+    if (subjects && subjects.length > 0) {
+        // Check for existing subject codes for this school
+        const existingSubjects = await prisma.subject.findMany({
+            where: { schoolId, code: { in: subjects.map(s => s.code) } },
+            select: { code: true },
+        });
+        const existingCodeSet = new Set(existingSubjects.map(s => s.code));
+        
+        const subjectData = subjects
+            .filter(s => !existingCodeSet.has(s.code))
+            .map(subject => ({
+                schoolId,
+                code: subject.code,
+                name: subject.name,
+                phase: subject.phase,
+            }));
+        
+        if (subjectData.length > 0) {
+            await prisma.subject.createMany({
+                data: subjectData,
+                skipDuplicates: true,
+            });
+        }
+        
+        results.subjects = await prisma.subject.findMany({
+            where: { schoolId },
+            orderBy: { name: "asc" },
+        });
+    }
+    
+    // 5. Create teachers
     if (teachers && teachers.length > 0) {
         // Check for existing emails
         const existingEmails = await prisma.teacher.findMany({

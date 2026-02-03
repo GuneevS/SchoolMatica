@@ -37,20 +37,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const schoolId = auth.user.schoolId;
-    if (!schoolId) {
-      return NextResponse.json({ error: "No school context" }, { status: 400 });
-    }
-
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const studentId = searchParams.get("studentId");
     const term = searchParams.get("term");
     const year = searchParams.get("year");
+    
+    // Super admins can specify schoolId via query param
+    const requestedSchoolId = searchParams.get("schoolId");
+    const schoolId = auth.isSuperAdmin 
+      ? (requestedSchoolId || auth.user.schoolId)
+      : auth.user.schoolId;
+      
+    if (!schoolId && !auth.isSuperAdmin) {
+      return NextResponse.json({ error: "No school context" }, { status: 400 });
+    }
 
     const invoices = await prisma.invoice.findMany({
       where: {
-        schoolId,
+        ...(schoolId && { schoolId }),
         ...(status && { status }),
         ...(studentId && { studentId }),
         ...(term && { term }),
@@ -103,12 +108,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const schoolId = auth.user.schoolId;
+    const body = await request.json();
+    
+    // Super admins can specify schoolId in body
+    const schoolId = auth.isSuperAdmin 
+      ? (body.schoolId || auth.user.schoolId)
+      : auth.user.schoolId;
+      
     if (!schoolId) {
-      return NextResponse.json({ error: "No school context" }, { status: 400 });
+      return NextResponse.json({ error: "No school context. Super admins must specify schoolId." }, { status: 400 });
     }
 
-    const body = await request.json();
     const parsed = createInvoiceSchema.safeParse(body);
 
     if (!parsed.success) {

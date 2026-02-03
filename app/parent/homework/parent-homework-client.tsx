@@ -165,9 +165,9 @@ const getDaysUntilDue = (dueDate: string) => {
 export function ParentHomeworkClient({ homework, children, subjects, stats }: Props) {
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [childFilter, setChildFilter] = useState("");
-  const [subjectFilter, setSubjectFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [childFilter, setChildFilter] = useState("all");
+  const [subjectFilter, setSubjectFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [selectedHomework, setSelectedHomework] = useState<Homework | null>(null);
 
   // Filter homework based on all filters
@@ -175,11 +175,12 @@ export function ParentHomeworkClient({ homework, children, subjects, stats }: Pr
     const matchesSearch =
       hw.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       hw.subject.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesChild = !childFilter || hw.childId === childFilter;
-    const matchesSubject = !subjectFilter || hw.subject === subjectFilter;
+    const matchesChild = childFilter === "all" || hw.childId === childFilter;
+    const matchesSubject = subjectFilter === "all" || hw.subject === subjectFilter;
     
     let matchesStatus = true;
-    if (statusFilter === "pending") matchesStatus = hw.status === "pending" && !hw.isOverdue;
+    if (statusFilter === "all") matchesStatus = true;
+    else if (statusFilter === "pending") matchesStatus = hw.status === "pending" && !hw.isOverdue;
     else if (statusFilter === "submitted") matchesStatus = hw.status === "submitted" || hw.status === "late";
     else if (statusFilter === "missing") matchesStatus = hw.status === "missing";
     else if (statusFilter === "overdue") matchesStatus = hw.isOverdue && hw.status !== "submitted" && hw.status !== "late" && hw.status !== "excused";
@@ -319,7 +320,7 @@ export function ParentHomeworkClient({ homework, children, subjects, stats }: Pr
                     <SelectValue placeholder="All children" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All children</SelectItem>
+                    <SelectItem value="all">All children</SelectItem>
                     {children.map((child) => (
                       <SelectItem key={child.id} value={child.id}>
                         {child.name}
@@ -334,7 +335,7 @@ export function ParentHomeworkClient({ homework, children, subjects, stats }: Pr
                   <SelectValue placeholder="All subjects" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All subjects</SelectItem>
+                  <SelectItem value="all">All subjects</SelectItem>
                   {subjects.map((subject) => (
                     <SelectItem key={subject} value={subject}>
                       {subject}
@@ -348,7 +349,7 @@ export function ParentHomeworkClient({ homework, children, subjects, stats }: Pr
                   <SelectValue placeholder="All status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All status</SelectItem>
+                  <SelectItem value="all">All status</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="submitted">Submitted</SelectItem>
                   <SelectItem value="overdue">Overdue</SelectItem>

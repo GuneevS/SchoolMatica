@@ -116,7 +116,10 @@ export function useInView<T extends HTMLElement = HTMLDivElement>(
     return () => {
       observer.disconnect();
     };
-  }, [threshold, triggerOnce, forceVisible, observerOptions]);
+    // Note: observerOptions is intentionally excluded from deps to prevent infinite loops
+    // The options object would create a new reference on each render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [threshold, triggerOnce, forceVisible]);
 
   return { ref, isVisible };
 }

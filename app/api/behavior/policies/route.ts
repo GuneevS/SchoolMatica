@@ -37,13 +37,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const schoolId = auth.user.schoolId;
+    const { searchParams } = new URL(request.url);
+    const type = searchParams.get("type");
+    
+    // Super admins can specify schoolId via query param, others use their assigned school
+    const requestedSchoolId = searchParams.get("schoolId");
+    const schoolId = auth.isSuperAdmin 
+      ? (requestedSchoolId || auth.user.schoolId)
+      : auth.user.schoolId;
+    
     if (!schoolId && !auth.isSuperAdmin) {
       return NextResponse.json({ error: "No school context" }, { status: 400 });
     }
-
-    const { searchParams } = new URL(request.url);
-    const type = searchParams.get("type");
 
     const policies = await prisma.behaviorPolicy.findMany({
       where: {
@@ -68,12 +73,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const schoolId = auth.user.schoolId;
+    const body = await request.json();
+    
+    // Super admins can specify schoolId in body, others use their assigned school
+    const schoolId = auth.isSuperAdmin 
+      ? (body.schoolId || auth.user.schoolId)
+      : auth.user.schoolId;
+      
     if (!schoolId) {
-      return NextResponse.json({ error: "No school context" }, { status: 400 });
+      return NextResponse.json({ error: "No school context. Super admins must specify schoolId." }, { status: 400 });
     }
 
-    const body = await request.json();
     const parsed = policySchema.safeParse(body);
 
     if (!parsed.success) {
@@ -116,21 +126,27 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const schoolId = auth.user.schoolId;
-    if (!schoolId) {
-      return NextResponse.json({ error: "No school context" }, { status: 400 });
-    }
-
     const body = await request.json();
-    const { id, ...data } = body;
+    const { id, schoolId: requestedSchoolId, ...data } = body;
 
     if (!id) {
       return NextResponse.json({ error: "Policy ID required" }, { status: 400 });
     }
 
-    // Verify policy belongs to school
+    // Super admins can update policies in any school
+    const schoolId = auth.isSuperAdmin 
+      ? (requestedSchoolId || auth.user.schoolId)
+      : auth.user.schoolId;
+
+    if (!schoolId && !auth.isSuperAdmin) {
+      return NextResponse.json({ error: "No school context" }, { status: 400 });
+    }
+
+    // Verify policy exists (super admins can access any, others only their school)
     const existing = await prisma.behaviorPolicy.findFirst({
-      where: { id, schoolId },
+      where: auth.isSuperAdmin 
+        ? { id }
+        : { id, schoolId },
     });
 
     if (!existing) {

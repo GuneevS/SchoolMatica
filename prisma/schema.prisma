@@ -210,6 +210,7 @@ model Subject {
   classes            ClassGroup[]
   teacherAssignments ClassTeacherAssignment[]
   teacherSubjects    TeacherSubjectAssignment[]
+  gradeConfigs       GradeSubjectConfig[]
 }
 
 model ClassGroup {
@@ -354,14 +355,15 @@ model ParentContact {
 }
 
 model GradeLevel {
-  id        String       @id @default(cuid())
-  name      String
-  order     Int
-  school    School       @relation(fields: [schoolId], references: [id])
-  schoolId  String
-  classes   ClassGroup[]
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  id             String               @id @default(cuid())
+  name           String
+  order          Int
+  school         School               @relation(fields: [schoolId], references: [id])
+  schoolId       String
+  classes        ClassGroup[]
+  subjectConfigs GradeSubjectConfig[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 }
 
 model AssessmentPlan {

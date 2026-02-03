@@ -79,14 +79,14 @@ const heroHighlights = [
 
 export function EventsPageClient({ events }: EventsPageClientProps) {
   const [viewMode, setViewMode] = useState<"calendar" | "list">("list");
-  const [typeFilter, setTypeFilter] = useState("");
-  const [audienceFilter, setAudienceFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [audienceFilter, setAudienceFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const filteredEvents = events.filter((event) => {
-    const matchesType = !typeFilter || event.type === typeFilter;
-    const matchesAudience = !audienceFilter || event.audience.includes(audienceFilter) || event.audience.includes("all");
+    const matchesType = typeFilter === "all" || event.type === typeFilter;
+    const matchesAudience = audienceFilter === "all" || event.audience.includes(audienceFilter) || event.audience.includes("all");
     const matchesSearch = !searchQuery || 
       event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -180,7 +180,7 @@ END:VCALENDAR`;
                 <SelectValue placeholder="Event type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All types</SelectItem>
+                <SelectItem value="all">All types</SelectItem>
                 <SelectItem value="Meeting">Meetings</SelectItem>
                 <SelectItem value="Sports">Sports</SelectItem>
                 <SelectItem value="Exam">Exams</SelectItem>
@@ -194,7 +194,7 @@ END:VCALENDAR`;
                 <SelectValue placeholder="For whom" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All</SelectItem>
+                <SelectItem value="all">All</SelectItem>
                 <SelectItem value="grade-10">Grade 10</SelectItem>
                 <SelectItem value="grade-11">Grade 11</SelectItem>
                 <SelectItem value="grade-12">Grade 12</SelectItem>

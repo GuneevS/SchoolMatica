@@ -157,6 +157,60 @@ export function normaliseWeights<T extends { rawWeight: number }>(
   return withWeights;
 }
 
+/**
+ * Normalizes raw weights to percentages PER TERM
+ * Each term's assessments will sum to 100% independently
+ * This is the CAPS-compliant approach for South African schools
+ */
+export function normaliseWeightsPerTerm<T extends { rawWeight: number; term: string }>(
+  assessments: T[],
+  options: { precision?: number } = {},
+): (T & { weightPercent: number })[] {
+  const precision = options.precision ?? 2;
+  
+  // Group assessments by term
+  const termGroups = assessments.reduce((acc, assessment) => {
+    if (!acc[assessment.term]) acc[assessment.term] = [];
+    acc[assessment.term].push(assessment);
+    return acc;
+  }, {} as Record<string, T[]>);
+  
+  const result: (T & { weightPercent: number })[] = [];
+  
+  // Normalize each term independently to sum to 100%
+  for (const [term, termAssessments] of Object.entries(termGroups)) {
+    const totalRaw = termAssessments.reduce((sum, a) => sum + (a.rawWeight || 0), 0);
+    
+    // Handle edge case: no weights in this term
+    if (totalRaw === 0) {
+      termAssessments.forEach(a => result.push({ ...a, weightPercent: 0 }));
+      continue;
+    }
+    
+    // Calculate weights for this term
+    const withWeights = termAssessments.map(assessment => ({
+      ...assessment,
+      weightPercent: Number(((assessment.rawWeight / totalRaw) * 100).toFixed(precision)),
+    }));
+    
+    // Distribute rounding error to largest weight in this term
+    const sum = withWeights.reduce((acc, a) => acc + a.weightPercent, 0);
+    const diff = Number((100 - sum).toFixed(precision));
+    
+    if (Math.abs(diff) > 0 && withWeights.length > 0) {
+      const largest = withWeights.reduce((max, a, idx) => 
+        a.weightPercent > withWeights[max].weightPercent ? idx : max, 0);
+      withWeights[largest].weightPercent = Number(
+        (withWeights[largest].weightPercent + diff).toFixed(precision)
+      );
+    }
+    
+    result.push(...withWeights);
+  }
+  
+  return result;
+}
+
 export function getBandsForPhase(config: GradingConfig | null, phase: string) {
   if (!config) return [] as LevelBand[];
   const phases = config.phasesJson as Record<string, LevelBand[]>;

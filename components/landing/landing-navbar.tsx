@@ -57,10 +57,10 @@ export function LandingNavbar() {
 
       <header
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+          "fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out",
           isScrolled
-            ? "py-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 shadow-sm"
-            : "py-5 bg-transparent"
+            ? "py-2 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl backdrop-saturate-150 shadow-lg shadow-black/5 dark:shadow-black/20 border-b border-white/20 dark:border-slate-700/50"
+            : "py-4 bg-transparent"
         )}
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -70,23 +70,22 @@ export function LandingNavbar() {
               <UnifiedLogo
                 variant="full"
                 size={isScrolled ? "sm" : "md"}
-                colorScheme="gradient"
+                colorScheme={isScrolled ? "gradient" : "light"}
                 className="transition-all duration-300"
               />
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-8">
+            <div className="hidden md:flex items-center gap-1">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "text-sm font-medium transition-colors duration-200",
-                    "text-foreground/70 hover:text-foreground",
-                    "relative after:absolute after:bottom-[-4px] after:left-0 after:h-[2px] after:w-0",
-                    "after:bg-gradient-to-r after:from-[hsl(var(--accent-iris))] after:to-[hsl(var(--accent-violet))]",
-                    "after:transition-all after:duration-300 hover:after:w-full"
+                    "px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                    isScrolled
+                      ? "text-slate-700 hover:text-slate-900 hover:bg-slate-900/5 dark:text-slate-200 dark:hover:text-white dark:hover:bg-white/10"
+                      : "text-white/90 hover:text-white hover:bg-white/10"
                   )}
                 >
                   {item.label}
@@ -96,10 +95,29 @@ export function LandingNavbar() {
 
             {/* CTA Buttons */}
             <div className="hidden md:flex items-center gap-3">
-              <Button variant="ghost" size="sm" asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                asChild
+                className={cn(
+                  "transition-all duration-200 font-medium",
+                  isScrolled
+                    ? "text-slate-700 hover:text-slate-900 hover:bg-slate-900/5 dark:text-slate-200 dark:hover:text-white"
+                    : "text-white hover:bg-white/10 hover:text-white"
+                )}
+              >
                 <Link href="/login">Log In</Link>
               </Button>
-              <Button size="sm" asChild className="group">
+              <Button 
+                size="sm" 
+                asChild 
+                className={cn(
+                  "group transition-all duration-200",
+                  isScrolled
+                    ? "bg-gradient-to-r from-[hsl(var(--brand-primary))] to-[hsl(var(--brand-secondary))] text-white hover:opacity-90"
+                    : "bg-white text-slate-900 hover:bg-white/90"
+                )}
+              >
                 <Link href="/register">
                   Start Free Trial
                   <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -110,7 +128,12 @@ export function LandingNavbar() {
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden relative z-10 p-2 rounded-lg hover:bg-secondary/60 transition-colors"
+              className={cn(
+                "md:hidden relative z-10 p-2 rounded-lg transition-colors",
+                isScrolled 
+                  ? "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                  : "hover:bg-white/10 text-white"
+              )}
               aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={isMobileMenuOpen}
             >

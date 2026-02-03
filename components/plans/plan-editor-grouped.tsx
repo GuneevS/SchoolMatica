@@ -76,70 +76,113 @@ export function PlanEditorGrouped({ plan, threads, weightInsights }: Props) {
     const newIndex = orderedAssessments.findIndex((item) => item.id === over.id);
     if (currentIndex === -1 || newIndex === -1) return;
     const nextAssessments = arrayMove(orderedAssessments, currentIndex, newIndex);
+    const previousAssessments = orderedAssessments;
     setOrderedAssessments(nextAssessments);
     startTransition(async () => {
-      await fetch(`/api/assessment-plans/${plan.id}/reorder`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderedAssessmentIds: nextAssessments.map((item) => item.id) }),
-      });
-      router.refresh();
+      try {
+        const response = await fetch(`/api/assessment-plans/${plan.id}/reorder`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderedAssessmentIds: nextAssessments.map((item) => item.id) }),
+        });
+        if (!response.ok) {
+          console.error("Failed to reorder assessments");
+          setOrderedAssessments(previousAssessments);
+          return;
+        }
+        router.refresh();
+      } catch (error) {
+        console.error("Network error reordering assessments:", error);
+        setOrderedAssessments(previousAssessments);
+      }
     });
   }
 
   function mutateAssessment(id: string, data: Partial<Assessment>) {
     if (!canEdit) return;
     startTransition(async () => {
-      await fetch(`/api/assessments/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      // Revalidate dashboard and current page
-      await fetch("/api/revalidate?path=/dashboard", { method: "POST" });
-      router.refresh();
+      try {
+        const response = await fetch(`/api/assessments/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        if (!response.ok) {
+          console.error("Failed to update assessment");
+          return;
+        }
+        // Revalidate dashboard and current page
+        await fetch("/api/revalidate?path=/dashboard", { method: "POST" });
+        router.refresh();
+      } catch (error) {
+        console.error("Network error updating assessment:", error);
+      }
     });
   }
 
   function createAssessment(term?: string) {
     if (!canEdit) return;
     startTransition(async () => {
-      await fetch(`/api/assessments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          assessmentPlanId: plan.id,
-          taskName: `Task ${orderedAssessments.length + 1}`,
-          term: term || "T1",
-          totalMark: 10,
-          rawWeight: 10,
-        }),
-      });
-      // Revalidate dashboard and current page
-      await fetch("/api/revalidate?path=/dashboard", { method: "POST" });
-      router.refresh();
+      try {
+        const response = await fetch(`/api/assessments`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            assessmentPlanId: plan.id,
+            taskName: `Task ${orderedAssessments.length + 1}`,
+            term: term || "T1",
+            totalMark: 10,
+            rawWeight: 10,
+          }),
+        });
+        if (!response.ok) {
+          console.error("Failed to create assessment");
+          return;
+        }
+        // Revalidate dashboard and current page
+        await fetch("/api/revalidate?path=/dashboard", { method: "POST" });
+        router.refresh();
+      } catch (error) {
+        console.error("Network error creating assessment:", error);
+      }
     });
   }
 
   function deleteAssessment(id: string) {
     if (!canEdit) return;
     startTransition(async () => {
-      await fetch(`/api/assessments/${id}`, { method: "DELETE" });
-      // Revalidate dashboard and current page
-      await fetch("/api/revalidate?path=/dashboard", { method: "POST" });
-      router.refresh();
+      try {
+        const response = await fetch(`/api/assessments/${id}`, { method: "DELETE" });
+        if (!response.ok) {
+          console.error("Failed to delete assessment");
+          return;
+        }
+        // Revalidate dashboard and current page
+        await fetch("/api/revalidate?path=/dashboard", { method: "POST" });
+        router.refresh();
+      } catch (error) {
+        console.error("Network error deleting assessment:", error);
+      }
     });
   }
 
   function updateStatus(status: AssessmentPlan["status"]) {
     if (!canEdit) return;
     startTransition(async () => {
-      await fetch(`/api/assessment-plans/${plan.id}/workflow`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetStatus: status, actorRole: role }),
-      });
-      router.refresh();
+      try {
+        const response = await fetch(`/api/assessment-plans/${plan.id}/workflow`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ targetStatus: status, actorRole: role }),
+        });
+        if (!response.ok) {
+          console.error("Failed to update plan status");
+          return;
+        }
+        router.refresh();
+      } catch (error) {
+        console.error("Network error updating plan status:", error);
+      }
     });
   }
 

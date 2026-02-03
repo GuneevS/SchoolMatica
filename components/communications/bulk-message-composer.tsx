@@ -190,12 +190,12 @@ export function BulkMessageComposer({
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
   const [showPreview, setShowPreview] = useState(false);
-  const [filterClass, setFilterClass] = useState<string>("");
+  const [filterClass, setFilterClass] = useState<string>("all");
 
   const filteredRecipients = recipients.filter((r) => {
     const matchesSearch = r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.childName?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesClass = !filterClass || r.className === filterClass;
+    const matchesClass = filterClass === "all" || r.className === filterClass;
     return matchesSearch && matchesClass;
   });
 
@@ -290,7 +290,7 @@ export function BulkMessageComposer({
                 <SelectValue placeholder="Class" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All</SelectItem>
+                <SelectItem value="all">All</SelectItem>
                 {uniqueClasses.map(cls => (
                   <SelectItem key={cls} value={cls!}>{cls}</SelectItem>
                 ))}

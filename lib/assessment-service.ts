@@ -1,7 +1,19 @@
 import { prisma } from "@/lib/prisma";
-import { normaliseWeights } from "@/lib/calculations";
+import { normaliseWeights, normaliseWeightsPerTerm } from "@/lib/calculations";
 
-export async function recalculateWeightsForPlan(planId: string) {
+/**
+ * Recalculates weight percentages for all assessments in a plan
+ * 
+ * @param planId - The assessment plan ID
+ * @param options.perTerm - If true (default), normalizes weights per-term so each term sums to 100%
+ *                          If false, normalizes globally across all assessments
+ */
+export async function recalculateWeightsForPlan(
+  planId: string, 
+  options: { perTerm?: boolean } = {}
+) {
+  const { perTerm = true } = options; // Default to per-term normalization (CAPS compliant)
+  
   const plan = await prisma.assessmentPlan.findUnique({
     where: { id: planId },
     include: { assessments: true },
@@ -9,7 +21,12 @@ export async function recalculateWeightsForPlan(planId: string) {
 
   if (!plan || plan.assessments.length === 0) return;
 
-  const normalised = normaliseWeights(plan.assessments);
+  // Use per-term normalization by default for CAPS compliance
+  // Each term's assessments will sum to 100% independently
+  const normalised = perTerm 
+    ? normaliseWeightsPerTerm(plan.assessments)
+    : normaliseWeights(plan.assessments);
+    
   await Promise.all(
     normalised.map((assessment) =>
       prisma.assessment.update({

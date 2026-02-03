@@ -51,33 +51,45 @@ export function MarkbookGrid({ payload }: Props) {
   }) {
     if (!canEdit) return;
     startTransition(async () => {
-      await fetch("/api/marks/bulk-upsert", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          entries: [
-            {
-              assessmentId: entry.assessmentId,
-              studentId: entry.studentId,
-              rawMark: entry.rawMark,
-              isAbsent: entry.isAbsent ?? false,
-            },
-          ],
-        }),
-      });
-      setDraftMarks((state) => {
-        const studentDraft = state[entry.studentId];
-        if (!studentDraft) return state;
-        const nextStudentDraft = { ...studentDraft };
-        delete nextStudentDraft[entry.assessmentId];
-        if (Object.keys(nextStudentDraft).length === 0) {
-          const nextState = { ...state };
-          delete nextState[entry.studentId];
-          return nextState;
+      try {
+        const response = await fetch("/api/marks/bulk-upsert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            entries: [
+              {
+                assessmentId: entry.assessmentId,
+                studentId: entry.studentId,
+                rawMark: entry.rawMark,
+                isAbsent: entry.isAbsent ?? false,
+              },
+            ],
+          }),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error("Failed to save mark:", errorData.error || response.statusText);
+          // Don't clear draft on error so user can retry
+          return;
         }
-        return { ...state, [entry.studentId]: nextStudentDraft };
-      });
-      router.refresh();
+        
+        setDraftMarks((state) => {
+          const studentDraft = state[entry.studentId];
+          if (!studentDraft) return state;
+          const nextStudentDraft = { ...studentDraft };
+          delete nextStudentDraft[entry.assessmentId];
+          if (Object.keys(nextStudentDraft).length === 0) {
+            const nextState = { ...state };
+            delete nextState[entry.studentId];
+            return nextState;
+          }
+          return { ...state, [entry.studentId]: nextStudentDraft };
+        });
+        router.refresh();
+      } catch (error) {
+        console.error("Network error saving mark:", error);
+      }
     });
   }
 

@@ -113,7 +113,7 @@ const getStatusBadge = (status: string) => {
 export function FeesPageClient({ invoices, payments, feeStructures, discounts }: FeesPageClientProps) {
   const [activeTab, setActiveTab] = useState("overview");
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const totalCollected = invoices.reduce((sum, inv) => sum + inv.paid, 0);
   const totalOutstanding = invoices.reduce((sum, inv) => sum + inv.balance, 0);
@@ -124,7 +124,7 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts }:
     const matchesSearch =
       inv.student.toLowerCase().includes(searchQuery.toLowerCase()) ||
       inv.id.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = !statusFilter || inv.status === statusFilter;
+    const matchesStatus = statusFilter === "all" || inv.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -401,7 +401,7 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts }:
                       <SelectValue placeholder="All statuses" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All statuses</SelectItem>
+                      <SelectItem value="all">All statuses</SelectItem>
                       <SelectItem value="Paid">Paid</SelectItem>
                       <SelectItem value="Partially Paid">Partially Paid</SelectItem>
                       <SelectItem value="Sent">Sent</SelectItem>

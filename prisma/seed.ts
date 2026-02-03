@@ -360,8 +360,14 @@ const rolePermissionMatrix: Record<string, string[]> = {
     "school:manage",
   ],
   super_admin: [
-    // Super admin has ALL permissions including system-wide access
+    // ═══════════════════════════════════════════════════════════════════
+    // SUPER ADMIN: Full platform-level access to ALL functionality
+    // Super admins can access everything across all schools
+    // ═══════════════════════════════════════════════════════════════════
+    
+    // System-wide access (grants cross-school capabilities)
     "system:admin",
+    
     // Super admin specific permissions
     "superadmin:access",
     "superadmin:schools",
@@ -369,21 +375,116 @@ const rolePermissionMatrix: Record<string, string[]> = {
     "superadmin:provision",
     "superadmin:impersonate",
     "superadmin:settings",
-    // All school management
+    
+    // Assessment Plans
+    "assessmentPlan:read",
+    "assessmentPlan:create",
+    "assessmentPlan:update",
+    "assessmentPlan:delete",
+    "assessmentPlan:advance",
+    "assessmentPlan:approve",
+    
+    // Assessment Documents
+    "assessmentDocument:read",
+    "assessmentDocument:upload",
+    "assessmentDocument:decide",
+    "assessmentDocument:delete",
+    
+    // Assessments
+    "assessment:read",
+    "assessment:create",
+    "assessment:update",
+    "assessment:delete",
+    
+    // Marks
+    "mark:read",
+    "mark:create",
+    "mark:update",
+    "mark:delete",
+    
+    // Classes
+    "class:read",
+    "class:create",
+    "class:update",
+    "class:delete",
+    "class:manage",
+    
+    // Students
+    "student:read",
+    "student:create",
+    "student:update",
+    "student:delete",
+    
+    // Teachers
+    "teacher:read",
+    "teacher:create",
+    "teacher:update",
+    "teacher:delete",
+    
+    // Schools
     "school:read",
     "school:create",
     "school:update",
     "school:delete",
     "school:manage",
-    // All user management
+    
+    // Subjects
+    "subject:read",
+    "subject:create",
+    "subject:update",
+    "subject:delete",
+    
+    // Grade Levels
+    "gradeLevel:read",
+    "gradeLevel:create",
+    "gradeLevel:update",
+    "gradeLevel:delete",
+    
+    // Grading Configuration
+    "gradingConfig:read",
+    "gradingConfig:update",
+    
+    // Timetables
+    "timetable:read",
+    "timetable:create",
+    "timetable:update",
+    "timetable:delete",
+    
+    // Curriculum Templates
+    "template:read",
+    "template:create",
+    "template:update",
+    "template:delete",
+    
+    // Reports
+    "report:read",
+    "report:generate",
+    "report:publish",
+    
+    // Registrations
+    "registration:read",
+    "registration:create",
+    "registration:update",
+    "registration:decide",
+    
+    // Users
     "user:read",
     "user:create",
     "user:update",
     "user:delete",
+    
+    // Roles
     "role:read",
     "role:assign",
     "role:remove",
-    // Full audit access
+    
+    // Moderation
+    "moderation:read",
+    "moderation:create",
+    "moderation:update",
+    "moderation:resolve",
+    
+    // Audit Logs
     "audit:read",
   ],
 };
@@ -444,6 +545,29 @@ const QUICK_LOGIN_EMAILS = {
 
 async function clearAllData() {
   console.log("⚠️  FORCE_SEED is enabled - clearing all existing data...");
+  
+  // Behavior-related tables (must be deleted before AppUser due to FK constraints)
+  await prisma.behaviorThresholdTrigger.deleteMany();
+  await prisma.behaviorIncident.deleteMany();
+  await prisma.behaviorBalance.deleteMany();
+  await prisma.behaviorPolicy.deleteMany();
+  
+  // Fee-related tables
+  await prisma.accountLedger.deleteMany();
+  await prisma.payment.deleteMany();
+  await prisma.invoice.deleteMany();
+  await prisma.feeStructure.deleteMany();
+  
+  // Notification and messaging
+  await prisma.notification.deleteMany();
+  await prisma.message.deleteMany();
+  await prisma.messageThread.deleteMany();
+  await prisma.announcement.deleteMany();
+  await prisma.schoolEvent.deleteMany();
+  
+  // Homework (delete submissions first)
+  await prisma.homeworkSubmission.deleteMany();
+  await prisma.homework.deleteMany();
   
   await prisma.documentApproval.deleteMany();
   await prisma.assessmentDocument.deleteMany();

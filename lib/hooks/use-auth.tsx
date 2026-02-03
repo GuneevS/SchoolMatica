@@ -125,8 +125,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext value= { contextValue } >
-    { children }
+    <AuthContext value={contextValue}>
+      {children}
     </AuthContext>
   );
 }

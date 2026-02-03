@@ -19,7 +19,12 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recha
 import { generateDemoAssessmentPlanData } from "@/lib/demo/demo-data-generator";
 import { cn } from "@/lib/utils";
 
-const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
+const TERM_COLORS = {
+  term1: "#3b82f6", // Blue
+  term2: "#10b981", // Emerald
+  term3: "#f59e0b", // Amber
+  term4: "#8b5cf6", // Violet
+};
 
 interface InteractiveAssessmentPlannerDemoProps {
   onInteraction?: () => void;
@@ -51,12 +56,16 @@ export function InteractiveAssessmentPlannerDemo({ onInteraction }: InteractiveA
   const totalTermWeights = Object.values(termWeights).reduce((sum, w) => sum + w, 0);
   const isWeightsValid = Math.abs(totalTermWeights - 100) < 0.01;
 
-  // Prepare chart data
-  const chartData = Object.entries(termWeights).map(([term, weight]) => ({
-    name: `Term ${term.substring(1)}`,
-    value: weight,
-    compliance: isTermCompliant(term.toUpperCase()),
-  }));
+  // Prepare chart data - extract term number from keys like "term1", "term2"
+  const chartData = Object.entries(termWeights).map(([term, weight]) => {
+    const termNumber = term.replace("term", "");
+    return {
+      name: `Term ${termNumber}`,
+      value: weight,
+      compliance: isTermCompliant(`T${termNumber}`),
+      color: TERM_COLORS[term as keyof typeof TERM_COLORS],
+    };
+  });
 
   // Handle weight change
   const handleWeightChange = (term: string, value: number[]) => {
@@ -95,7 +104,7 @@ export function InteractiveAssessmentPlannerDemo({ onInteraction }: InteractiveA
               {Object.entries(termWeights).map(([term, weight]) => (
                 <div key={term} className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium">Term {term.substring(1)}</label>
+                    <label className="text-sm font-medium">Term {term.replace("term", "")}</label>
                     <span className="text-sm font-semibold">{weight.toFixed(1)}%</span>
                   </div>
                   <Slider
@@ -149,7 +158,7 @@ export function InteractiveAssessmentPlannerDemo({ onInteraction }: InteractiveA
                     {chartData.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
-                        fill={entry.compliance ? COLORS[index % COLORS.length] : "#ef4444"}
+                        fill={entry.color}
                       />
                     ))}
                   </Pie>

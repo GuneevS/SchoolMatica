@@ -248,7 +248,7 @@ export function SuperAdminOverlay({
                 Active School
               </label>
               <Select
-                value={selectedSchool || ""}
+                value={selectedSchool || "platform"}
                 onValueChange={handleSchoolSwitch}
                 disabled={isLoading}
               >
@@ -256,7 +256,7 @@ export function SuperAdminOverlay({
                   <SelectValue placeholder="Select a school to view..." />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-900/95 backdrop-blur-xl border-white/10">
-                  <SelectItem value="" className="text-gray-300">
+                  <SelectItem value="platform" className="text-gray-300">
                     All Schools (Platform View)
                   </SelectItem>
                   {schools.map((school) => (

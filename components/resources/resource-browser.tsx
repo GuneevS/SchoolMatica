@@ -97,10 +97,10 @@ const formatDate = (dateStr: string) => {
 
 export function ResourceBrowser({ resources, subjects, gradeLevels }: ResourceBrowserProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSubject, setSelectedSubject] = useState<string>("");
-  const [selectedGrade, setSelectedGrade] = useState<string>("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [selectedYear, setSelectedYear] = useState<string>("");
+  const [selectedSubject, setSelectedSubject] = useState<string>("all");
+  const [selectedGrade, setSelectedGrade] = useState<string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedYear, setSelectedYear] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   // Get unique years from resources
@@ -124,10 +124,10 @@ export function ResourceBrowser({ resources, subjects, gradeLevels }: ResourceBr
         resource.assessmentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         resource.subject.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesSubject = !selectedSubject || resource.subject === selectedSubject;
-      const matchesGrade = !selectedGrade || resource.grade.toString() === selectedGrade;
-      const matchesCategory = !selectedCategory || resource.category === selectedCategory;
-      const matchesYear = !selectedYear || resource.year.toString() === selectedYear;
+      const matchesSubject = selectedSubject === "all" || resource.subject === selectedSubject;
+      const matchesGrade = selectedGrade === "all" || resource.grade.toString() === selectedGrade;
+      const matchesCategory = selectedCategory === "all" || resource.category === selectedCategory;
+      const matchesYear = selectedYear === "all" || resource.year.toString() === selectedYear;
 
       return matchesSearch && matchesSubject && matchesGrade && matchesCategory && matchesYear;
     });
@@ -147,13 +147,13 @@ export function ResourceBrowser({ resources, subjects, gradeLevels }: ResourceBr
 
   const clearFilters = () => {
     setSearchQuery("");
-    setSelectedSubject("");
-    setSelectedGrade("");
-    setSelectedCategory("");
-    setSelectedYear("");
+    setSelectedSubject("all");
+    setSelectedGrade("all");
+    setSelectedCategory("all");
+    setSelectedYear("all");
   };
 
-  const hasActiveFilters = searchQuery || selectedSubject || selectedGrade || selectedCategory || selectedYear;
+  const hasActiveFilters = searchQuery || selectedSubject !== "all" || selectedGrade !== "all" || selectedCategory !== "all" || selectedYear !== "all";
 
   return (
     <div className="space-y-6">
@@ -208,7 +208,7 @@ export function ResourceBrowser({ resources, subjects, gradeLevels }: ResourceBr
                 <SelectValue placeholder="All Subjects" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Subjects</SelectItem>
+                <SelectItem value="all">All Subjects</SelectItem>
                 {subjects.map((subject) => (
                   <SelectItem key={subject.id} value={subject.name}>
                     {subject.name}
@@ -221,7 +221,7 @@ export function ResourceBrowser({ resources, subjects, gradeLevels }: ResourceBr
                 <SelectValue placeholder="All Grades" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Grades</SelectItem>
+                <SelectItem value="all">All Grades</SelectItem>
                 {gradeLevels.map((grade) => (
                   <SelectItem key={grade.id} value={grade.order.toString()}>
                     {grade.name}
@@ -234,7 +234,7 @@ export function ResourceBrowser({ resources, subjects, gradeLevels }: ResourceBr
                 <SelectValue placeholder="All Types" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Types</SelectItem>
+                <SelectItem value="all">All Types</SelectItem>
                 {categories.map((cat) => (
                   <SelectItem key={cat} value={cat}>
                     {cat}

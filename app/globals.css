@@ -37,13 +37,13 @@
 
     /* Design system tokens */
     --canvas: 210 45% 97%;
-    --canvas-glow-a: rgba(31, 134, 121, 0.16);
-    --canvas-glow-b: rgba(242, 140, 40, 0.18);
-    --canvas-glow-c: rgba(59, 130, 246, 0.12);
+    --canvas-glow-a: rgba(139, 92, 246, 0.12);
+    --canvas-glow-b: rgba(168, 85, 247, 0.10);
+    --canvas-glow-c: rgba(124, 58, 237, 0.08);
     --canvas-gradient: radial-gradient(circle at 16% 18%, var(--canvas-glow-a), transparent 55%),
       radial-gradient(circle at 82% 8%, var(--canvas-glow-b), transparent 60%),
       radial-gradient(circle at 70% 85%, var(--canvas-glow-c), transparent 65%),
-      linear-gradient(180deg, #f7fbff 0%, #f1f6ff 45%, #f6f8f5 100%);
+      linear-gradient(180deg, #faf8ff 0%, #f5f3ff 45%, #f8f7fc 100%);
     --surface-soft: 210 35% 94%;
     --surface-strong: 0 0% 100%;
     --text-muted-strong: 220 16% 42%;
@@ -65,16 +65,16 @@
     --status-rejected: 0 78% 58%;
 
     /* Shell glow accents */
-    --shell-glow-a: rgba(31, 134, 121, 0.24);
-    --shell-glow-b: rgba(242, 140, 40, 0.2);
-    --shell-glow-c: rgba(255, 107, 91, 0.16);
+    --shell-glow-a: rgba(139, 92, 246, 0.18);
+    --shell-glow-b: rgba(168, 85, 247, 0.14);
+    --shell-glow-c: rgba(124, 58, 237, 0.12);
 
     --aurora-panel-bg:
       radial-gradient(120% 120% at 0% 0%, var(--canvas-glow-a), transparent 60%),
       radial-gradient(120% 120% at 100% 0%, var(--canvas-glow-b), transparent 65%),
       radial-gradient(140% 140% at 20% 100%, var(--canvas-glow-c), transparent 65%),
-      linear-gradient(135deg, #fcfdff 0%, #f1f7ff 55%, #fff4ec 100%);
-    --chart-surface-bg: linear-gradient(145deg, #f7fbff 0%, #f0f7f6 55%, #fff4ec 100%);
+      linear-gradient(135deg, #fcfbff 0%, #f5f3ff 55%, #faf8ff 100%);
+    --chart-surface-bg: linear-gradient(145deg, #faf8ff 0%, #f5f3ff 55%, #f8f7fc 100%);
   }
 
 }

@@ -67,8 +67,8 @@ const eventTypeColors: Record<string, string> = {
   Exam: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
   Cultural: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
   Academic: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  Holiday: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400",
-  Other: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400",
+  Holiday: "bg-slate-100 text-slate-700 dark:bg-slate-700/50 dark:text-slate-200",
+  Other: "bg-slate-100 text-slate-700 dark:bg-slate-700/50 dark:text-slate-200",
 };
 
 const heroHighlights = [

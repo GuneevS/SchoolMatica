@@ -34,7 +34,7 @@ export function AuroraHero({ eyebrow, title, description, badges, actions, aside
     >
       <div className="absolute inset-0 opacity-70" aria-hidden />
       <div className="pointer-events-none absolute -left-16 top-6 h-40 w-40 rounded-full bg-[hsl(var(--accent-iris))/0.25] blur-3xl" aria-hidden />
-      <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-[hsl(var(--accent-gold))/0.2] blur-3xl" aria-hidden />
+      <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-[hsl(var(--accent-violet))/0.15] blur-3xl" aria-hidden />
       <div
         className={cn(
           "relative grid gap-10 p-8 md:p-10",

@@ -93,15 +93,15 @@ const getStatusBadge = (status: string) => {
     case "Missing":
       return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
     case "Pending":
-      return "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400";
+      return "bg-slate-100 text-slate-700 dark:bg-slate-700/50 dark:text-slate-200";
     case "Active":
       return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
     case "Completed":
-      return "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400";
+      return "bg-slate-100 text-slate-700 dark:bg-slate-700/50 dark:text-slate-200";
     case "Excused":
       return "bg-[hsl(var(--accent-violet))/0.12] text-[hsl(var(--accent-violet))] dark:bg-[hsl(var(--accent-violet))/0.28] dark:text-[hsl(var(--accent-violet))]";
     default:
-      return "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400";
+      return "bg-slate-100 text-slate-700 dark:bg-slate-700/50 dark:text-slate-200";
   }
 };
 
@@ -169,7 +169,7 @@ export function HomeworkPageClient({ homework, submissions }: HomeworkPageClient
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex items-center justify-between mb-6">
-          <TabsList className="bg-slate-100 dark:bg-slate-800">
+          <TabsList>
             <TabsTrigger value="all">All Homework</TabsTrigger>
             <TabsTrigger value="active">
               Active

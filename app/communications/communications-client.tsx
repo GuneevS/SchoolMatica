@@ -219,7 +219,7 @@ export function CommunicationsPageClient({
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex items-center justify-between mb-6">
-          <TabsList className="bg-slate-100 dark:bg-slate-800">
+          <TabsList>
             <TabsTrigger value="messages" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
               Messages

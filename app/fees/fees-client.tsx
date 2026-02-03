@@ -101,7 +101,7 @@ const getStatusBadge = (status: string) => {
     "Partially Paid": "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
     Overdue: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
     Sent: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    Draft: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400",
+    Draft: "bg-slate-100 text-slate-700 dark:bg-slate-700/50 dark:text-slate-200",
     Completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
     Processing: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
     Pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
@@ -162,7 +162,7 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts }:
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex items-center justify-between mb-6">
-          <TabsList className="bg-slate-100 dark:bg-slate-800">
+          <TabsList>
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
               Overview

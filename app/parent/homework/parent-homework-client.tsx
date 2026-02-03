@@ -278,7 +278,7 @@ export function ParentHomeworkClient({ homework, children, subjects, stats }: Pr
       {/* Tabs and Filters */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <TabsList className="bg-slate-100 dark:bg-slate-800">
+          <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="upcoming">
               Upcoming

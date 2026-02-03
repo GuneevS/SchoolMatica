@@ -96,7 +96,7 @@ export function ParentShell({
       />
 
       {/* Sidebar */}
-      <aside className="relative z-10 hidden w-64 flex-col border-r border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))/0.9] px-6 py-8 shadow-ambient-sm backdrop-blur lg:flex xl:w-72">
+      <aside className="relative z-10 hidden w-64 flex-col border-r border-slate-200/60 bg-white/95 px-6 py-8 shadow-ambient-sm backdrop-blur lg:flex xl:w-72">
         {/* Logo */}
         <Link href="/parent" className="mb-8 flex items-center gap-3 hover:opacity-90 transition-opacity">
           <UnifiedLogo variant="icon" size="sm" colorScheme="gradient" />
@@ -106,7 +106,7 @@ export function ParentShell({
           </div>
         </Link>
 
-        <div className="rounded-3xl border border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-soft))] p-4 shadow-ambient-sm">
+        <div className="rounded-3xl border border-slate-200/60 bg-slate-50/80 p-4 shadow-ambient-sm">
           <div className="flex items-center gap-3">
             <SchoolMark name={schoolName ?? "School"} logoUrl={branding?.logoUrl} size="sm" />
             <div>
@@ -133,8 +133,8 @@ export function ParentShell({
                 className={cn(
                   "flex items-center justify-between rounded-2xl px-4 py-2.5 transition-all duration-200",
                   isActive
-                    ? "bg-[hsl(var(--accent-iris))]/12 text-foreground shadow-ambient-sm"
-                    : "hover:text-foreground hover:bg-[hsl(var(--surface-soft))]",
+                    ? "bg-slate-100/80 text-slate-900 shadow-ambient-sm"
+                    : "hover:text-slate-900 hover:bg-slate-100/60",
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -160,16 +160,16 @@ export function ParentShell({
 
         {/* Bottom section */}
         <div className="mt-auto space-y-4">
-          <div className="rounded-2xl border border-[hsl(var(--border))/0.6] bg-[hsl(var(--surface-soft))] p-4">
-            <p className="text-xs font-medium text-muted-foreground">Signed in as</p>
-            <p className="mt-1 truncate text-sm font-semibold text-foreground">
+          <div className="rounded-2xl border border-slate-200/60 bg-slate-50/80 p-4">
+            <p className="text-xs font-medium text-slate-500">Signed in as</p>
+            <p className="mt-1 truncate text-sm font-semibold text-slate-900">
               {user.displayName || "Parent"}
             </p>
-            <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+            <p className="truncate text-xs text-slate-500">{user.email}</p>
           </div>
 
           {childNames.length > 0 && (
-            <div className="rounded-2xl border border-[hsl(var(--border))/0.6] bg-[hsl(var(--surface-soft))] p-4">
+            <div className="rounded-2xl border border-slate-200/60 bg-slate-50/80 p-4">
               <p className="text-xs font-medium text-muted-foreground">Children</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {childNames.map((name) => (
@@ -187,14 +187,14 @@ export function ParentShell({
 
           <Link
             href="/login"
-            className="flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-[hsl(var(--surface-soft))] hover:text-foreground"
+            className="flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-slate-100/80 hover:text-foreground"
           >
             <ArrowLeftRight className="h-4 w-4" />
             Switch Portal
           </Link>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
-            className="flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-[hsl(var(--surface-soft))] hover:text-foreground"
+            className="flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-slate-100/80 hover:text-foreground"
           >
             <LogOut className="h-4 w-4" />
             Sign Out

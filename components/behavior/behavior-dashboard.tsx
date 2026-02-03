@@ -553,7 +553,7 @@ export function BehaviorDashboard({ stats, schoolId }: BehaviorDashboardProps) {
                           "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors",
                           selectedStudents.includes(balance.student.id)
                             ? "bg-[hsl(var(--accent-violet))/0.1]"
-                            : "hover:bg-slate-100 dark:hover:bg-slate-800"
+                            : "hover:bg-slate-100 dark:hover:bg-slate-700/50"
                         )}
                         onClick={() => toggleStudentSelection(balance.student.id)}
                       >
@@ -613,7 +613,7 @@ export function BehaviorDashboard({ stats, schoolId }: BehaviorDashboardProps) {
             </div>
 
             {/* Preview */}
-            <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-lg">
+            <div className="p-4 bg-slate-100 dark:bg-slate-700/50 rounded-lg">
               <p className="text-xs font-medium text-muted-foreground mb-2">Message Preview</p>
               <p className="text-sm">
                 Dear Parent, your child has accumulated {"{demerits}"} demerits this term.{" "}

@@ -69,14 +69,14 @@ export async function GET(request: NextRequest) {
     const formattedEvents = events.map((event) => ({
       id: event.id,
       title: event.title,
-      type: event.type,
+      type: event.eventType,
       date: event.startDate.toISOString().split("T")[0],
       startTime: event.startTime || "09:00",
       endTime: event.endTime || "17:00",
       location: event.location || "School",
       description: event.description || "",
       audience: parseAudience(event.audience),
-      color: event.color || getEventColor(event.type),
+      color: event.color || getEventColor(event.eventType),
       isAllDay: event.isAllDay,
     }));
 
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
         schoolId: effectiveSchoolId,
         title: data.title,
         description: data.description,
-        type: data.type,
+        eventType: data.type,
         startDate: new Date(data.startDate),
         endDate: data.endDate ? new Date(data.endDate) : new Date(data.startDate),
         startTime: data.startTime,
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
         audience: JSON.stringify(data.audience),
         isAllDay: data.isAllDay,
         color: data.color || getEventColor(data.type),
-        createdById: auth.user.id,
+        createdBy: auth.user.id,
       },
     });
 

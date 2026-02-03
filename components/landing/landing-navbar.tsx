@@ -131,7 +131,7 @@ export function LandingNavbar() {
               className={cn(
                 "md:hidden relative z-10 p-2 rounded-lg transition-colors",
                 isScrolled 
-                  ? "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                  ? "hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-200"
                   : "hover:bg-white/10 text-white"
               )}
               aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}

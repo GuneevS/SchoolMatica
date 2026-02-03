@@ -134,7 +134,7 @@ export function ChatInterface({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               placeholder="Search conversations..."
-              className="pl-10 bg-slate-50 dark:bg-slate-800 border-0"
+              className="pl-10 bg-slate-50 dark:bg-slate-700/50 border-0"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -147,7 +147,7 @@ export function ChatInterface({
               onClick={() => onSelectConversation(conversation)}
               className={cn(
                 "w-full flex items-start gap-3 p-4 text-left transition-colors",
-                "hover:bg-slate-50 dark:hover:bg-slate-800",
+                "hover:bg-slate-50 dark:hover:bg-slate-700/50",
                 activeConversation?.id === conversation.id &&
                   "bg-[hsl(var(--accent-violet))/0.06] dark:bg-[hsl(var(--accent-violet))/0.2] border-l-2 border-[hsl(var(--accent-violet))]"
               )}
@@ -248,7 +248,7 @@ export function ChatInterface({
                     <React.Fragment key={message.id}>
                       {showDate && (
                         <div className="flex justify-center my-4">
-                          <span className="text-xs text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                          <span className="text-xs text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/50 px-3 py-1 rounded-full">
                             {formatDate(message.timestamp)}
                           </span>
                         </div>
@@ -271,7 +271,7 @@ export function ChatInterface({
                             "max-w-[70%] rounded-2xl p-3",
                             message.isOwn
                               ? "bg-[hsl(var(--accent-violet))] text-white rounded-br-md"
-                              : "bg-slate-100 dark:bg-slate-800 rounded-bl-md"
+                              : "bg-slate-100 dark:bg-slate-700/50 rounded-bl-md"
                           )}
                         >
                           <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -349,7 +349,7 @@ export function ChatInterface({
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <div className="h-16 w-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
+              <div className="h-16 w-16 rounded-full bg-slate-100 dark:bg-slate-700/50 flex items-center justify-center mx-auto mb-4">
                 <Send className="h-8 w-8 text-slate-400" />
               </div>
               <h3 className="text-lg font-medium">Select a conversation</h3>

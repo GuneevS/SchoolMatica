@@ -269,7 +269,7 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
                 </Badge>
               )}
               {plan.status === "Locked" && (
-                <Badge className="bg-gray-100 dark:bg-gray-800 border-gray-400 text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                <Badge className="bg-gray-100 dark:bg-gray-700/50 border-gray-400 text-gray-700 dark:text-gray-200 flex items-center gap-1">
                   <Lock className="h-3 w-3" />
                   Locked
                 </Badge>

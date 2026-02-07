@@ -142,6 +142,7 @@ export async function POST(request: NextRequest, { params }: Params) {
         classes: [] as any[],
         subjects: [] as any[],
         teachers: [] as any[],
+        gradeSubjectConfigs: [] as any[],
         gradingConfigUpdated: false,
     };
     
@@ -213,10 +214,10 @@ export async function POST(request: NextRequest, { params }: Params) {
     if (subjects && subjects.length > 0) {
         // Check for existing subject codes for this school
         const existingSubjects = await prisma.subject.findMany({
-            where: { schoolId, code: { in: subjects.map(s => s.code) } },
+            where: { schoolId, code: { in: subjects.map((s: { code: string }) => s.code) } },
             select: { code: true },
         });
-        const existingCodeSet = new Set(existingSubjects.map(s => s.code));
+        const existingCodeSet = new Set(existingSubjects.map((s: { code: string }) => s.code));
         
         const subjectData = subjects
             .filter(s => !existingCodeSet.has(s.code))
@@ -238,6 +239,49 @@ export async function POST(request: NextRequest, { params }: Params) {
             where: { schoolId },
             orderBy: { name: "asc" },
         });
+        
+        // 4b. Create GradeSubjectConfig entries to link subjects to grade levels
+        // This ensures subjects show up when building timetables for specific grades
+        if (results.gradeLevels.length > 0 && results.subjects.length > 0) {
+            const gradeSubjectConfigData: { schoolId: string; gradeLevelId: string; subjectId: string; isCompulsory: boolean }[] = [];
+            
+            // Map grade level names to their phases
+            const gradeLevelPhaseMap = new Map<string, string>();
+            for (const gl of results.gradeLevels) {
+                // Extract grade ID from name like "Grade 10" -> "10", "Grade R" -> "R"
+                const gradeMatch = gl.name.match(/Grade\s+(\w+)/i);
+                const gradeId = gradeMatch ? gradeMatch[1] : gl.name;
+                const phase = GRADE_PHASES[gradeId] || "FET";
+                gradeLevelPhaseMap.set(gl.id, phase);
+            }
+            
+            // Link each subject to grade levels of the same phase
+            for (const subject of results.subjects) {
+                for (const gradeLevel of results.gradeLevels) {
+                    const gradeLevelPhase = gradeLevelPhaseMap.get(gradeLevel.id);
+                    if (gradeLevelPhase === subject.phase) {
+                        gradeSubjectConfigData.push({
+                            schoolId,
+                            gradeLevelId: gradeLevel.id,
+                            subjectId: subject.id,
+                            isCompulsory: true, // Default to compulsory for now
+                        });
+                    }
+                }
+            }
+            
+            if (gradeSubjectConfigData.length > 0) {
+                await prisma.gradeSubjectConfig.createMany({
+                    data: gradeSubjectConfigData,
+                    skipDuplicates: true,
+                });
+                
+                results.gradeSubjectConfigs = await prisma.gradeSubjectConfig.findMany({
+                    where: { schoolId },
+                    include: { subject: true, gradeLevel: true },
+                });
+            }
+        }
     }
     
     // 5. Create teachers
@@ -247,7 +291,7 @@ export async function POST(request: NextRequest, { params }: Params) {
             where: { email: { in: teachers.map(t => t.email) } },
             select: { email: true },
         });
-        const existingEmailSet = new Set(existingEmails.map(e => e.email));
+        const existingEmailSet = new Set(existingEmails.map((e: { email: string }) => e.email));
         
         const teacherData = teachers
             .filter(t => !existingEmailSet.has(t.email))

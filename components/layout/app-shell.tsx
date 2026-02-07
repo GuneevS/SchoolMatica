@@ -24,7 +24,7 @@ import {
   Users2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { RoleSwitcher } from "@/components/role-switcher";
+import { UserProfileMenu } from "@/components/ui/user-profile-menu";
 import { HelpButton } from "@/components/help/help-button";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { SchoolSwitcher } from "@/components/school-switcher";
@@ -239,12 +239,14 @@ interface Props {
     id: string;
     email: string;
     displayName: string | null;
+    profilePictureUrl?: string | null;
+    image?: string | null;
   } | null;
 }
 
 export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminProp = false, user }: Props) {
   const pathname = usePathname();
-  const { user: authUser, permissions, isAdmin, isSuperAdmin: isSuperAdminFromHook, schoolIds, isLoading } = useAuth();
+  const { user: authUser, permissions, isAdmin, isSuperAdmin: isSuperAdminFromHook, schoolIds, isLoading, activeRoleKey, setActiveRole } = useAuth();
   const { branding } = useBranding();
 
   // Build the client auth context for permission checks
@@ -278,11 +280,22 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
   );
 
   const navItemsToRender = useMemo(() => {
-    if (filteredNavItems.length === 0 && hasSuperAdminAccess) {
+    // If user has super admin access, show all items
+    if (hasSuperAdminAccess) {
       return navItems;
     }
+    // If user has no role assignments, show basic items (Dashboard, Events) plus allow navigation
+    // This prevents users from being completely stuck
+    if (authUser && authUser.roleAssignments.length === 0) {
+      // Show items without permission requirements (Dashboard, Events)
+      return navItems.filter(item => !item.canAccess);
+    }
+    // Normal permission-based filtering
+    if (filteredNavItems.length === 0) {
+      return navItems.filter(item => !item.canAccess);
+    }
     return filteredNavItems;
-  }, [filteredNavItems, hasSuperAdminAccess]);
+  }, [filteredNavItems, hasSuperAdminAccess, authUser]);
 
   // For marketing pages, render children directly without the app shell chrome
   const isMarketingPage = pathname && marketingPaths.includes(pathname);
@@ -477,7 +490,21 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
               <NotificationDropdown />
               <SchoolSwitcher initialSchool={initialSchool} className="hidden md:flex" />
               <ThemeToggle />
-              <RoleSwitcher />
+              <UserProfileMenu
+                user={{
+                  id: authUser?.id || user?.id || "",
+                  email: authUser?.email || user?.email || "",
+                  displayName: authUser?.displayName || user?.displayName || null,
+                  profilePictureUrl: (user as { profilePictureUrl?: string })?.profilePictureUrl,
+                  image: (user as { image?: string })?.image,
+                }}
+                roleAssignments={authUser?.roleAssignments || []}
+                activeRoleKey={activeRoleKey}
+                onRoleChange={setActiveRole}
+                isAdmin={isAdmin}
+                isSuperAdmin={isSuperAdminFromHook || isSuperAdminProp}
+                portalType="staff"
+              />
             </div>
           </div>
         </header>

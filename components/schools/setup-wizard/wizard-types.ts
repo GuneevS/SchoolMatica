@@ -72,12 +72,18 @@ export const STAFF_ROLES = [
 ] as const;
 
 // South African CAPS subjects by phase
+// Compulsory subjects are required per CAPS guidelines; optional subjects can be added by schools
 export const SA_CAPS_SUBJECTS = {
     Foundation: [
         { code: "HL", name: "Home Language", isCompulsory: true },
         { code: "FAL", name: "First Additional Language", isCompulsory: true },
         { code: "MATH", name: "Mathematics", isCompulsory: true },
         { code: "LS", name: "Life Skills", isCompulsory: true },
+        // Optional enrichment subjects
+        { code: "SAL", name: "Second Additional Language", isCompulsory: false },
+        { code: "COMP", name: "Computer Skills", isCompulsory: false },
+        { code: "MUSIC", name: "Music", isCompulsory: false },
+        { code: "ART", name: "Art", isCompulsory: false },
     ],
     Intermediate: [
         { code: "HL", name: "Home Language", isCompulsory: true },
@@ -86,6 +92,12 @@ export const SA_CAPS_SUBJECTS = {
         { code: "NS", name: "Natural Sciences & Technology", isCompulsory: true },
         { code: "SS", name: "Social Sciences", isCompulsory: true },
         { code: "LS", name: "Life Skills", isCompulsory: true },
+        // Optional enrichment subjects
+        { code: "SAL", name: "Second Additional Language", isCompulsory: false },
+        { code: "COMP", name: "Computer Skills", isCompulsory: false },
+        { code: "MUSIC", name: "Music", isCompulsory: false },
+        { code: "ART", name: "Art", isCompulsory: false },
+        { code: "DRAMA", name: "Drama", isCompulsory: false },
     ],
     Senior: [
         { code: "HL", name: "Home Language", isCompulsory: true },
@@ -97,6 +109,10 @@ export const SA_CAPS_SUBJECTS = {
         { code: "EMS", name: "Economic & Management Sciences", isCompulsory: true },
         { code: "CA", name: "Creative Arts", isCompulsory: true },
         { code: "LO", name: "Life Orientation", isCompulsory: true },
+        // Optional enrichment subjects
+        { code: "SAL", name: "Second Additional Language", isCompulsory: false },
+        { code: "CAT", name: "Computer Applications", isCompulsory: false },
+        { code: "AG", name: "Agricultural Studies", isCompulsory: false },
     ],
     FET: [
         { code: "HL", name: "Home Language", isCompulsory: true },

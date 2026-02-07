@@ -16,6 +16,8 @@ export interface AuthUser {
   email: string;
   displayName: string | null;
   schoolId: string | null;
+  profilePictureUrl: string | null;
+  image: string | null;
   roleAssignments: RoleAssignment[];
 }
 

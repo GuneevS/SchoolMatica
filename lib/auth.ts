@@ -123,6 +123,18 @@ export const PERMISSION_KEYS = [
   "superadmin:provision",      // Provision new schools with initial admin
   "superadmin:impersonate",    // Impersonate any user (for debugging)
   "superadmin:settings",       // Platform-wide settings
+
+  // Messaging & Communications
+  "message:read",              // Read messages in threads user is participant of
+  "message:send",              // Send messages in threads
+  "message:create_thread",     // Create new message threads
+  "message:delete",            // Delete own messages
+  "message:delete_any",        // Delete any message (admin)
+  "message:audit",             // View message audit logs
+  "announcement:read",         // Read announcements
+  "announcement:create",       // Create announcements
+  "announcement:update",       // Update announcements
+  "announcement:delete",       // Delete announcements
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];

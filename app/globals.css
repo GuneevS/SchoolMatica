@@ -211,6 +211,24 @@
   }
 }
 
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+@keyframes ring-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 .animate-shimmer {
   animation: shimmer 2s infinite linear;
   background: linear-gradient(
@@ -237,6 +255,14 @@
 
 .animate-rise {
   animation: rise-in 0.6s ease both;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s ease-in-out infinite;
+}
+
+.animate-ring-rotate {
+  animation: ring-rotate 8s linear infinite;
 }
 
 .stagger-grid > * {

@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
@@ -34,6 +34,8 @@ export interface Message {
   senderId: string;
   senderName: string;
   senderInitials: string;
+  senderPictureUrl?: string | null;
+  senderRole?: string;
   timestamp: Date;
   isOwn: boolean;
   status?: "sent" | "delivered" | "read";
@@ -45,6 +47,7 @@ export interface Conversation {
   participantName: string;
   participantRole: string;
   participantInitials: string;
+  participantPictureUrl?: string | null;
   lastMessage: string;
   lastMessageTime: Date;
   unreadCount: number;
@@ -61,6 +64,9 @@ interface ChatInterfaceProps {
   onSearch?: (query: string) => void;
   currentUserId: string;
   isLoading?: boolean;
+  isConnected?: boolean;
+  typingUsers?: Map<string, string>;
+  onTyping?: (isTyping: boolean) => void;
 }
 
 export function ChatInterface({
@@ -72,6 +78,9 @@ export function ChatInterface({
   onSearch,
   currentUserId,
   isLoading = false,
+  isConnected = false,
+  typingUsers = new Map(),
+  onTyping,
 }: ChatInterfaceProps) {
   const [messageInput, setMessageInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -152,16 +161,15 @@ export function ChatInterface({
                   "bg-[hsl(var(--accent-violet))/0.06] dark:bg-[hsl(var(--accent-violet))/0.2] border-l-2 border-[hsl(var(--accent-violet))]"
               )}
             >
-              <div className="relative">
-                <Avatar className="h-12 w-12">
-                  <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--accent-iris))] to-[hsl(var(--accent-flamingo))] text-white font-semibold">
-                    {conversation.participantInitials}
-                  </AvatarFallback>
-                </Avatar>
-                {conversation.isOnline && (
-                  <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" />
-                )}
-              </div>
+              <UserAvatar
+                src={conversation.participantPictureUrl}
+                name={conversation.participantName}
+                role={conversation.participantRole}
+                size="md"
+                showRing={true}
+                showStatus={true}
+                status={conversation.isOnline ? "online" : "offline"}
+              />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
                   <p className="font-medium truncate">{conversation.participantName}</p>
@@ -196,11 +204,15 @@ export function ChatInterface({
             {/* Chat Header */}
             <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900">
               <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--accent-iris))] to-[hsl(var(--accent-flamingo))] text-white font-semibold">
-                    {activeConversation.participantInitials}
-                  </AvatarFallback>
-                </Avatar>
+                <UserAvatar
+                  src={activeConversation.participantPictureUrl}
+                  name={activeConversation.participantName}
+                  role={activeConversation.participantRole}
+                  size="sm"
+                  showRing={true}
+                  showStatus={true}
+                  status={activeConversation.isOnline ? "online" : "offline"}
+                />
                 <div>
                   <p className="font-medium">{activeConversation.participantName}</p>
                   <p className="text-sm text-slate-500">
@@ -260,11 +272,13 @@ export function ChatInterface({
                         )}
                       >
                         {!message.isOwn && (
-                          <Avatar className="h-8 w-8 shrink-0">
-                            <AvatarFallback className="bg-slate-200 dark:bg-slate-700 text-xs">
-                              {message.senderInitials}
-                            </AvatarFallback>
-                          </Avatar>
+                          <UserAvatar
+                            src={message.senderPictureUrl}
+                            name={message.senderName}
+                            role={message.senderRole}
+                            size="xs"
+                            showRing={true}
+                          />
                         )}
                         <div
                           className={cn(
@@ -300,6 +314,14 @@ export function ChatInterface({
                 <div ref={messagesEndRef} />
               </div>
             </ScrollArea>
+
+            {/* Typing Indicator */}
+            {typingUsers.size > 0 && (
+              <div className="px-4 py-2 text-sm text-slate-500 dark:text-slate-400 italic">
+                {Array.from(typingUsers.values()).join(", ")}{" "}
+                {typingUsers.size === 1 ? "is" : "are"} typing...
+              </div>
+            )}
 
             {/* Message Input */}
             <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">

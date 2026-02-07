@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChatInterface, BulkMessageComposer, Conversation, Message } from "@/components/communications";
+import { ChatInterface, BulkMessageComposer, NewConversationDialog, Conversation, Message } from "@/components/communications";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
+import { useRealtimeChat, RealtimeMessage } from "@/lib/hooks/use-realtime-chat";
 import {
   MessageSquare,
   Users,
@@ -40,6 +41,7 @@ interface CommunicationsPageClientProps {
     audience: string[];
   }>;
   currentUserId: string;
+  schoolId: string;
   stats: {
     unreadMessages: number;
     messagesToday: number;
@@ -58,6 +60,7 @@ export function CommunicationsPageClient({
   conversations: initialConversations,
   announcements,
   currentUserId,
+  schoolId,
   stats,
 }: CommunicationsPageClientProps) {
   const [activeTab, setActiveTab] = useState("messages");
@@ -73,6 +76,30 @@ export function CommunicationsPageClient({
   );
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [isNewConversationOpen, setIsNewConversationOpen] = useState(false);
+  const [conversationsList, setConversationsList] = useState<Conversation[]>(conversations);
+
+  // Handle incoming real-time messages
+  const handleRealtimeMessage = useCallback((realtimeMsg: RealtimeMessage) => {
+    const newMessage: Message = {
+      id: realtimeMsg.id,
+      content: realtimeMsg.content,
+      senderId: realtimeMsg.senderId,
+      senderName: realtimeMsg.senderName,
+      senderInitials: realtimeMsg.senderInitials,
+      timestamp: new Date(realtimeMsg.createdAt),
+      isOwn: false,
+      status: "delivered",
+    };
+    setMessages((prev) => [...prev, newMessage]);
+  }, []);
+
+  // Real-time chat hook
+  const { isConnected, typingUsers } = useRealtimeChat({
+    threadId: activeConversation?.id || null,
+    currentUserId,
+    onNewMessage: handleRealtimeMessage,
+  });
 
   // Fetch messages when conversation changes
   useEffect(() => {
@@ -151,6 +178,54 @@ export function CommunicationsPageClient({
       }
     } catch (error) {
       console.error("Failed to send message:", error);
+    }
+  };
+
+  const handleCreateThread = async (data: {
+    type: "Direct" | "Class" | "School";
+    participants: Array<{ id: string; type: string; name?: string }>;
+    subject?: string;
+    initialMessage?: string;
+  }): Promise<{ threadId: string } | null> => {
+    try {
+      const response = await fetch("/api/messages/threads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const newThread = result.thread;
+
+        // Add to conversations list
+        const otherParticipant = data.participants[0];
+        const newConversation: Conversation = {
+          id: newThread.id,
+          participantName: otherParticipant?.name || "Unknown",
+          participantRole: "User",
+          participantInitials: (otherParticipant?.name || "??")
+            .split(" ")
+            .map((n: string) => n[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2),
+          lastMessage: data.initialMessage || "No messages yet",
+          lastMessageTime: new Date(),
+          unreadCount: 0,
+          isOnline: false,
+          childName: data.subject,
+        };
+
+        setConversationsList((prev) => [newConversation, ...prev]);
+        setActiveConversation(newConversation);
+
+        return { threadId: newThread.id };
+      }
+      return null;
+    } catch (error) {
+      console.error("Failed to create thread:", error);
+      return null;
     }
   };
 
@@ -237,7 +312,10 @@ export function CommunicationsPageClient({
               Scheduled
             </TabsTrigger>
           </TabsList>
-          <Button className="bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]">
+          <Button 
+            onClick={() => setIsNewConversationOpen(true)}
+            className="bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]"
+          >
             <Plus className="h-4 w-4 mr-2" />
             New Message
           </Button>
@@ -252,7 +330,10 @@ export function CommunicationsPageClient({
                 <p className="text-sm text-muted-foreground mt-1">
                   Start a new conversation to connect with parents or staff
                 </p>
-                <Button className="mt-4 bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]">
+                <Button 
+                  onClick={() => setIsNewConversationOpen(true)}
+                  className="mt-4 bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Start Conversation
                 </Button>
@@ -267,6 +348,8 @@ export function CommunicationsPageClient({
               onSendMessage={handleSendMessage}
               currentUserId={currentUserId}
               isLoading={isLoadingMessages}
+              isConnected={isConnected}
+              typingUsers={typingUsers}
             />
           )}
         </TabsContent>
@@ -374,6 +457,14 @@ export function CommunicationsPageClient({
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* New Conversation Dialog */}
+      <NewConversationDialog
+        open={isNewConversationOpen}
+        onOpenChange={setIsNewConversationOpen}
+        onCreateThread={handleCreateThread}
+        schoolId={schoolId}
+      />
     </div>
   );
 }

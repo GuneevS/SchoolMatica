@@ -65,10 +65,10 @@ export default async function TimetablePage({ params }: Props) {
     );
   }
 
-  const [classes, teachers, assessmentPlans] = await Promise.all([
+  const [classes, teachers, assessmentPlans, subjects, gradeSubjectConfigs] = await Promise.all([
     prisma.classGroup.findMany({
       where: { schoolId: timetable.schoolId },
-      include: { subject: true },
+      include: { subject: true, gradeLevel: true },
       orderBy: [{ grade: "asc" }, { name: "asc" }],
     }),
     prisma.teacher.findMany({
@@ -79,6 +79,14 @@ export default async function TimetablePage({ params }: Props) {
       where: { classGroup: { schoolId: timetable.schoolId } },
       include: { classGroup: { include: { subject: true } } },
       orderBy: [{ updatedAt: "desc" }],
+    }),
+    prisma.subject.findMany({
+      where: { schoolId: timetable.schoolId },
+      orderBy: [{ phase: "asc" }, { name: "asc" }],
+    }),
+    prisma.gradeSubjectConfig.findMany({
+      where: { schoolId: timetable.schoolId },
+      include: { subject: true, gradeLevel: true },
     }),
   ]);
 
@@ -98,6 +106,8 @@ export default async function TimetablePage({ params }: Props) {
         classes={classes}
         teachers={teachers}
         assessmentPlans={assessmentPlans}
+        subjects={subjects}
+        gradeSubjectConfigs={gradeSubjectConfigs}
       />
     </div>
   );

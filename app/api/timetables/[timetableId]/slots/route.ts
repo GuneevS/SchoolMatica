@@ -28,7 +28,8 @@ export async function POST(request: NextRequest, { params }: Params) {
   const parsed = createSlotSchema.safeParse(json);
   
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
+    const errorMessage = parsed.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', ');
+    return NextResponse.json({ error: errorMessage }, { status: 400 });
   }
 
   // Validate timetable and school scope

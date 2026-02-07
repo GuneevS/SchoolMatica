@@ -151,6 +151,7 @@ export function LandingFooter() {
               <input
                 type="email"
                 placeholder="Enter your email"
+                suppressHydrationWarning
                 className={cn(
                   "flex-1 md:w-64 px-4 py-2 rounded-xl text-sm",
                   "bg-[hsl(var(--surface-soft))] border border-[hsl(var(--border-strong))/0.5]",
@@ -170,7 +171,7 @@ export function LandingFooter() {
         <div className="py-6 border-t border-[hsl(var(--border-strong))/0.3]">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-xs text-muted-foreground">
-              © {new Date().getFullYear()} SchoolMatica. All rights reserved.
+              © 2026 SchoolMatica. All rights reserved.
             </p>
             <div className="flex items-center gap-6">
               <span className="text-xs text-muted-foreground">

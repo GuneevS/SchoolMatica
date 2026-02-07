@@ -53,6 +53,10 @@ model AppUser {
   displayName   String // Kept for backward compatibility, sync with name
   passwordHash  String? // For credentials auth if needed
 
+  // Profile customization
+  profilePictureUrl String? // Custom uploaded profile picture
+  profileColor      String? // User's preferred accent color
+
   // Password reset fields
   resetToken       String? // Hashed reset token
   resetTokenExpiry DateTime? // Token expiration timestamp

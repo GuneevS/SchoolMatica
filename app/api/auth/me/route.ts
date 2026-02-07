@@ -19,7 +19,9 @@ export async function GET(request: NextRequest) {
       email: auth.user.email,
       displayName: auth.user.displayName,
       schoolId: auth.user.schoolId,
-      roleAssignments: auth.user.roleAssignments.map(assignment => ({
+      profilePictureUrl: (auth.user as { profilePictureUrl?: string }).profilePictureUrl ?? null,
+      image: auth.user.image ?? null,
+      roleAssignments: auth.user.roleAssignments.map((assignment: typeof auth.user.roleAssignments[number]) => ({
         role: {
           name: assignment.role.name,
           key: assignment.role.key,

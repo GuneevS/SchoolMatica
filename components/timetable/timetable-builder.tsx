@@ -1,17 +1,20 @@
 
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type {
   AssessmentPlan,
   ClassGroup,
+  GradeLevel,
+  GradeSubjectConfig,
   Subject,
   Teacher,
   Timetable,
   TimetablePeriod,
   TimetableSlot,
 } from "@prisma/client";
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useDraggable, useDroppable } from "@dnd-kit/core";
 import { TimetableGrid } from "@/components/timetable/timetable-grid";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,7 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { CheckCircle2, LayoutGrid, Pencil, Sparkles, Users2 } from "lucide-react";
+import { BookOpen, CheckCircle2, Clock, GripVertical, LayoutGrid, Pencil, Sparkles, Users2 } from "lucide-react";
 
 type TimetableSlotWithRelations = TimetableSlot & {
   classGroup: ClassGroup & { subject: Subject | null };
@@ -36,8 +39,9 @@ type TimetablePeriodWithSlots = TimetablePeriod & {
   slots: TimetableSlotWithRelations[];
 };
 
-type ClassGroupWithSubject = ClassGroup & { subject: Subject | null };
+type ClassGroupWithSubject = ClassGroup & { subject: Subject | null; gradeLevel: GradeLevel | null };
 type AssessmentPlanWithClass = AssessmentPlan & { classGroup: ClassGroupWithSubject };
+type GradeSubjectConfigWithRelations = GradeSubjectConfig & { subject: Subject; gradeLevel: GradeLevel };
 
 interface TimetableBuilderProps {
   timetable: Timetable & {
@@ -47,6 +51,8 @@ interface TimetableBuilderProps {
   classes: ClassGroupWithSubject[];
   teachers: Teacher[];
   assessmentPlans: AssessmentPlanWithClass[];
+  subjects: Subject[];
+  gradeSubjectConfigs: GradeSubjectConfigWithRelations[];
 }
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
@@ -78,7 +84,119 @@ interface PeriodGroup {
   periods: TimetablePeriod[];
 }
 
-export function TimetableBuilder({ timetable, classes, teachers, assessmentPlans }: TimetableBuilderProps) {
+// Draggable Subject Component
+function DraggableSubject({ subject, isDragging }: { subject: Subject; isDragging?: boolean }) {
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+    id: `subject-${subject.id}`,
+    data: { type: 'subject', subject },
+  });
+
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+  } : undefined;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
+      className={cn(
+        "flex items-center gap-2 px-3 py-2 rounded-lg border cursor-grab active:cursor-grabbing transition-all",
+        "bg-card hover:bg-accent hover:border-primary/30 hover:shadow-sm",
+        isDragging && "opacity-50 ring-2 ring-primary"
+      )}
+    >
+      <GripVertical className="h-4 w-4 text-muted-foreground" />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">{subject.name}</p>
+        <p className="text-xs text-muted-foreground">{subject.code}</p>
+      </div>
+      <Badge variant="outline" className="text-[10px] h-5 shrink-0">{subject.phase}</Badge>
+    </div>
+  );
+}
+
+// Droppable Period Cell Component
+function DroppablePeriodCell({ 
+  period, 
+  slot, 
+  isBreak,
+  onSlotClick, 
+  onEmptyClick,
+  highlightClassId 
+}: { 
+  period: TimetablePeriod;
+  slot?: TimetableSlotWithRelations;
+  isBreak: boolean;
+  onSlotClick: (slot: TimetableSlotWithRelations) => void;
+  onEmptyClick: (period: TimetablePeriod) => void;
+  highlightClassId?: string;
+}) {
+  const { isOver, setNodeRef } = useDroppable({
+    id: `period-${period.id}`,
+    data: { type: 'period', period },
+  });
+
+  const isDimmed = Boolean(highlightClassId && slot && slot.classGroupId !== highlightClassId);
+
+  return (
+    <div 
+      ref={setNodeRef}
+      className={cn(
+        "p-2 border-r last:border-0 min-h-[120px] relative group/cell transition-colors",
+        isOver && !slot && !isBreak && "bg-primary/10 ring-2 ring-primary ring-inset"
+      )}
+    >
+      {slot ? (
+        <div 
+          onClick={() => onSlotClick(slot)}
+          className={cn(
+            "h-full w-full rounded-lg bg-primary/5 border border-primary/10 p-3 cursor-pointer hover:bg-primary/10 hover:border-primary/30 transition-all hover:shadow-sm flex flex-col gap-1",
+            isDimmed && "opacity-50 hover:opacity-80",
+          )}
+        >
+          <div className="flex items-start justify-between">
+            <span className="font-semibold text-sm text-primary line-clamp-1">
+              {slot.classGroup.subject?.name || slot.classGroup.name}
+            </span>
+          </div>
+          <div className="mt-auto space-y-1">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Users2 className="h-3 w-3" />
+              <span className="line-clamp-1">
+                {slot.teacher ? `${slot.teacher.firstName[0]}. ${slot.teacher.lastName}` : 'No Teacher'}
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : isBreak ? (
+        <div className="h-full w-full rounded-lg border border-dashed border-amber-400/40 bg-amber-500/10 flex items-center justify-center">
+          <span className="text-xs font-semibold uppercase tracking-wider text-amber-600">
+            {period.name}
+          </span>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => onEmptyClick(period)}
+          className={cn(
+            "h-full w-full rounded-lg border border-dashed flex items-center justify-center transition",
+            isOver 
+              ? "border-primary bg-primary/5 text-primary" 
+              : "border-transparent hover:border-primary/40 hover:bg-primary/5 text-muted-foreground/60"
+          )}
+        >
+          <span className="text-xs font-medium uppercase tracking-wider">
+            {isOver ? "Drop here" : "Add class"}
+          </span>
+        </button>
+      )}
+    </div>
+  );
+}
+
+export function TimetableBuilder({ timetable, classes, teachers, assessmentPlans, subjects, gradeSubjectConfigs }: TimetableBuilderProps) {
   const router = useRouter();
   const [slots, setSlots] = useState<TimetableSlotWithRelations[]>(timetable.slots);
   const [periods, setPeriods] = useState<TimetablePeriodWithSlots[]>(timetable.periods);
@@ -106,6 +224,42 @@ export function TimetableBuilder({ timetable, classes, teachers, assessmentPlans
   const [isSavingPeriod, setIsSavingPeriod] = useState(false);
   const [isRefreshing, startTransition] = useTransition();
   const [activePeriodGroup, setActivePeriodGroup] = useState<PeriodGroup | null>(null);
+  
+  // Drag-and-drop state
+  const [draggingSubject, setDraggingSubject] = useState<Subject | null>(null);
+  const [showSubjectPalette, setShowSubjectPalette] = useState(true);
+  
+  // Smart defaults: remember teacher preferences per subject
+  const [teacherBySubject, setTeacherBySubject] = useState<Map<string, string>>(new Map());
+  
+  // Separate homeroom classes (for slot assignment) from subject classes
+  const homeroomClasses = useMemo(() => 
+    classes.filter(c => c.classType === "Homeroom" || !c.subjectId),
+    [classes]
+  );
+  
+  // Get subjects available for a specific grade
+  const getSubjectsForGrade = (grade: number) => {
+    // Find grade level for this grade number
+    const gradeLevel = classes.find(c => c.grade === grade)?.gradeLevel;
+    if (!gradeLevel) return subjects; // Fallback to all subjects
+    
+    // Get subjects linked to this grade level
+    const linkedSubjectIds = gradeSubjectConfigs
+      .filter(config => config.gradeLevelId === gradeLevel.id)
+      .map(config => config.subjectId);
+    
+    if (linkedSubjectIds.length === 0) return subjects; // Fallback if no configs
+    
+    return subjects.filter(s => linkedSubjectIds.includes(s.id));
+  };
+  
+  // When class is selected, get its subjects
+  const selectedClassSubjects = useMemo(() => {
+    const selectedClass = classes.find(c => c.id === slotForm.classGroupId);
+    if (!selectedClass) return subjects;
+    return getSubjectsForGrade(selectedClass.grade);
+  }, [slotForm.classGroupId, classes, subjects, gradeSubjectConfigs]);
 
   const classLabel = (classGroup: ClassGroupWithSubject) => {
     const subjectName = classGroup.subject?.name ? ` · ${classGroup.subject.name}` : "";
@@ -156,6 +310,63 @@ export function TimetableBuilder({ timetable, classes, teachers, assessmentPlans
       uniqueTeachers,
     };
   }, [periods, slots]);
+
+  // Drag-and-drop handlers
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const { active } = event;
+    if (active.data.current?.type === 'subject') {
+      setDraggingSubject(active.data.current.subject);
+    }
+  }, []);
+
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setDraggingSubject(null);
+    
+    if (!over || !active.data.current?.subject) return;
+    
+    // Check if dropped on a period
+    if (over.data.current?.type === 'period') {
+      const droppedSubject = active.data.current.subject as Subject;
+      const targetPeriod = over.data.current.period as TimetablePeriod;
+      
+      // Check if period already has a slot
+      const existingSlot = slots.find(s => s.periodId === targetPeriod.id);
+      if (existingSlot) return; // Don't replace existing slots
+      
+      // Find or create a class for this subject
+      // First, try to find a class that matches the subject
+      const subjectClass = classes.find(c => c.subjectId === droppedSubject.id);
+      
+      if (subjectClass) {
+        // Use the existing subject class
+        openCreateSlotWithDefaults(targetPeriod, subjectClass.id, droppedSubject);
+      } else {
+        // Use the first homeroom class and open the dialog
+        const defaultClass = homeroomClasses[0]?.id ?? classes[0]?.id ?? "";
+        openCreateSlotWithDefaults(targetPeriod, defaultClass, droppedSubject);
+      }
+    }
+  }, [slots, classes, homeroomClasses]);
+
+  // Open slot dialog with pre-filled subject info
+  function openCreateSlotWithDefaults(period: TimetablePeriod, classId: string, subject?: Subject) {
+    setActiveSlot(null);
+    setActivePeriod(period);
+    
+    // Get remembered teacher for this subject
+    const rememberedTeacher = subject ? teacherBySubject.get(subject.id) : undefined;
+    
+    setSlotForm({
+      classGroupId: classId,
+      teacherId: rememberedTeacher ?? "none",
+      assessmentPlanId: "none",
+      room: "",
+      notes: subject ? `Subject: ${subject.name}` : "",
+    });
+    setSlotError(null);
+    setSlotDialogOpen(true);
+  }
 
   function openCreateSlot(period: TimetablePeriod) {
     const defaultClass = selectedClassId !== "all" ? selectedClassId : classes[0]?.id ?? "";
@@ -235,7 +446,12 @@ export function TimetableBuilder({ timetable, classes, teachers, assessmentPlans
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        setSlotError(errorData?.error ?? "Unable to save this slot. Check your permissions.");
+        const errorMsg = typeof errorData?.error === 'string' 
+          ? errorData.error 
+          : Array.isArray(errorData?.error)
+            ? errorData.error.map((e: { message?: string }) => e.message || String(e)).join(', ')
+            : "Unable to save this slot. Check your permissions.";
+        setSlotError(errorMsg);
         return;
       }
 
@@ -358,8 +574,64 @@ export function TimetableBuilder({ timetable, classes, teachers, assessmentPlans
   const selectedClass = classes.find((item) => item.id === selectedClassId);
 
   return (
+    <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
     <TooltipProvider>
-      <div className="space-y-8">
+      <div className="flex gap-6">
+        {/* Subject Palette Sidebar */}
+        {showSubjectPalette && (
+          <div className="w-72 shrink-0 space-y-4">
+            <Card className="sticky top-4">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <BookOpen className="h-4 w-4" />
+                    Subject Palette
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowSubjectPalette(false)}
+                    className="h-6 w-6 p-0"
+                  >
+                    ×
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Drag subjects onto the timetable grid
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-2 max-h-[60vh] overflow-y-auto">
+                {subjects.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No subjects configured for this school
+                  </p>
+                ) : (
+                  subjects.map((subject) => (
+                    <DraggableSubject
+                      key={subject.id}
+                      subject={subject}
+                      isDragging={draggingSubject?.id === subject.id}
+                    />
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Main Content */}
+        <div className="flex-1 space-y-8">
+        {!showSubjectPalette && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowSubjectPalette(true)}
+            className="gap-2"
+          >
+            <BookOpen className="h-4 w-4" />
+            Show Subject Palette
+          </Button>
+        )}
         <Card className="border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))] shadow-ambient-sm">
           <CardContent className="p-6">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -583,7 +855,7 @@ export function TimetableBuilder({ timetable, classes, teachers, assessmentPlans
             </DialogHeader>
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="classGroup">Class</Label>
+                <Label htmlFor="classGroup">Class (Homeroom)</Label>
                 <Select
                   value={slotForm.classGroupId}
                   onValueChange={(value) =>
@@ -598,13 +870,28 @@ export function TimetableBuilder({ timetable, classes, teachers, assessmentPlans
                     <SelectValue placeholder="Choose class" />
                   </SelectTrigger>
                   <SelectContent>
-                    {classes.map((classGroup) => (
+                    {homeroomClasses.map((classGroup) => (
                       <SelectItem key={classGroup.id} value={classGroup.id}>
                         {classLabel(classGroup)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {selectedClassSubjects.length > 0 && (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    <span className="text-xs text-muted-foreground">Subjects for this grade:</span>
+                    {selectedClassSubjects.slice(0, 6).map(s => (
+                      <Badge key={s.id} variant="outline" className="text-[10px] h-5">
+                        {s.code}
+                      </Badge>
+                    ))}
+                    {selectedClassSubjects.length > 6 && (
+                      <Badge variant="outline" className="text-[10px] h-5">
+                        +{selectedClassSubjects.length - 6} more
+                      </Badge>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
@@ -772,51 +1059,96 @@ export function TimetableBuilder({ timetable, classes, teachers, assessmentPlans
                   </Select>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
+                {/* Quick Duration Presets */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    Quick Duration
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {[30, 40, 45, 50, 60].map((mins) => (
                       <Button
+                        key={mins}
                         type="button"
                         variant="outline"
-                        className={cn(isBreakPeriod(activePeriodGroup.base) && "border-amber-500/50")}
-                        onClick={() =>
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => {
+                          const [h, m] = periodForm.startTime.split(':').map(Number);
+                          const totalMins = h * 60 + m + mins;
+                          const endH = Math.floor(totalMins / 60) % 24;
+                          const endM = totalMins % 60;
                           setPeriodForm((state) => ({
                             ...state,
-                            name: "Break",
-                          }))
-                        }
+                            endTime: `${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`,
+                          }));
+                        }}
                       >
-                        Mark break
+                        {mins}min
                       </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Rename to a break so the grid blocks scheduling.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() =>
-                      setPeriodForm((state) => ({
-                        ...state,
-                        name: "Lunch",
-                      }))
-                    }
-                  >
-                    Lunch
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() =>
-                      setPeriodForm((state) => ({
-                        ...state,
-                        name: `Period ${activePeriodGroup.periodNumber}`,
-                      }))
-                    }
-                  >
-                    Reset label
-                  </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quick Type Presets */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Quick Type</Label>
+                  <div className="flex flex-wrap gap-2">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className={cn("h-7", isBreakPeriod(activePeriodGroup.base) && "border-amber-500/50 bg-amber-50")}
+                          onClick={() =>
+                            setPeriodForm((state) => ({
+                              ...state,
+                              name: "Break",
+                            }))
+                          }
+                        >
+                          ☕ Break
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Mark as break (blocks scheduling)</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7"
+                      onClick={() => {
+                        const [h, m] = periodForm.startTime.split(':').map(Number);
+                        const totalMins = h * 60 + m + 45; // 45 min lunch
+                        const endH = Math.floor(totalMins / 60) % 24;
+                        const endM = totalMins % 60;
+                        setPeriodForm((state) => ({
+                          ...state,
+                          name: "Lunch",
+                          endTime: `${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`,
+                        }));
+                      }}
+                    >
+                      🍽️ Lunch (45min)
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7"
+                      onClick={() =>
+                        setPeriodForm((state) => ({
+                          ...state,
+                          name: `Period ${activePeriodGroup.periodNumber}`,
+                        }))
+                      }
+                    >
+                      Reset label
+                    </Button>
+                  </div>
                 </div>
 
                 {periodError && <p className="text-sm text-destructive">{periodError}</p>}
@@ -832,7 +1164,22 @@ export function TimetableBuilder({ timetable, classes, teachers, assessmentPlans
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
     </TooltipProvider>
+    
+    {/* Drag overlay for visual feedback */}
+    <DragOverlay>
+      {draggingSubject && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-card shadow-lg opacity-90">
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{draggingSubject.name}</p>
+            <p className="text-xs text-muted-foreground">{draggingSubject.code}</p>
+          </div>
+        </div>
+      )}
+    </DragOverlay>
+    </DndContext>
   );
 }

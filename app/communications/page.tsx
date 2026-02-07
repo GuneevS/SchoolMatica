@@ -159,6 +159,7 @@ export default async function CommunicationsPage() {
       conversations={conversations}
       announcements={transformedAnnouncements}
       currentUserId={currentUserId}
+      schoolId={schoolId}
       stats={stats}
     />
   );

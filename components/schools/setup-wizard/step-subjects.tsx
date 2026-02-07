@@ -139,39 +139,48 @@ export function StepSubjects() {
                             </CardHeader>
                             <CardContent>
                                 <div className="grid grid-cols-2 gap-3">
-                                    {subjects.map(subject => (
-                                        <div
-                                            key={subject.code}
-                                            className={`flex items-center justify-between rounded-lg border p-3 transition-colors ${
-                                                subject.enabled 
-                                                    ? "border-primary/50 bg-primary/5" 
-                                                    : "border-border bg-muted/30"
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
+                                    {subjects.map(subject => {
+                                        const isClickable = !subject.isCompulsory;
+                                        return (
+                                            <div
+                                                key={subject.code}
+                                                onClick={() => isClickable && toggleSubject(phase, subject.code)}
+                                                className={`flex items-center justify-between rounded-lg border p-3 transition-all ${
                                                     subject.enabled 
-                                                        ? "bg-primary/20 text-primary" 
-                                                        : "bg-muted text-muted-foreground"
-                                                }`}>
-                                                    {subject.code.slice(0, 2)}
+                                                        ? "border-primary/50 bg-primary/5" 
+                                                        : "border-border bg-muted/30"
+                                                } ${
+                                                    isClickable 
+                                                        ? "cursor-pointer hover:border-primary/70 hover:shadow-sm" 
+                                                        : ""
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
+                                                        subject.enabled 
+                                                            ? "bg-primary/20 text-primary" 
+                                                            : "bg-muted text-muted-foreground"
+                                                    }`}>
+                                                        {subject.code.slice(0, 2)}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-medium">{subject.name}</p>
+                                                        {subject.isCompulsory && (
+                                                            <Badge variant="secondary" className="text-[10px] h-4 mt-0.5">
+                                                                Compulsory
+                                                            </Badge>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p className="text-sm font-medium">{subject.name}</p>
-                                                    {subject.isCompulsory && (
-                                                        <Badge variant="secondary" className="text-[10px] h-4 mt-0.5">
-                                                            Compulsory
-                                                        </Badge>
-                                                    )}
-                                                </div>
+                                                <Checkbox
+                                                    checked={subject.enabled}
+                                                    onCheckedChange={() => toggleSubject(phase, subject.code)}
+                                                    disabled={subject.isCompulsory}
+                                                    className={subject.isCompulsory ? "opacity-70" : ""}
+                                                />
                                             </div>
-                                            <Checkbox
-                                                checked={subject.enabled}
-                                                onCheckedChange={() => toggleSubject(phase, subject.code)}
-                                                disabled={subject.isCompulsory}
-                                            />
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </CardContent>
                         </Card>

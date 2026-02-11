@@ -1,0 +1,9 @@
+{
+  "schoolName": "Test High School",
+  "schoolShortCode": "THS",
+  "firstName": "Admin",
+  "lastName": "User",
+  "email": "admin@testhighschool.com",
+  "password": "SecurePassword123!",
+  "confirmPassword": "SecurePassword123!"
+}

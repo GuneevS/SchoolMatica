@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "prisma generate && cross-env HOST=0.0.0.0 PORT=44777 next dev --hostname 0.0.0.0 --port 44777 --webpack",
+    "dev": "cross-env HOST=0.0.0.0 PORT=44777 next dev --hostname 0.0.0.0 --port 44777 --webpack",
+    "dev:gen": "prisma generate && cross-env HOST=0.0.0.0 PORT=44777 next dev --hostname 0.0.0.0 --port 44777 --webpack",
     "build": "prisma generate && next build --webpack",
     "start": "cross-env HOST=0.0.0.0 PORT=44777 next start --hostname 0.0.0.0 --port 44777",
     "lint": "eslint"

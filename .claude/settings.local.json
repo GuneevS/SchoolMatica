@@ -11,7 +11,17 @@
       "Bash(npx prisma migrate:*)",
       "Bash(npx prisma:*)",
       "Bash(npm install:*)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(netstat:*)",
+      "Bash(xargs:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker info:*)",
+      "Bash(docker ps:*)",
+      "Bash(curl -X POST http://localhost:44777/api/auth/register -H \"Content-Type: application/json\" -d '{\n    \"\"schoolName\"\": \"\"Test School\"\",\n    \"\"schoolShortCode\"\": \"\"TST\"\",\n    \"\"firstName\"\": \"\"Test\"\",\n    \"\"lastName\"\": \"\"Admin\"\",\n    \"\"email\"\": \"\"testadmin@testschool.com\"\",\n    \"\"password\"\": \"\"TestPassword123!\"\",\n    \"\"confirmPassword\"\": \"\"TestPassword123!\"\"\n  }')",
+      "Bash(curl:*)",
+      "Bash(node test-register.js:*)",
+      "Bash(cross-env HOST=0.0.0.0 PORT=44777 next dev:*)",
+      "Bash(test:*)"
     ]
   }
 }

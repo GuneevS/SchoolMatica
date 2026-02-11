@@ -129,14 +129,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     cookies: {
         sessionToken: {
-            name: process.env.NODE_ENV === "production"
+            // Use non-secure cookie name for HTTP (localhost/demo) access
+            // In production with HTTPS, you can set FORCE_SECURE_COOKIES=true
+            name: process.env.FORCE_SECURE_COOKIES === "true"
                 ? "__Secure-next-auth.session-token"
                 : "next-auth.session-token",
             options: {
                 httpOnly: true, // Prevent JavaScript access to session cookie
                 sameSite: "lax", // CSRF protection
                 path: "/",
-                secure: process.env.NODE_ENV === "production", // HTTPS only in production
+                // Only require secure cookies when explicitly enabled (for HTTPS deployments)
+                secure: process.env.FORCE_SECURE_COOKIES === "true",
             },
         },
     },

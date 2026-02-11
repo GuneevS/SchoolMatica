@@ -97,6 +97,11 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/node_modules/.bin ./node_modules/.bin
 
+# Copy runtime dependencies that aren't bundled by Next.js standalone
+COPY --from=builder /app/node_modules/bcryptjs ./node_modules/bcryptjs
+COPY --from=builder /app/node_modules/next-auth ./node_modules/next-auth
+COPY --from=builder /app/node_modules/@auth ./node_modules/@auth
+
 # Copy Prisma config file (if exists)
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 

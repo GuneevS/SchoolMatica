@@ -35,9 +35,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             },
             authorize: async (credentials, request) => {
                 const parsed = z
-                    .object({ 
-                        email: z.string().email().transform(e => e.toLowerCase().trim()), 
-                        password: z.string().min(8) 
+                    .object({
+                        email: z.string().email().transform(e => e.toLowerCase().trim()),
+                        password: z.string().min(8)
                     })
                     .safeParse(credentials);
 
@@ -46,7 +46,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 }
 
                 const { email, password } = parsed.data;
-                
+
                 // Rate limit login attempts by email
                 // This supplements the account lockout mechanism
                 const rateLimit = await checkRateLimit(`login:${email}`, RATE_LIMITS.AUTH_LOGIN);
@@ -148,16 +148,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     cookies: {
         sessionToken: {
-            // Use non-secure cookie name when not behind HTTPS (development or non-HTTPS demo)
-            name: process.env.NODE_ENV === "production" && process.env.NEXTAUTH_URL?.startsWith("https")
+            // Use non-secure cookie name for HTTP (localhost/demo) access
+            // In production with HTTPS, set FORCE_SECURE_COOKIES=true or use an https:// NEXTAUTH_URL
+            name: (process.env.FORCE_SECURE_COOKIES === "true" || process.env.NEXTAUTH_URL?.startsWith("https"))
                 ? "__Secure-next-auth.session-token"
                 : "next-auth.session-token",
             options: {
                 httpOnly: true, // Prevent JavaScript access to session cookie
                 sameSite: "lax", // CSRF protection
                 path: "/",
-                // Only require secure cookies when behind HTTPS
-                secure: process.env.NEXTAUTH_URL?.startsWith("https") ?? false,
+                // Only require secure cookies when explicitly enabled or behind HTTPS
+                secure: process.env.FORCE_SECURE_COOKIES === "true" || (process.env.NEXTAUTH_URL?.startsWith("https") ?? false),
             },
         },
     },

@@ -45,3 +45,12 @@ next-env.d.ts
 
 # Auto Claude data directory
 .auto-claude/
+
+# Log files
+*.log
+
+# Development SQLite database (PostgreSQL used in prod)
+prisma/dev.db
+
+# Windsurf plans
+.windsurf/

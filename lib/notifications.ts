@@ -301,7 +301,7 @@ export async function checkDemeritThresholds(
   if (!policy || !policy.thresholds) return;
 
   const thresholds = policy.thresholds as unknown as NotificationThreshold[];
-  
+
   // Get student details
   const student = await prisma.student.findUnique({
     where: { id: studentId },
@@ -438,4 +438,218 @@ export async function checkDemeritThresholds(
       }
     }
   }
+}
+
+// ============================================
+// Finance & Billing Notifications
+// ============================================
+
+/**
+ * Notify parents when an invoice is sent
+ */
+export async function notifyParentInvoiceSent(
+  studentId: string,
+  invoiceNumber: string,
+  totalAmount: number,
+  dueDate: Date,
+  schoolName: string
+) {
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    include: {
+      parents: {
+        where: { parentUserId: { not: null } },
+        include: {
+          parentUser: { include: { user: { select: { id: true } } } },
+        },
+      },
+      classGroup: { select: { schoolId: true } },
+    },
+  });
+
+  if (!student) return 0;
+
+  const parentUserIds = student.parents
+    .filter((p) => p.parentUser?.userId)
+    .map((p) => p.parentUser!.userId);
+
+  if (parentUserIds.length === 0) return 0;
+
+  const formattedAmount = new Intl.NumberFormat("en-ZA", {
+    style: "currency", currency: "ZAR", minimumFractionDigits: 2,
+  }).format(totalAmount);
+
+  const formattedDate = dueDate.toLocaleDateString("en-ZA", {
+    day: "numeric", month: "long", year: "numeric",
+  });
+
+  await createBulkNotifications({
+    userIds: parentUserIds,
+    type: "system",
+    title: `New Invoice: ${invoiceNumber}`,
+    body: `A new invoice of ${formattedAmount} has been issued for ${student.firstName} ${student.lastName} at ${schoolName}. Payment is due by ${formattedDate}.`,
+    actionUrl: "/parent/fees",
+    schoolId: student.classGroup.schoolId,
+    data: { studentId, invoiceNumber, totalAmount },
+  });
+
+  return parentUserIds.length;
+}
+
+/**
+ * Notify parents when a payment is received
+ */
+export async function notifyParentPaymentReceived(
+  studentId: string,
+  paymentRef: string,
+  amount: number,
+  invoiceNumber: string,
+  remainingBalance: number
+) {
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    include: {
+      parents: {
+        where: { parentUserId: { not: null } },
+        include: {
+          parentUser: { include: { user: { select: { id: true } } } },
+        },
+      },
+      classGroup: { select: { schoolId: true } },
+    },
+  });
+
+  if (!student) return 0;
+
+  const parentUserIds = student.parents
+    .filter((p) => p.parentUser?.userId)
+    .map((p) => p.parentUser!.userId);
+
+  if (parentUserIds.length === 0) return 0;
+
+  const formattedAmount = new Intl.NumberFormat("en-ZA", {
+    style: "currency", currency: "ZAR", minimumFractionDigits: 2,
+  }).format(amount);
+
+  const balanceText = remainingBalance <= 0
+    ? "The invoice is now fully paid."
+    : `Remaining balance: R${remainingBalance.toFixed(2)}.`;
+
+  await createBulkNotifications({
+    userIds: parentUserIds,
+    type: "system",
+    title: `Payment Received: ${paymentRef}`,
+    body: `Payment of ${formattedAmount} received for ${student.firstName} ${student.lastName} (Invoice: ${invoiceNumber}). ${balanceText}`,
+    actionUrl: "/parent/fees",
+    schoolId: student.classGroup.schoolId,
+    data: { studentId, paymentRef, amount, invoiceNumber },
+  });
+
+  return parentUserIds.length;
+}
+
+/**
+ * Notify parents of overdue invoices
+ */
+export async function notifyParentOverdueInvoice(
+  studentId: string,
+  invoiceNumber: string,
+  balanceDue: number,
+  dueDate: Date
+) {
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    include: {
+      parents: {
+        where: { parentUserId: { not: null } },
+        include: {
+          parentUser: { include: { user: { select: { id: true } } } },
+        },
+      },
+      classGroup: { select: { schoolId: true } },
+    },
+  });
+
+  if (!student) return 0;
+
+  const parentUserIds = student.parents
+    .filter((p) => p.parentUser?.userId)
+    .map((p) => p.parentUser!.userId);
+
+  if (parentUserIds.length === 0) return 0;
+
+  const formattedAmount = new Intl.NumberFormat("en-ZA", {
+    style: "currency", currency: "ZAR", minimumFractionDigits: 2,
+  }).format(balanceDue);
+
+  const formattedDate = dueDate.toLocaleDateString("en-ZA", {
+    day: "numeric", month: "long", year: "numeric",
+  });
+
+  await createBulkNotifications({
+    userIds: parentUserIds,
+    type: "system",
+    title: `Overdue: Invoice ${invoiceNumber}`,
+    body: `Invoice ${invoiceNumber} for ${student.firstName} ${student.lastName} is overdue. Outstanding amount: ${formattedAmount} (due ${formattedDate}). Please arrange payment as soon as possible.`,
+    actionUrl: "/parent/fees",
+    schoolId: student.classGroup.schoolId,
+    data: { studentId, invoiceNumber, balanceDue, overdue: true },
+  });
+
+  return parentUserIds.length;
+}
+
+/**
+ * Send payment reminder to parents
+ */
+export async function notifyParentPaymentReminder(
+  studentId: string,
+  invoiceNumber: string,
+  balanceDue: number,
+  dueDate: Date,
+  schoolName: string
+): Promise<number> {
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    include: {
+      parents: {
+        where: { parentUserId: { not: null } },
+        include: {
+          parentUser: { include: { user: { select: { id: true } } } },
+        },
+      },
+      classGroup: { select: { schoolId: true } },
+    },
+  });
+
+  if (!student) return 0;
+
+  const parentUserIds = student.parents
+    .filter((p) => p.parentUser?.userId)
+    .map((p) => p.parentUser!.userId);
+
+  if (parentUserIds.length === 0) return 0;
+
+  const formattedAmount = new Intl.NumberFormat("en-ZA", {
+    style: "currency", currency: "ZAR", minimumFractionDigits: 2,
+  }).format(balanceDue);
+
+  const formattedDate = dueDate.toLocaleDateString("en-ZA", {
+    day: "numeric", month: "long", year: "numeric",
+  });
+
+  const isPastDue = dueDate < new Date();
+  const urgency = isPastDue ? "OVERDUE" : "Reminder";
+
+  await createBulkNotifications({
+    userIds: parentUserIds,
+    type: "system",
+    title: `${urgency}: Payment for ${student.firstName} ${student.lastName}`,
+    body: `This is a payment reminder from ${schoolName}. Invoice ${invoiceNumber} has an outstanding balance of ${formattedAmount}${isPastDue ? ` which was due on ${formattedDate}` : `, due by ${formattedDate}`}. Please arrange payment at your earliest convenience.`,
+    actionUrl: "/parent/fees",
+    schoolId: student.classGroup.schoolId,
+    data: { studentId, invoiceNumber, balanceDue, reminder: true },
+  });
+
+  return parentUserIds.length;
 }

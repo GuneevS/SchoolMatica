@@ -1,13 +1,22 @@
 import { prisma } from "@/lib/prisma";
 import { ReportGeneratorForm } from "@/components/reports/report-generator-form";
 import { AuroraHero } from "@/components/layout/aurora-hero";
+import { redirect } from "next/navigation";
+import { getServerAuthContext, getAuthorizedActiveSchool } from "@/lib/auth-server";
 
 // Force dynamic rendering - this page makes database calls
 export const dynamic = "force-dynamic";
 
 export default async function GenerateReportsPage() {
-  const schools = await prisma.school.findMany();
-  const school = schools[0];
+  const auth = await getServerAuthContext();
+  if (!auth) {
+    redirect("/login");
+  }
+
+  const school = await getAuthorizedActiveSchool();
+  if (!school) {
+    redirect("/schools");
+  }
 
   const classGroups = await prisma.classGroup.findMany({
     where: { schoolId: school?.id },

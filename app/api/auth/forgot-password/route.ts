@@ -126,8 +126,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "If an account with that email exists, you will receive a password reset link.",
-      // Only include reset URL in development for testing
-      ...(process.env.NODE_ENV !== "production" && { resetUrl }),
     });
   } catch (error) {
     console.error("Forgot password error:", error);

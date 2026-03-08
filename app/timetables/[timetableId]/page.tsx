@@ -24,7 +24,7 @@ export default async function TimetablePage({ params }: Props) {
       </div>
     );
   }
-  
+
   const timetable = await prisma.timetable.findUnique({
     where: { id: resolvedParams.timetableId },
     include: {
@@ -77,7 +77,7 @@ export default async function TimetablePage({ params }: Props) {
     }),
     prisma.assessmentPlan.findMany({
       where: { classGroup: { schoolId: timetable.schoolId } },
-      include: { classGroup: { include: { subject: true } } },
+      include: { classGroup: { include: { subject: true, gradeLevel: true } } },
       orderBy: [{ updatedAt: "desc" }],
     }),
     prisma.subject.findMany({

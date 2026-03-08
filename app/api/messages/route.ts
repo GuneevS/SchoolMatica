@@ -4,13 +4,24 @@ import { authorizeWithSchool, hasSchoolAccess } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
+/** Check if a user is a participant in a thread's participants JSON */
+function isParticipant(participants: unknown, userId: string): boolean {
+  try {
+    const parsed = typeof participants === "string" ? JSON.parse(participants) : participants;
+    if (!Array.isArray(parsed)) return false;
+    return parsed.some((p: { id?: string }) => p.id === userId);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * GET /api/messages
  * Get message threads for the current user
  */
 export async function GET(request: NextRequest) {
   try {
-    const result = await authorizeWithSchool(request, "student:read");
+    const result = await authorizeWithSchool(request, "message:read");
     if ("error" in result) return result.error;
     const { auth } = result;
 
@@ -22,12 +33,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // Get threads where user is a participant
-    const threads = await prisma.messageThread.findMany({
+    // Get all threads for the school, then filter by participant membership
+    const allThreads = await prisma.messageThread.findMany({
       where: {
         schoolId,
-        // In production, filter by participant
-        // participants: { path: "$[*].id", equals: auth.user.id }
       },
       include: {
         messages: {
@@ -44,8 +53,12 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: { lastMessageAt: "desc" },
-      take: limit,
     });
+
+    // Filter to only threads where current user is a participant
+    const threads = allThreads
+      .filter((t) => isParticipant(t.participants, auth.user.id))
+      .slice(0, limit);
 
     return NextResponse.json({ threads });
   } catch (error) {
@@ -63,7 +76,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const result = await authorizeWithSchool(request, "student:read");
+    const result = await authorizeWithSchool(request, "message:send");
     if ("error" in result) return result.error;
     const { auth } = result;
 
@@ -83,6 +96,11 @@ export async function POST(request: NextRequest) {
 
       if (!thread || thread.schoolId !== effectiveSchoolId) {
         return NextResponse.json({ error: "Thread not found" }, { status: 404 });
+      }
+
+      // Verify sender is a participant in this thread
+      if (!isParticipant(thread.participants, auth.user.id)) {
+        return NextResponse.json({ error: "Not a participant in this thread" }, { status: 403 });
       }
 
       const message = await prisma.message.create({

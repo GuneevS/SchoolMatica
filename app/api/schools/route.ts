@@ -2,18 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authorizeWithSchool, getUserSchoolIds, isSystemAdmin } from "@/lib/auth";
+import { DEFAULT_GRADING_BANDS } from "@/lib/constants/grading";
 
-const defaultBands = {
-  FET: [
-    { minPercent: 0, level: 1, descriptor: "Not Achieved" },
-    { minPercent: 40, level: 2, descriptor: "Elementary" },
-    { minPercent: 50, level: 3, descriptor: "Moderate" },
-    { minPercent: 60, level: 4, descriptor: "Adequate" },
-    { minPercent: 70, level: 5, descriptor: "Substantial" },
-    { minPercent: 80, level: 6, descriptor: "Meritorious" },
-    { minPercent: 90, level: 7, descriptor: "Outstanding" },
-  ],
-};
+const defaultBands = DEFAULT_GRADING_BANDS;
 
 const createSchema = z.object({
   name: z.string().min(3),

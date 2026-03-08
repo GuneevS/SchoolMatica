@@ -62,16 +62,24 @@ export async function POST(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
   }
 
+  // Block comments on resolved threads
+  if (thread.status === "Resolved") {
+    return NextResponse.json({ error: "Cannot comment on a resolved thread" }, { status: 400 });
+  }
+
   const json = await request.json();
   const parsed = commentSchema.safeParse(json);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
   }
 
+  // Use server-side role instead of client-provided value
+  const authorRole = auth.user.roleAssignments[0]?.role.name ?? parsed.data.authorRole;
+
   const comment = await prisma.moderationComment.create({
     data: {
       threadId,
-      authorRole: parsed.data.authorRole,
+      authorRole,
       message: parsed.data.message,
       attachmentUrl: parsed.data.attachmentUrl ?? null,
     },
@@ -87,22 +95,22 @@ export async function POST(request: NextRequest, { params }: Params) {
     });
 
     // Get plan details for context
-    const planId = thread.assessmentPlan?.id || thread.assessment?.assessmentPlanId;
+    const planId = thread.assessmentPlan?.id || thread.assessment?.assessmentPlan?.id;
     const planName = thread.assessmentPlan?.name || thread.title || "Assessment Plan";
 
     // Find users with those roles (excluding the commenter's role)
-    const roleKeys = participantRoles
-      .map(p => p.authorRole.toLowerCase())
-      .filter(role => role !== parsed.data.authorRole.toLowerCase());
+    const roleNames = participantRoles
+      .map(p => p.authorRole)
+      .filter(name => name !== authorRole);
 
-    if (roleKeys.length > 0) {
+    if (roleNames.length > 0) {
       const participants = await prisma.appUser.findMany({
         where: {
           schoolId,
           roleAssignments: {
             some: {
               role: {
-                key: { in: roleKeys },
+                name: { in: roleNames },
               },
               scopeSchoolId: schoolId,
             },
@@ -116,13 +124,13 @@ export async function POST(request: NextRequest, { params }: Params) {
           schoolId,
           type: "system",
           title: "New Moderation Comment",
-          body: `${parsed.data.authorRole} added a comment to the moderation discussion for "${planName}"`,
-          actionUrl: `/assessment-plans/${planId}`,
-          data: { 
-            threadId, 
+          body: `${authorRole} added a comment to the moderation discussion for "${planName}"`,
+          actionUrl: planId ? `/assessment-plans/${planId}` : undefined,
+          data: {
+            threadId,
             commentId: comment.id,
-            authorRole: parsed.data.authorRole,
-            planId,
+            authorRole,
+            planId: planId ?? undefined,
           },
         });
       }

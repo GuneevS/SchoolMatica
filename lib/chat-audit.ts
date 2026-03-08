@@ -48,11 +48,11 @@ export async function logMessageAuditEvent(entry: MessageAuditEntry): Promise<vo
         action: entry.action,
         actorRole: entry.actorRole,
         actorName: entry.actorName ?? null,
-        metadata: {
+        metadata: JSON.parse(JSON.stringify({
           ...entry.metadata,
           actorId: entry.actorId,
           auditType: "messaging",
-        } as Record<string, unknown>,
+        })),
       },
     });
   } catch (error) {

@@ -104,6 +104,11 @@ export const PERMISSION_KEYS = [
   "gradingConfig:read",
   "gradingConfig:update",
 
+  // Finance & Fees
+  "finance:read",              // View invoices, payments, ledger, reports
+  "finance:write",             // Record payments, create invoices, adjustments
+  "finance:manage",            // Write-offs, credit notes, fee structures, bank details
+
   // User Management
   "user:read",
   "user:create",
@@ -189,9 +194,9 @@ export async function getAuthContext(request?: NextRequest): Promise<AuthContext
   const permissions = new Set<PermissionKey>();
   for (const assignment of user.roleAssignments) {
     for (const grant of assignment.role.permissions) {
-      const key = `${grant.permission.resource}:${grant.permission.action}`;
-      if (isPermissionKey(key)) {
-        permissions.add(key);
+      // Use permission.key directly (consistent with auth-server.ts)
+      if (isPermissionKey(grant.permission.key)) {
+        permissions.add(grant.permission.key);
       }
     }
   }

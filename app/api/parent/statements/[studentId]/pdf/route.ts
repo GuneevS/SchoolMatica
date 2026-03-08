@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerAuthContext } from "@/lib/auth-server";
+import { formatCurrency } from "@/lib/utils/currency";
 
 // GET - Generate PDF statement for a student
 export async function GET(
@@ -14,6 +15,15 @@ export async function GET(
     }
 
     const { studentId } = await params;
+    const { searchParams } = new URL(request.url);
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
+
+    const dateFilter = {
+      ...(startDate && { gte: new Date(startDate) }),
+      ...(endDate && { lte: new Date(endDate) }),
+    };
+    const hasDateFilter = startDate || endDate;
 
     // Verify parent has access to this student
     const parentUser = await prisma.parentUser.findUnique({
@@ -31,6 +41,7 @@ export async function GET(
                   orderBy: { createdAt: "desc" },
                 },
                 ledgerEntries: {
+                  where: hasDateFilter ? { createdAt: dateFilter } : undefined,
                   orderBy: { createdAt: "desc" },
                 },
               },
@@ -46,6 +57,7 @@ export async function GET(
 
     const student = parentUser.contacts[0].student;
     const school = student.classGroup.school;
+    const bankDetails = school.bankDetails as { bankName?: string; accountNumber?: string; branchCode?: string; accountHolder?: string; reference?: string } | null;
 
     // Calculate totals
     const totalDebit = student.ledgerEntries.reduce((sum, e) => sum + e.debit, 0);
@@ -58,12 +70,6 @@ export async function GET(
       month: "long",
       year: "numeric",
     });
-
-    const formatCurrency = (amount: number) =>
-      new Intl.NumberFormat("en-ZA", {
-        style: "currency",
-        currency: "ZAR",
-      }).format(amount);
 
     const html = `
 <!DOCTYPE html>
@@ -109,6 +115,7 @@ export async function GET(
       <div class="statement-date">
         <p><strong>Statement Date:</strong> ${statementDate}</p>
         <p><strong>Account #:</strong> ${student.admissionNumber}</p>
+        ${hasDateFilter ? `<p><strong>Period:</strong> ${startDate || "Start"} to ${endDate || "Present"}</p>` : ""}
       </div>
     </div>
 
@@ -169,9 +176,14 @@ export async function GET(
         ? `
     <div class="payment-info">
       <h4>Payment Information</h4>
-      <p>Please use the following reference when making payment:</p>
+      ${bankDetails && bankDetails.bankName ? `
+      <p><strong>Bank:</strong> ${bankDetails.bankName}</p>
+      <p><strong>Account Holder:</strong> ${bankDetails.accountHolder || school.name}</p>
+      <p><strong>Account Number:</strong> ${bankDetails.accountNumber || "Contact school"}</p>
+      <p><strong>Branch Code:</strong> ${bankDetails.branchCode || "N/A"}</p>
+      ` : `<p>Please contact the school finance office for banking details.</p>`}
       <p><strong>Reference:</strong> ${student.admissionNumber}</p>
-      <p>Payment can be made via EFT, card, or SnapScan through the parent portal.</p>
+      <p style="margin-top: 8px; font-size: 11px; color: #64748b;">Please use your child's admission number as the payment reference. Payments can also be made via the parent portal.</p>
     </div>
     `
         : ""

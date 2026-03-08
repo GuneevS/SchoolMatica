@@ -86,7 +86,7 @@ export function NotificationDropdown({ className }: NotificationDropdownProps) {
       await fetch("/api/notifications", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ all: true }),
+        body: JSON.stringify({ markAllRead: true }),
       });
       
       // Update local state

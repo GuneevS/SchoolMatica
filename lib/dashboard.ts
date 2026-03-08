@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { calculateStudentSba } from "@/lib/calculations";
+import { getPhaseForGradeNum, getAtRiskThreshold } from "@/lib/constants/grading";
 
 interface ClassSummary {
   id: string;
@@ -128,7 +129,9 @@ export async function getDashboardData(schoolId: string): Promise<DashboardData>
     const averageSba = studentValues.length
       ? studentValues.reduce((sum, value) => sum + value, 0) / studentValues.length
       : null;
-    const atRiskCount = studentValues.filter((value) => value < 40).length;
+    const classPhase = getPhaseForGradeNum(classGroup.grade);
+    const atRiskThreshold = getAtRiskThreshold(classPhase);
+    const atRiskCount = studentValues.filter((value) => value < atRiskThreshold).length;
 
     return {
       id: classGroup.id,

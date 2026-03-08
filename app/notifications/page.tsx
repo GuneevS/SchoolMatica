@@ -201,7 +201,7 @@ export default function NotificationsPage() {
       await fetch("/api/notifications", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ all: true }),
+        body: JSON.stringify({ markAllRead: true }),
       });
       await fetchNotifications();
     } catch (error) {

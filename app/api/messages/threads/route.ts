@@ -73,14 +73,14 @@ export async function GET(request: NextRequest) {
     // Filter threads where current user is a participant (unless admin)
     const userThreads = threads.filter((thread) => {
       if (isAdmin) return true;
-      const participants = thread.participants as ThreadParticipant[];
+      const participants = thread.participants as unknown as ThreadParticipant[];
       return participants.some((p) => p.id === auth.user.id);
     });
 
     // Transform threads for response
     const transformedThreads = await Promise.all(
       userThreads.map(async (thread) => {
-        const participants = thread.participants as ThreadParticipant[];
+        const participants = thread.participants as unknown as ThreadParticipant[];
         const otherParticipant = participants.find((p) => p.id !== auth.user.id);
         const lastMessage = thread.messages[0];
 
@@ -137,9 +137,9 @@ export async function GET(request: NextRequest) {
           lastMessageTime: thread.lastMessageAt?.toISOString() || thread.createdAt.toISOString(),
           lastMessageSender: lastMessage?.sender
             ? {
-                id: lastMessage.sender.id,
-                name: lastMessage.sender.displayName || lastMessage.sender.name,
-              }
+              id: lastMessage.sender.id,
+              name: lastMessage.sender.displayName || lastMessage.sender.name,
+            }
             : null,
           unreadCount,
           isArchived: thread.isArchived,
@@ -235,17 +235,17 @@ export async function POST(request: NextRequest) {
         schoolId,
         type,
         subject: subject || null,
-        participants: allParticipants,
+        participants: JSON.parse(JSON.stringify(allParticipants)),
         createdBy: auth.user.id,
         lastMessageAt: initialMessage ? new Date() : null,
         messages: initialMessage
           ? {
-              create: {
-                senderId: auth.user.id,
-                content: initialMessage,
-                readBy: [auth.user.id],
-              },
-            }
+            create: {
+              senderId: auth.user.id,
+              content: initialMessage,
+              readBy: JSON.stringify([auth.user.id]),
+            },
+          }
           : undefined,
       },
       include: {
@@ -311,7 +311,7 @@ async function findExistingDirectThread(schoolId: string, participantIds: string
 
   // Find a thread where participants match exactly
   return threads.find((thread) => {
-    const participants = thread.participants as ThreadParticipant[];
+    const participants = thread.participants as unknown as ThreadParticipant[];
     if (participants.length !== participantIds.length) return false;
     const threadParticipantIds = participants.map((p) => p.id).sort();
     const targetIds = [...participantIds].sort();

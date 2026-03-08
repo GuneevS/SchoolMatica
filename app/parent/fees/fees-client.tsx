@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,18 +8,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Receipt,
-  Wallet,
   AlertCircle,
   Check,
   Clock,
   Download,
   CreditCard,
   FileText,
-  ChevronRight,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils/currency";
+import { buildCSVRow } from "@/lib/utils/csv";
 
 interface Payment {
   id: string;
@@ -76,15 +76,6 @@ interface ParentFeesClientProps {
   childrenData: ChildFeeData[];
 }
 
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("en-ZA", {
-    style: "currency",
-    currency: "ZAR",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
-};
-
 const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleDateString("en-ZA", {
     day: "numeric",
@@ -107,8 +98,23 @@ const getStatusBadge = (status: string) => {
 export function ParentFeesClient({ childrenData }: ParentFeesClientProps) {
   const [selectedChild, setSelectedChild] = useState(childrenData[0]?.student.id);
   const [activeTab, setActiveTab] = useState("overview");
+  const [showPayInfo, setShowPayInfo] = useState(false);
 
   const currentChild = childrenData.find((c) => c.student.id === selectedChild);
+
+  const handleDownloadStatement = useCallback(() => {
+    if (!currentChild) return;
+    const { student, transactions } = currentChild;
+    const headers = ["Date", "Description", "Type", "Debit", "Credit", "Balance"];
+    const csvContent = [
+      buildCSVRow(headers),
+      ...transactions.map((tx) => buildCSVRow([tx.date, tx.description, tx.type, String(tx.debit), String(tx.credit), String(tx.balance)]))
+    ].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `statement-${student.firstName}-${student.lastName}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  }, [currentChild]);
 
   if (!currentChild) {
     return <div>No data available</div>;
@@ -130,7 +136,7 @@ export function ParentFeesClient({ childrenData }: ParentFeesClientProps) {
                 <AlertCircle className="h-6 w-6 text-red-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Outstanding</p>
+                <p className="text-sm text-muted-foreground">Total Outstanding (All Children)</p>
                 <p className="text-2xl font-bold text-red-600">{formatCurrency(totalOutstanding)}</p>
               </div>
             </div>
@@ -218,12 +224,12 @@ export function ParentFeesClient({ childrenData }: ParentFeesClientProps) {
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" className="gap-2" onClick={handleDownloadStatement}>
                 <Download className="h-4 w-4" />
                 Download Statement
               </Button>
               {summary.totalOutstanding > 0 && (
-                <Button className="gap-2 bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]">
+                <Button className="gap-2 bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]" onClick={() => setShowPayInfo(!showPayInfo)}>
                   <CreditCard className="h-4 w-4" />
                   Pay Now
                 </Button>
@@ -232,6 +238,25 @@ export function ParentFeesClient({ childrenData }: ParentFeesClientProps) {
           </div>
         </CardHeader>
       </Card>
+
+      {/* Payment Instructions */}
+      {showPayInfo && (
+        <Card className="border-[hsl(var(--accent-violet))]">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2"><CreditCard className="h-5 w-5" />Payment Instructions</CardTitle>
+            <CardDescription>Use the following details to make an EFT payment</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-3">
+                <div><p className="text-sm text-muted-foreground">Reference</p><p className="font-bold text-[hsl(var(--accent-violet))]">{student.admissionNumber}</p></div>
+                <div><p className="text-sm text-muted-foreground">Amount Due</p><p className="font-bold text-lg">{formatCurrency(summary.totalOutstanding)}</p></div>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground mt-4">Please contact the school finance office for banking details and alternative payment methods (EFT, SnapScan, PayFast, card payments). Use your child&apos;s admission number as the payment reference. Payments are usually reflected within 1-3 business days.</p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -297,6 +322,7 @@ export function ParentFeesClient({ childrenData }: ParentFeesClientProps) {
                     .flatMap((inv) =>
                       inv.payments.map((p) => ({ ...p, invoiceNumber: inv.invoiceNumber }))
                     )
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                     .slice(0, 5)
                     .map((payment) => (
                       <div
@@ -387,7 +413,14 @@ export function ParentFeesClient({ childrenData }: ParentFeesClientProps) {
                   <CardTitle>Account Statement</CardTitle>
                   <CardDescription>Transaction history for {student.firstName}'s account</CardDescription>
                 </div>
-                <Button variant="outline" className="gap-2">
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => {
+                    if (!currentChild) return;
+                    window.open(`/api/parent/statements/${currentChild.student.id}/pdf`, "_blank");
+                  }}
+                >
                   <Download className="h-4 w-4" />
                   Download PDF
                 </Button>

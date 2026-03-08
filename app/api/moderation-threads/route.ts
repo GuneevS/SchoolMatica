@@ -53,6 +53,16 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  if (assessmentId) {
+    const assessment = await prisma.assessment.findUnique({
+      where: { id: assessmentId },
+      select: { assessmentPlan: { select: { classGroup: { select: { schoolId: true } } } } },
+    });
+    if (assessment && !hasSchoolAccess(auth, assessment.assessmentPlan.classGroup.schoolId)) {
+      return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+    }
+  }
+
   // For non-admins without specific filters, scope to their schools
   if (!assessmentPlanId && !assessmentId && !isSystemAdmin(auth)) {
     const userSchoolIds = getUserSchoolIds(auth);

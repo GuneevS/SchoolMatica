@@ -8,6 +8,7 @@ import {
   mapPercentToLevel,
   type TermWeights,
 } from "@/lib/calculations";
+import { getPhaseForGradeNum, getAtRiskThreshold } from "@/lib/constants/grading";
 
 export type MarkbookStats = {
   capturedMarks: number;
@@ -127,7 +128,9 @@ export async function getClassMarkbookPayload(classId: string, assessmentPlanId?
     const captured = row.marks.filter((mark) => mark.rawMark !== null || mark.isAbsent).length;
     return sum + captured;
   }, 0);
-  const atRiskLearners = rows.filter((row) => row.sbaPercent > 0 && row.sbaPercent < 40).length;
+  const phase = getPhaseForGradeNum(classGroup.grade);
+  const atRiskThreshold = getAtRiskThreshold(phase, bands);
+  const atRiskLearners = rows.filter((row) => row.sbaPercent > 0 && row.sbaPercent < atRiskThreshold).length;
   const averageSba = rows.length
     ? rows.reduce((sum, row) => sum + row.sbaPercent, 0) / rows.length
     : 0;

@@ -13,21 +13,26 @@ export const metadata = {
 };
 
 async function getBehaviorStats(schoolId: string) {
+  // Filter to current academic year (SA school year starts in January)
+  const currentYearStart = new Date(new Date().getFullYear(), 0, 1);
+
   const [totalMerits, totalDemerits, recentIncidents, studentsAtRisk] = await Promise.all([
-    // Total merits this term
+    // Total merits this academic year
     prisma.behaviorIncident.count({
       where: {
         schoolId,
         type: "Merit",
         status: "Active",
+        createdAt: { gte: currentYearStart },
       },
     }),
-    // Total demerits this term
+    // Total demerits this academic year
     prisma.behaviorIncident.count({
       where: {
         schoolId,
         type: "Demerit",
         status: "Active",
+        createdAt: { gte: currentYearStart },
       },
     }),
     // Recent incidents (last 7 days)
@@ -60,7 +65,7 @@ async function getBehaviorStats(schoolId: string) {
       orderBy: { createdAt: "desc" },
       take: 10,
     }),
-    // Students with high demerit count
+    // Students with high demerit count (TODO: make threshold configurable per school)
     prisma.behaviorBalance.findMany({
       where: {
         student: {

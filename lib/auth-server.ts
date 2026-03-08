@@ -199,6 +199,10 @@ export async function requireAuth(): Promise<ServerAuthContext> {
  */
 export async function requirePermission(permission: string): Promise<ServerAuthContext> {
   const auth = await requireAuth();
+  // Admin and super admin bypass permission checks (consistent with authorize() in lib/auth.ts)
+  if (auth.isAdmin || auth.isSuperAdmin) {
+    return auth;
+  }
   if (!auth.permissions.has(permission)) {
     throw new Error(`Permission required: ${permission}`);
   }

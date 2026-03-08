@@ -83,7 +83,7 @@ async function validateChannelAccess(
     if (!hasSchoolAccess(auth, thread.schoolId)) return false;
 
     // Check if user is a participant
-    const participants = thread.participants as ThreadParticipant[];
+    const participants = thread.participants as unknown as ThreadParticipant[];
     return participants.some((p) => p.id === auth.user.id);
   }
 

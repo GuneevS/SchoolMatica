@@ -1,12 +1,16 @@
 import { prisma } from "@/lib/prisma";
 import { StudentDirectory } from "@/components/students/student-directory";
-import { getActiveSchool } from "@/lib/school";
+import { getServerAuthContext, getAuthorizedActiveSchool } from "@/lib/auth-server";
+import { redirect } from "next/navigation";
 
 // Force dynamic rendering - requires database
 export const dynamic = "force-dynamic";
 
 export default async function StudentsPage() {
-  const school = await getActiveSchool();
+  const auth = await getServerAuthContext();
+  if (!auth) redirect("/login");
+
+  const school = await getAuthorizedActiveSchool(auth);
   if (!school) {
     return (
       <div className="p-10 text-center text-muted-foreground">

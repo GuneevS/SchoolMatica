@@ -8,13 +8,13 @@ export default async function CommunicationsPage() {
   if (!auth) redirect("/login");
 
   let schoolId = auth.user.schoolId;
-  
+
   // Super admins may not have a schoolId - use first available school
   if (!schoolId && isSuperAdmin(auth)) {
     const firstSchool = await prisma.school.findFirst({ orderBy: { createdAt: "desc" } });
     if (firstSchool) schoolId = firstSchool.id;
   }
-  
+
   if (!schoolId) redirect("/dashboard?error=no_school");
 
   const currentUserId = auth.user.id;
@@ -39,16 +39,16 @@ export default async function CommunicationsPage() {
 
   // Filter threads where current user is a participant
   const userThreads = threads.filter((thread) => {
-    const participants = thread.participants as Array<{ id: string; type: string }>;
+    const participants = thread.participants as unknown as Array<{ id: string; type: string }>;
     return participants.some((p) => p.id === currentUserId);
   });
 
   // Transform threads into conversations
   const conversations = await Promise.all(
     userThreads.map(async (thread) => {
-      const participants = thread.participants as Array<{ id: string; type: string; name?: string }>;
+      const participants = thread.participants as unknown as Array<{ id: string; type: string; name?: string }>;
       const otherParticipant = participants.find((p) => p.id !== currentUserId);
-      
+
       // Get participant details if available
       let participantName = otherParticipant?.name || "Unknown";
       let participantRole = "User";
@@ -78,17 +78,17 @@ export default async function CommunicationsPage() {
 
       // Count unread messages
       const lastMessage = thread.messages[0];
-      const unreadCount = lastMessage && !lastMessage.senderId.includes(currentUserId) 
+      const unreadCount = lastMessage && !lastMessage.senderId.includes(currentUserId)
         ? await prisma.message.count({
-            where: {
-              threadId: thread.id,
-              NOT: {
-                readBy: {
-                  array_contains: currentUserId,
-                },
+          where: {
+            threadId: thread.id,
+            NOT: {
+              readBy: {
+                array_contains: currentUserId,
               },
             },
-          }).catch(() => 0)
+          },
+        }).catch(() => 0)
         : 0;
 
       return {

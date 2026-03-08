@@ -14,6 +14,7 @@
  */
 
 import nodemailer from "nodemailer";
+import { escapeHtml } from "@/lib/utils/sanitize";
 
 export interface EmailOptions {
   to: string | string[];
@@ -146,14 +147,14 @@ export async function sendPasswordResetEmail(
   <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
     <h1 style="color: #2563eb; margin-top: 0;">Reset Your Password</h1>
 
-    <p>Hello ${data.recipientName},</p>
+    <p>Hello ${escapeHtml(data.recipientName)},</p>
 
     <p>We received a request to reset your password for your SchoolMatica account.</p>
 
     <p>Click the button below to reset your password:</p>
 
     <div style="text-align: center; margin: 30px 0;">
-      <a href="${data.resetUrl}"
+      <a href="${escapeHtml(data.resetUrl)}"
          style="background-color: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: 600;">
         Reset Password
       </a>
@@ -161,7 +162,7 @@ export async function sendPasswordResetEmail(
 
     <p>Or copy and paste this link into your browser:</p>
     <p style="background-color: #e5e7eb; padding: 10px; border-radius: 5px; word-break: break-all;">
-      ${data.resetUrl}
+      ${escapeHtml(data.resetUrl)}
     </p>
 
     <p><strong>This link will expire in ${data.expiryHours} hour${data.expiryHours !== 1 ? "s" : ""}.</strong></p>
@@ -231,9 +232,9 @@ export async function sendTeacherInvitationEmail(
   <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
     <h1 style="color: #2563eb; margin-top: 0;">Welcome to SchoolMatica</h1>
 
-    <p>Hello ${data.recipientName},</p>
+    <p>Hello ${escapeHtml(data.recipientName)},</p>
 
-    <p>${data.inviterName} has invited you to join <strong>${data.schoolName}</strong> on SchoolMatica.</p>
+    <p>${escapeHtml(data.inviterName)} has invited you to join <strong>${escapeHtml(data.schoolName)}</strong> on SchoolMatica.</p>
 
     <p>SchoolMatica is a comprehensive school management system designed for South African schools,
     helping you manage assessments, grades, and student records efficiently.</p>
@@ -241,7 +242,7 @@ export async function sendTeacherInvitationEmail(
     <p>Click the button below to accept the invitation and set up your account:</p>
 
     <div style="text-align: center; margin: 30px 0;">
-      <a href="${data.invitationUrl}"
+      <a href="${escapeHtml(data.invitationUrl)}"
          style="background-color: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: 600;">
         Accept Invitation
       </a>
@@ -249,7 +250,7 @@ export async function sendTeacherInvitationEmail(
 
     <p>Or copy and paste this link into your browser:</p>
     <p style="background-color: #e5e7eb; padding: 10px; border-radius: 5px; word-break: break-all;">
-      ${data.invitationUrl}
+      ${escapeHtml(data.invitationUrl)}
     </p>
 
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
@@ -317,32 +318,32 @@ export async function sendHomeworkMissingEmail(
 
     <h1 style="color: #dc2626; margin-top: 0; text-align: center;">Missing Homework</h1>
 
-    <p>Dear ${data.parentName},</p>
+    <p>Dear ${escapeHtml(data.parentName)},</p>
 
-    <p>This is a notification from <strong>${data.schoolName}</strong> regarding incomplete homework for your child.</p>
+    <p>This is a notification from <strong>${escapeHtml(data.schoolName)}</strong> regarding incomplete homework for your child.</p>
 
     <div style="background-color: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0;">
       <h3 style="margin-top: 0; color: #1f2937;">Assignment Details</h3>
       <table style="width: 100%; border-collapse: collapse;">
         <tr>
           <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280;">Student:</td>
-          <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: 600;">${data.studentName}</td>
+          <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: 600;">${escapeHtml(data.studentName)}</td>
         </tr>
         <tr>
           <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280;">Assignment:</td>
-          <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: 600;">${data.homeworkTitle}</td>
+          <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-weight: 600;">${escapeHtml(data.homeworkTitle)}</td>
         </tr>
         <tr>
           <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280;">Subject:</td>
-          <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">${data.subject}</td>
+          <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">${escapeHtml(data.subject)}</td>
         </tr>
         <tr>
           <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280;">Class:</td>
-          <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">${data.className}</td>
+          <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">${escapeHtml(data.className)}</td>
         </tr>
         <tr>
           <td style="padding: 8px 0; color: #6b7280;">Due Date:</td>
-          <td style="padding: 8px 0; color: #dc2626; font-weight: 600;">${data.dueDate}</td>
+          <td style="padding: 8px 0; color: #dc2626; font-weight: 600;">${escapeHtml(data.dueDate)}</td>
         </tr>
       </table>
     </div>
@@ -350,25 +351,25 @@ export async function sendHomeworkMissingEmail(
     ${data.customMessage ? `
     <div style="background-color: #fefce8; border-left: 4px solid #eab308; padding: 15px; margin: 20px 0;">
       <p style="margin: 0; color: #713f12;"><strong>Message from teacher:</strong></p>
-      <p style="margin: 10px 0 0 0; color: #78350f;">${data.customMessage}</p>
+      <p style="margin: 10px 0 0 0; color: #78350f;">${escapeHtml(data.customMessage)}</p>
     </div>
     ` : ''}
 
-    <p>Please ensure that ${data.studentName} completes and submits this assignment as soon as possible. Consistent homework completion is important for academic success.</p>
+    <p>Please ensure that ${escapeHtml(data.studentName)} completes and submits this assignment as soon as possible. Consistent homework completion is important for academic success.</p>
 
     <p>If you have any questions about this assignment, please contact the teacher:</p>
     
     <div style="background-color: #eff6ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
-      <p style="margin: 0;"><strong>${data.teacherName}</strong></p>
+      <p style="margin: 0;"><strong>${escapeHtml(data.teacherName)}</strong></p>
       <p style="margin: 5px 0 0 0;">
-        <a href="mailto:${data.teacherEmail}" style="color: #2563eb;">${data.teacherEmail}</a>
+        <a href="mailto:${escapeHtml(data.teacherEmail)}" style="color: #2563eb;">${escapeHtml(data.teacherEmail)}</a>
       </p>
     </div>
 
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
 
     <p style="font-size: 14px; color: #6b7280;">
-      <strong>${data.schoolName}</strong><br>
+      <strong>${escapeHtml(data.schoolName)}</strong><br>
       Powered by SchoolMatica<br>
       Comprehensive School Management System
     </p>

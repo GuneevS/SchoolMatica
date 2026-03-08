@@ -22,8 +22,13 @@ export async function GET(request: NextRequest) {
   const { auth } = authResult;
 
   // Get school's grading configuration
+  const schoolId = auth.user.schoolId ?? authResult.schoolId;
+  if (!schoolId) {
+    return NextResponse.json({ error: "No school context. Select a school first." }, { status: 400 });
+  }
+
   const school = await prisma.school.findUnique({
-    where: { id: auth.user.schoolId! },
+    where: { id: schoolId },
     include: { gradingConfig: true },
   });
 
@@ -49,8 +54,13 @@ export async function PUT(request: NextRequest) {
   }
 
   // Get school's current grading configuration
+  const schoolId = auth.user.schoolId ?? authResult.schoolId;
+  if (!schoolId) {
+    return NextResponse.json({ error: "No school context. Select a school first." }, { status: 400 });
+  }
+
   const school = await prisma.school.findUnique({
-    where: { id: auth.user.schoolId! },
+    where: { id: schoolId },
     include: { gradingConfig: true },
   });
 

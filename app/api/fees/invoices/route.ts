@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerAuthContext } from "@/lib/auth-server";
+import { generateInvoiceNumber } from "@/lib/utils/reference-generator";
 import { z } from "zod";
 
 // Schema for creating invoices
@@ -19,15 +20,6 @@ const createInvoiceSchema = z.object({
   discountAmount: z.number().min(0).default(0),
   notes: z.string().optional(),
 });
-
-// Generate invoice number: INV-YYYY-XXXXX
-async function generateInvoiceNumber(schoolId: string, year: number): Promise<string> {
-  const count = await prisma.invoice.count({
-    where: { schoolId, year },
-  });
-  const paddedNumber = String(count + 1).padStart(5, "0");
-  return `INV-${year}-${paddedNumber}`;
-}
 
 // GET - List invoices for the school
 export async function GET(request: NextRequest) {
@@ -138,50 +130,59 @@ export async function POST(request: NextRequest) {
     const taxAmount = 0; // VAT can be added if needed: subtotal * 0.15
     const totalAmount = subtotal - data.discountAmount + taxAmount;
 
-    // Generate invoice number
-    const invoiceNumber = await generateInvoiceNumber(schoolId, data.year);
+    // Create invoice + ledger entry atomically with unique invoice number
+    const invoice = await prisma.$transaction(async (tx) => {
+      const invoiceNumber = await generateInvoiceNumber(tx, schoolId, data.year);
 
-    // Create the invoice
-    const invoice = await prisma.invoice.create({
-      data: {
-        invoiceNumber,
-        schoolId,
-        studentId: data.studentId,
-        feeStructureId: data.feeStructureId || null,
-        parentContactId: data.parentContactId || null,
-        term: data.term,
-        year: data.year,
-        dueDate: new Date(data.dueDate),
-        subtotal,
-        discountAmount: data.discountAmount,
-        taxAmount,
-        totalAmount,
-        paidAmount: 0,
-        balanceDue: totalAmount,
-        lineItems: data.lineItems,
-        notes: data.notes,
-        status: "Draft",
-      },
-      include: {
-        student: {
-          select: { firstName: true, lastName: true },
+      const inv = await tx.invoice.create({
+        data: {
+          invoiceNumber,
+          schoolId,
+          studentId: data.studentId,
+          feeStructureId: data.feeStructureId || null,
+          parentContactId: data.parentContactId || null,
+          term: data.term,
+          year: data.year,
+          dueDate: new Date(data.dueDate),
+          subtotal,
+          discountAmount: data.discountAmount,
+          taxAmount,
+          totalAmount,
+          paidAmount: 0,
+          balanceDue: totalAmount,
+          lineItems: data.lineItems,
+          notes: data.notes,
+          status: "Draft",
         },
-      },
-    });
+        include: {
+          student: {
+            select: { firstName: true, lastName: true },
+          },
+        },
+      });
 
-    // Create ledger entry for the invoice
-    await prisma.accountLedger.create({
-      data: {
-        schoolId,
-        studentId: data.studentId,
-        type: "Invoice",
-        description: `Invoice ${invoiceNumber} - ${invoice.student.firstName} ${invoice.student.lastName}`,
-        debit: totalAmount,
-        credit: 0,
-        balance: totalAmount, // This should be running balance - simplified here
-        reference: invoice.id,
-        createdBy: auth.user.id,
-      },
+      // Calculate cumulative running balance
+      const agg = await tx.accountLedger.aggregate({
+        where: { studentId: data.studentId },
+        _sum: { debit: true, credit: true },
+      });
+      const prevBalance = (agg._sum.debit ?? 0) - (agg._sum.credit ?? 0);
+
+      await tx.accountLedger.create({
+        data: {
+          schoolId,
+          studentId: data.studentId,
+          type: "Invoice",
+          description: `Invoice ${invoiceNumber} - ${inv.student.firstName} ${inv.student.lastName}`,
+          debit: totalAmount,
+          credit: 0,
+          balance: prevBalance + totalAmount,
+          reference: inv.id,
+          createdBy: auth.user.id,
+        },
+      });
+
+      return inv;
     });
 
     return NextResponse.json(invoice, { status: 201 });

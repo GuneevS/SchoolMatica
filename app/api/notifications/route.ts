@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getAuthContext } from "@/lib/auth";
+import { getAuthContext, isSystemAdmin, isSuperAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -59,8 +59,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { userId, type, title, body: notificationBody, actionUrl, schoolId, data } = body;
 
-    // Only allow system/admin to create notifications for others
-    // For now, simplified - in production check permissions
+    // Only allow admins/system to create notifications for other users
+    if (userId !== auth.user.id && !isSystemAdmin(auth) && !isSuperAdmin(auth)) {
+      return NextResponse.json(
+        { error: "Only administrators can create notifications for other users" },
+        { status: 403 }
+      );
+    }
 
     const notification = await prisma.notification.create({
       data: {

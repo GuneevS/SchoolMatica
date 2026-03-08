@@ -185,9 +185,11 @@ model School {
   announcements  Announcement[]
 
   // Fees & Accounting
+  bankDetails   Json?   // { bankName, accountNumber, branchCode, accountHolder, reference? }
   feeStructures FeeStructure[]
   invoices      Invoice[]
   ledgerEntries AccountLedger[]
+  creditNotes   CreditNote[]
 
   // Homework & Events
   homework     Homework[]
@@ -223,7 +225,7 @@ model Subject {
 model ClassGroup {
   id                   String                   @id @default(cuid())
   name                 String
-  grade                Int
+  grade                Int // Grade R = 0, Grades 1-12 = 1-12. See lib/constants/grading.ts for phase mapping.
   year                 Int
   classType            ClassType                @default(Subject)
   subject              Subject?                 @relation(fields: [subjectId], references: [id])
@@ -278,6 +280,7 @@ model Student {
   discounts     StudentDiscount[]
   invoices      Invoice[]
   ledgerEntries AccountLedger[]
+  creditNotes   CreditNote[]
 
   // Homework
   homeworkSubmissions HomeworkSubmission[]
@@ -455,19 +458,26 @@ model Mark {
 }
 
 model ModerationThread {
-  id               String               @id @default(cuid())
-  title            String?
-  kind             String? // plan | assessment | moderation
-  assessmentPlan   AssessmentPlan?      @relation(fields: [assessmentPlanId], references: [id])
-  assessmentPlanId String?
-  assessment       Assessment?          @relation(fields: [assessmentId], references: [id])
-  assessmentId     String?
-  status           String
-  createdByRole    String
-  comments         ModerationComment[]
-  documents        AssessmentDocument[]
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
+  id                String               @id @default(cuid())
+  title             String?
+  kind              String? // plan | assessment | moderation
+  assessmentPlan    AssessmentPlan?      @relation(fields: [assessmentPlanId], references: [id])
+  assessmentPlanId  String?
+  assessment        Assessment?          @relation(fields: [assessmentId], references: [id])
+  assessmentId      String?
+  status            String
+  createdByRole     String
+  resolvedAt        DateTime?
+  resolvedBy        String?
+  resolutionSummary String?
+  escalatedAt       DateTime?
+  escalatedBy       String?
+  escalationReason  String?
+  comments          ModerationComment[]
+  documents         AssessmentDocument[]
+  events            ModerationThreadEvent[]
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
 }
 
 model ModerationComment {
@@ -478,6 +488,21 @@ model ModerationComment {
   message       String
   attachmentUrl String?
   createdAt     DateTime         @default(now())
+}
+
+model ModerationThreadEvent {
+  id         String           @id @default(cuid())
+  thread     ModerationThread @relation(fields: [threadId], references: [id])
+  threadId   String
+  eventType  String // status_change, escalation, resolution, comment, reopen
+  fromStatus String?
+  toStatus   String?
+  actorRole  String
+  actorId    String
+  note       String?
+  createdAt  DateTime         @default(now())
+
+  @@index([threadId])
 }
 
 model CurriculumTemplate {
@@ -1052,6 +1077,7 @@ model Invoice {
   appliedDiscounts Json? // Discounts applied to this invoice
   notes           String?
   payments        Payment[]
+  creditNotes     CreditNote[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
@@ -1064,6 +1090,7 @@ model Invoice {
 model Payment {
   id              String    @id @default(cuid())
   paymentRef      String    @unique // Auto-generated: PAY-2024-001
+  receiptNumber   String?   @unique // Auto-generated: REC-2024-001
   invoice         Invoice   @relation(fields: [invoiceId], references: [id])
   invoiceId       String
   amount          Float
@@ -1102,6 +1129,30 @@ model AccountLedger {
 
   @@index([schoolId, studentId])
   @@index([createdAt])
+}
+
+// Credit notes for adjustments, refunds, or corrections
+model CreditNote {
+  id               String   @id @default(cuid())
+  creditNoteNumber String   @unique // Auto-generated: CN-2024-001
+  school           School   @relation(fields: [schoolId], references: [id])
+  schoolId         String
+  student          Student  @relation(fields: [studentId], references: [id])
+  studentId        String
+  invoice          Invoice? @relation(fields: [invoiceId], references: [id])
+  invoiceId        String?
+  amount           Float
+  reason           String
+  status           String   @default("Issued") // Issued, Voided
+  issuedBy         String // userId of person who issued it
+  voidedAt         DateTime?
+  voidedBy         String?
+  voidReason       String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([schoolId, studentId])
+  @@index([status])
 }
 
 // ============================================

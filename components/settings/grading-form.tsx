@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
+import { DEFAULT_GRADING_BANDS } from "@/lib/constants/grading";
 
 interface Props {
   config: GradingConfig | null;
@@ -15,7 +16,7 @@ export function GradingForm({ config }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const defaultPhases = useMemo(() => {
-    if (!config) return { FET: [] };
+    if (!config) return DEFAULT_GRADING_BANDS as Record<string, { minPercent: number; level: number; descriptor: string }[]>;
     return (config.phasesJson as Record<string, { minPercent: number; level: number; descriptor: string }[]>);
   }, [config]);
   const [draft, setDraft] = useState(defaultPhases);

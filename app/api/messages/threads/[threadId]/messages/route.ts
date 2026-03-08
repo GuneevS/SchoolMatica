@@ -64,7 +64,7 @@ export async function GET(
     }
 
     // Check if user is a participant (admins can view all threads in their school)
-    const participants = thread.participants as ThreadParticipant[];
+    const participants = thread.participants as unknown as ThreadParticipant[];
     const isParticipant = isThreadParticipant(participants, auth.user.id);
     const isAdmin = isSystemAdmin(auth) || isSuperAdmin(auth);
 
@@ -178,7 +178,7 @@ export async function POST(
     }
 
     // Check if user is a participant
-    const participants = thread.participants as ThreadParticipant[];
+    const participants = thread.participants as unknown as ThreadParticipant[];
     if (!isThreadParticipant(participants, auth.user.id)) {
       return NextResponse.json({ error: "Not a participant in this thread" }, { status: 403 });
     }
@@ -189,7 +189,7 @@ export async function POST(
         threadId,
         senderId: auth.user.id,
         content: content.trim(),
-        attachments: attachments ? JSON.stringify(attachments) : null,
+        attachments: attachments ? JSON.stringify(attachments) : undefined,
         readBy: JSON.stringify([auth.user.id]),
       },
       include: {

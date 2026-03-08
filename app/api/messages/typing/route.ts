@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
-    const participants = thread.participants as ThreadParticipant[];
+    const participants = thread.participants as unknown as ThreadParticipant[];
     if (!participants.some((p) => p.id === auth.user.id)) {
       return NextResponse.json({ error: "Not a participant" }, { status: 403 });
     }

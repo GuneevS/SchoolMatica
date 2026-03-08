@@ -4,14 +4,23 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FileText, Download, Eye, Plus } from "lucide-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
+import { getServerAuthContext, getAuthorizedActiveSchool } from "@/lib/auth-server";
 
 // Force dynamic rendering - requires database
 export const dynamic = "force-dynamic";
 
 export default async function ReportsPage() {
-  const schools = await prisma.school.findMany();
-  const school = schools[0];
+  const auth = await getServerAuthContext();
+  if (!auth) {
+    redirect("/login");
+  }
+
+  const school = await getAuthorizedActiveSchool();
+  if (!school) {
+    redirect("/schools");
+  }
 
   const classGroups = await prisma.classGroup.findMany({
     where: { schoolId: school?.id },

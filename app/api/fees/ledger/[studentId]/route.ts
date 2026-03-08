@@ -119,6 +119,7 @@ export async function POST(
       return NextResponse.json({ error: "Student not found" }, { status: 404 });
     }
 
+    // Permission check: WriteOff requires finance:manage, others require finance:write
     const body = await request.json();
     const { type, description, amount } = body;
 
@@ -138,14 +139,25 @@ export async function POST(
       );
     }
 
-    // Calculate running balance
-    const lastEntry = await prisma.accountLedger.findFirst({
-      where: { studentId },
-      orderBy: { createdAt: "desc" },
-    });
+    // Check finance permissions (admins/super admins bypass via isAdmin check)
+    if (!auth.isAdmin && !auth.isSuperAdmin) {
+      const requiredPerm = type === "WriteOff" ? "finance:manage" : "finance:write";
+      if (!auth.permissions.has(requiredPerm)) {
+        return NextResponse.json(
+          { error: `Permission required: ${requiredPerm}` },
+          { status: 403 }
+        );
+      }
+    }
 
-    const previousBalance = lastEntry?.balance || 0;
-    const isCredit = type === "Credit" || (type === "Adjustment" && amount < 0);
+    // Calculate running balance using aggregate for accuracy
+    const agg = await prisma.accountLedger.aggregate({
+      where: { studentId },
+      _sum: { debit: true, credit: true },
+    });
+    const previousBalance = (agg._sum.debit ?? 0) - (agg._sum.credit ?? 0);
+
+    const isCredit = type === "Credit" || type === "WriteOff" || (type === "Adjustment" && amount < 0);
     const debit = isCredit ? 0 : Math.abs(amount);
     const credit = isCredit ? Math.abs(amount) : 0;
     const newBalance = previousBalance + debit - credit;

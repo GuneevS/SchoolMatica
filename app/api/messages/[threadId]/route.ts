@@ -4,6 +4,17 @@ import { authorizeWithSchool, hasSchoolAccess } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
+/** Check if a user is a participant in a thread's participants JSON */
+function isParticipant(participants: unknown, userId: string): boolean {
+  try {
+    const parsed = typeof participants === "string" ? JSON.parse(participants) : participants;
+    if (!Array.isArray(parsed)) return false;
+    return parsed.some((p: { id?: string }) => p.id === userId);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * GET /api/messages/[threadId]
  * Get all messages in a thread
@@ -13,7 +24,7 @@ export async function GET(
   { params }: { params: Promise<{ threadId: string }> }
 ) {
   try {
-    const result = await authorizeWithSchool(request, "student:read");
+    const result = await authorizeWithSchool(request, "message:read");
     if ("error" in result) return result.error;
     const { auth } = result;
 
@@ -43,6 +54,11 @@ export async function GET(
 
     if (!hasSchoolAccess(auth, thread.schoolId)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    // Verify user is a participant in this thread
+    if (!isParticipant(thread.participants, auth.user.id)) {
+      return NextResponse.json({ error: "Not a participant in this thread" }, { status: 403 });
     }
 
     return NextResponse.json({ thread, messages: thread.messages });

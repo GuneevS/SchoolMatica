@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { calculateStudentSba, getBandsForPhase, mapPercentToLevel } from "@/lib/calculations";
 import { authorizeWithSchool, hasSchoolAccess } from "@/lib/auth";
 import { auditReportGeneration } from "@/lib/audit";
+import { getPhaseForGradeNum } from "@/lib/constants/grading";
 
 export async function POST(request: NextRequest) {
   // Authorize the request
@@ -65,8 +66,8 @@ export async function POST(request: NextRequest) {
     const assessmentPlan = classGroup.assessmentPlans[0];
     const assessments = assessmentPlan?.assessments ?? [];
 
-    // Get grading bands from school's config - FIX: use actual config instead of hardcoded values
-    const phase = classGroup.gradeLevel?.name ?? "default";
+    // Get grading bands from school's config using numeric grade -> phase mapping
+    const phase = getPhaseForGradeNum(classGroup.grade);
     const gradingBands = getBandsForPhase(classGroup.school.gradingConfig, phase);
 
     // Generate report cards for each student

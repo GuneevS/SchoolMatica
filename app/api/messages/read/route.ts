@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: NextRequest) {
   try {
-    const result = await authorizeWithSchool(request, "student:read");
+    const result = await authorizeWithSchool(request, "message:read");
     if ("error" in result) return result.error;
     const { auth } = result;
 
@@ -32,6 +32,18 @@ export async function POST(request: NextRequest) {
 
     if (!hasSchoolAccess(auth, thread.schoolId)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    // Verify user is a participant in this thread
+    const participants = (() => {
+      try {
+        const parsed = typeof thread.participants === "string"
+          ? JSON.parse(thread.participants) : thread.participants;
+        return Array.isArray(parsed) ? parsed : [];
+      } catch { return []; }
+    })();
+    if (!participants.some((p: { id?: string }) => p.id === auth.user.id)) {
+      return NextResponse.json({ error: "Not a participant in this thread" }, { status: 403 });
     }
 
     // Get all unread messages in the thread

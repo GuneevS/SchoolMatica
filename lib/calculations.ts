@@ -329,6 +329,11 @@ export function calculateStudentSba(args: {
           return sum + (item.percent * adjustedWeight) / 100;
         }, 0);
 
+  const totalPossibleWeight = assessments.reduce((sum, a) => sum + a.weightPercent, 0);
+  const completionPercent = totalPossibleWeight > 0
+    ? Number(((totalWeight / totalPossibleWeight) * 100).toFixed(1))
+    : 0;
+
   return {
     sbaPercent: Number(sbaPercent.toFixed(2)),
     componentBreakdown: {
@@ -336,7 +341,9 @@ export function calculateStudentSba(args: {
       schoolBasedPercent: Number(schoolBasedPercent.toFixed(2)),
     },
     assessmentCount: usable.length,
-    totalPossibleWeight: assessments.reduce((sum, a) => sum + a.weightPercent, 0),
+    totalAssessments: assessments.length,
+    totalPossibleWeight,
+    completionPercent,
   };
 }
 

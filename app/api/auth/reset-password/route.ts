@@ -5,10 +5,15 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from "@/lib/rate-limit";
 
+// Must match the same strong validation used during registration
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
 const resetPasswordSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   token: z.string().min(1, "Reset token is required"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(passwordRegex, "Password must include uppercase, lowercase, number, and special character (@$!%*?&)"),
 });
 
 export async function POST(request: NextRequest) {

@@ -64,12 +64,6 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
   }
 
-  if (existing.assessmentPlan.status === "PendingApproval" || existing.assessmentPlan.status === "Locked") {
-    if (!isSystemAdmin(auth)) {
-      return NextResponse.json({ error: "Plan is not editable in its current status" }, { status: 409 });
-    }
-  }
-
   const assessment = await prisma.assessment.update({
     where: { id: assessmentId },
     data: {
@@ -103,6 +97,15 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   // Verify school access
   if (!hasSchoolAccess(auth, existing.assessmentPlan.classGroup.schoolId)) {
     return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+  }
+
+  // Check if assessment has marks before deleting
+  const markCount = await prisma.mark.count({ where: { assessmentId } });
+  if (markCount > 0) {
+    return NextResponse.json(
+      { error: `Cannot delete assessment with ${markCount} existing marks. Archive it instead.` },
+      { status: 409 }
+    );
   }
 
   await prisma.assessment.delete({ where: { id: assessmentId } });

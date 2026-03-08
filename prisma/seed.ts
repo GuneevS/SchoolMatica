@@ -16,14 +16,15 @@ const demoStudents = [
   "Jude Peterson",
 ];
 
+// Correct CAPS grading bands: Level 2 at 30%, Level 7 at 80%
 const gradingBands = [
   { minPercent: 0, level: 1, descriptor: "Not Achieved" },
-  { minPercent: 40, level: 2, descriptor: "Elementary" },
-  { minPercent: 50, level: 3, descriptor: "Moderate" },
-  { minPercent: 60, level: 4, descriptor: "Adequate" },
-  { minPercent: 70, level: 5, descriptor: "Substantial" },
-  { minPercent: 80, level: 6, descriptor: "Meritorious" },
-  { minPercent: 90, level: 7, descriptor: "Outstanding" },
+  { minPercent: 30, level: 2, descriptor: "Elementary Achievement" },
+  { minPercent: 40, level: 3, descriptor: "Moderate Achievement" },
+  { minPercent: 50, level: 4, descriptor: "Adequate Achievement" },
+  { minPercent: 60, level: 5, descriptor: "Substantial Achievement" },
+  { minPercent: 70, level: 6, descriptor: "Meritorious Achievement" },
+  { minPercent: 80, level: 7, descriptor: "Outstanding Achievement" },
 ];
 
 const permissionSeeds = [
@@ -104,6 +105,11 @@ const permissionSeeds = [
   { key: "moderation:create", resource: "moderation", action: "create", description: "Create moderation threads" },
   { key: "moderation:update", resource: "moderation", action: "update", description: "Update moderation threads" },
   { key: "moderation:resolve", resource: "moderation", action: "resolve", description: "Resolve moderation issues" },
+
+  // Finance & Fees
+  { key: "finance:read", resource: "finance", action: "read", description: "View invoices, payments, ledger, and reports" },
+  { key: "finance:write", resource: "finance", action: "write", description: "Record payments, create invoices, adjustments" },
+  { key: "finance:manage", resource: "finance", action: "manage", description: "Write-offs, credit notes, fee structures, bank details" },
 
   // Timetables
   { key: "timetable:read", resource: "timetable", action: "read", description: "View timetables" },
@@ -192,6 +198,8 @@ const rolePermissionMatrix: Record<string, string[]> = {
     "template:read",
     // Grade Levels
     "gradeLevel:read",
+    // Finance (read-only for teachers)
+    "finance:read",
   ],
   hod: [
     // Assessment Plans
@@ -257,6 +265,8 @@ const rolePermissionMatrix: Record<string, string[]> = {
     "template:update",
     // Grade Levels
     "gradeLevel:read",
+    // Finance (read-only for HODs)
+    "finance:read",
   ],
   smt: [
     // Assessment Plans
@@ -343,6 +353,9 @@ const rolePermissionMatrix: Record<string, string[]> = {
     "user:update",
     "role:read",
     "role:assign",
+    // Finance (read + write for SMT)
+    "finance:read",
+    "finance:write",
   ],
   admin: [
     "system:admin", // This grants everything within scope
@@ -358,6 +371,10 @@ const rolePermissionMatrix: Record<string, string[]> = {
     "school:read",
     "school:update",
     "school:manage",
+    // Finance (full access for admin)
+    "finance:read",
+    "finance:write",
+    "finance:manage",
   ],
   super_admin: [
     // ═══════════════════════════════════════════════════════════════════
@@ -483,9 +500,14 @@ const rolePermissionMatrix: Record<string, string[]> = {
     "moderation:create",
     "moderation:update",
     "moderation:resolve",
-    
+
     // Audit Logs
     "audit:read",
+
+    // Finance (full access for super admin)
+    "finance:read",
+    "finance:write",
+    "finance:manage",
   ],
 };
 

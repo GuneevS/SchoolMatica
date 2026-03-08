@@ -9,7 +9,19 @@ interface Params {
 
 const updateSchema = z.object({
   status: z.enum(["Open", "Resolved", "Escalated"]),
-});
+  resolutionSummary: z.string().min(3).optional(),
+  escalationReason: z.string().min(3).optional(),
+}).refine(
+  (data) => {
+    if (data.status === "Resolved" && !data.resolutionSummary) return false;
+    if (data.status === "Escalated" && !data.escalationReason) return false;
+    return true;
+  },
+  {
+    message: "resolutionSummary is required when resolving; escalationReason is required when escalating",
+    path: ["status"],
+  }
+);
 
 export async function GET(request: NextRequest, { params }: Params) {
   // Authorize user with required permission
@@ -28,6 +40,9 @@ export async function GET(request: NextRequest, { params }: Params) {
         orderBy: { createdAt: "asc" },
       },
       documents: true,
+      events: {
+        orderBy: { createdAt: "asc" },
+      },
       assessmentPlan: {
         include: {
           classGroup: true,
@@ -119,10 +134,66 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
   }
 
-  const thread = await prisma.moderationThread.update({
-    where: { id: threadId },
-    data: parsed.data,
-  });
+  const actorRole = auth.user.roleAssignments[0]?.role.name ?? "Unknown";
+  const actorId = auth.user.id;
+  const fromStatus = existingThread.status;
+  const toStatus = parsed.data.status;
+
+  // Require 2+ distinct commenter roles before resolution
+  if (toStatus === "Resolved") {
+    const distinctRoles = await prisma.moderationComment.findMany({
+      where: { threadId },
+      select: { authorRole: true },
+      distinct: ["authorRole"],
+    });
+    if (distinctRoles.length < 2) {
+      return NextResponse.json(
+        { error: "At least two distinct roles must participate before resolving a thread" },
+        { status: 400 }
+      );
+    }
+  }
+
+  // Build update data
+  const updateData: Record<string, unknown> = {
+    status: toStatus,
+  };
+
+  if (toStatus === "Resolved") {
+    updateData.resolvedAt = new Date();
+    updateData.resolvedBy = actorId;
+    updateData.resolutionSummary = parsed.data.resolutionSummary;
+  } else if (toStatus === "Escalated") {
+    updateData.escalatedAt = new Date();
+    updateData.escalatedBy = actorId;
+    updateData.escalationReason = parsed.data.escalationReason;
+  } else if (toStatus === "Open") {
+    // Reopening — clear resolution fields
+    updateData.resolvedAt = null;
+    updateData.resolvedBy = null;
+    updateData.resolutionSummary = null;
+  }
+
+  const [thread] = await prisma.$transaction([
+    prisma.moderationThread.update({
+      where: { id: threadId },
+      data: updateData,
+      include: { events: { orderBy: { createdAt: "desc" }, take: 5 } },
+    }),
+    prisma.moderationThreadEvent.create({
+      data: {
+        threadId,
+        eventType: toStatus === "Resolved" ? "resolution"
+          : toStatus === "Escalated" ? "escalation"
+          : "reopen",
+        fromStatus,
+        toStatus,
+        actorRole,
+        actorId,
+        note: parsed.data.resolutionSummary || parsed.data.escalationReason || null,
+      },
+    }),
+  ]);
 
   return NextResponse.json(thread);
 }

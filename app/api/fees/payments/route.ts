@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerAuthContext } from "@/lib/auth-server";
+import { generatePaymentRef, generateReceiptNumber } from "@/lib/utils/reference-generator";
 import { z } from "zod";
 
 // Payment methods supported in South Africa
@@ -28,20 +29,6 @@ const recordPaymentSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
-// Generate payment reference: PAY-YYYY-XXXXX
-async function generatePaymentRef(year: number): Promise<string> {
-  const count = await prisma.payment.count({
-    where: {
-      createdAt: {
-        gte: new Date(`${year}-01-01`),
-        lt: new Date(`${year + 1}-01-01`),
-      },
-    },
-  });
-  const paddedNumber = String(count + 1).padStart(5, "0");
-  return `PAY-${year}-${paddedNumber}`;
-}
-
 // GET - List payments
 export async function GET(request: NextRequest) {
   try {
@@ -50,12 +37,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const schoolId = auth.user.schoolId;
+    const { searchParams } = new URL(request.url);
+
+    // Super admins can specify schoolId via query param
+    const requestedSchoolId = searchParams.get("schoolId");
+    const schoolId = auth.isSuperAdmin
+      ? (requestedSchoolId || auth.user.schoolId)
+      : auth.user.schoolId;
+
     if (!schoolId && !auth.isSuperAdmin) {
       return NextResponse.json({ error: "No school context" }, { status: 400 });
     }
 
-    const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const method = searchParams.get("method");
     const invoiceId = searchParams.get("invoiceId");
@@ -110,12 +103,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const schoolId = auth.user.schoolId;
+    const body = await request.json();
+
+    // Super admins can specify schoolId in body
+    const schoolId = auth.isSuperAdmin
+      ? (body.schoolId || auth.user.schoolId)
+      : auth.user.schoolId;
+
     if (!schoolId && !auth.isSuperAdmin) {
-      return NextResponse.json({ error: "No school context" }, { status: 400 });
+      return NextResponse.json({ error: "No school context. Super admins must specify schoolId." }, { status: 400 });
     }
 
-    const body = await request.json();
     const parsed = recordPaymentSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -165,15 +163,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate payment reference
-    const paymentRef = await generatePaymentRef(new Date().getFullYear());
-
     // Create payment and update invoice in transaction
     const result = await prisma.$transaction(async (tx) => {
+      // Generate payment reference and receipt number atomically inside the transaction
+      const currentYear = new Date().getFullYear();
+      const paymentRef = await generatePaymentRef(tx, currentYear);
+      const receiptNumber = await generateReceiptNumber(tx, currentYear);
+
       // Create the payment
       const payment = await tx.payment.create({
         data: {
           paymentRef,
+          receiptNumber,
           invoiceId: data.invoiceId,
           amount: data.amount,
           method: data.method,
@@ -201,6 +202,13 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      // Calculate cumulative running balance
+      const agg = await tx.accountLedger.aggregate({
+        where: { studentId: invoice.studentId },
+        _sum: { debit: true, credit: true },
+      });
+      const prevBalance = (agg._sum.debit ?? 0) - (agg._sum.credit ?? 0);
+
       // Create ledger entry
       await tx.accountLedger.create({
         data: {
@@ -210,7 +218,7 @@ export async function POST(request: NextRequest) {
           description: `Payment ${paymentRef} - ${data.method}`,
           debit: 0,
           credit: data.amount,
-          balance: newBalanceDue,
+          balance: prevBalance - data.amount,
           reference: payment.id,
           createdBy: auth.user.id,
         },

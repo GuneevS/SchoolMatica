@@ -20,8 +20,9 @@ import {
   CheckCircle,
   XCircle,
 } from "lucide-react";
-import { getAuthContext } from "@/lib/auth";
+import { getServerAuthContext } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
+import { calculateStudentSba } from "@/lib/calculations";
 
 export const dynamic = "force-dynamic";
 
@@ -70,16 +71,18 @@ function getTimeAgo(date: Date): string {
   return date.toLocaleDateString("en-ZA", { day: "numeric", month: "short" });
 }
 
-// Helper to get greeting based on time of day
+// Helper to get greeting based on time of day in SAST (UTC+2)
 function getGreeting(): string {
-  const hour = new Date().getHours();
+  const now = new Date();
+  // Convert to South Africa Standard Time (UTC+2) regardless of server timezone
+  const hour = new Date(now.getTime() + (2 * 60 + now.getTimezoneOffset()) * 60000).getHours();
   if (hour < 12) return "Good morning!";
   if (hour < 17) return "Good afternoon!";
   return "Good evening!";
 }
 
 export default async function ParentDashboard() {
-  const auth = await getAuthContext();
+  const auth = await getServerAuthContext();
   if (!auth) redirect("/login");
 
   // Get parent user with all children data
@@ -200,17 +203,23 @@ export default async function ParentDashboard() {
     const student = contact.student;
     const marks = student.marks || [];
     
-    // Calculate overall average from marks
+    // Calculate overall average using CAPS-weighted SBA calculation
     let overallAverage = 0;
     if (marks.length > 0) {
-      const validMarks = marks.filter((m) => m.rawMark !== null && !m.isAbsent);
-      if (validMarks.length > 0) {
-        const totalPercent = validMarks.reduce((sum, m) => {
-          const percent = ((m.rawMark || 0) / m.assessment.totalMark) * 100;
-          return sum + percent;
-        }, 0);
-        overallAverage = Math.round(totalPercent / validMarks.length);
+      // Group marks by assessment for calculateStudentSba
+      const assessmentMap = new Map<string, typeof marks[0]["assessment"] & { marks: typeof marks }>();
+      for (const mark of marks) {
+        const id = mark.assessment.id;
+        if (!assessmentMap.has(id)) {
+          assessmentMap.set(id, { ...mark.assessment, marks: [] });
+        }
+        assessmentMap.get(id)!.marks.push(mark);
       }
+      const sba = calculateStudentSba({
+        assessments: Array.from(assessmentMap.values()),
+        studentId: student.id,
+      });
+      overallAverage = Math.round(sba.sbaPercent);
     }
 
     // Count pending reports (published but potentially unread)

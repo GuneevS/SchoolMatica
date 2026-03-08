@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import {
   calculateStudentSba,
@@ -8,6 +9,7 @@ import {
 } from "@/lib/calculations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 // Force dynamic rendering - requires database
 export const dynamic = "force-dynamic";
@@ -48,6 +50,21 @@ export default async function StudentDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
+      {/* Breadcrumb Navigation */}
+      <div className="flex items-center gap-2 text-sm">
+        <Link
+          href="/students"
+          className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Back to Students
+        </Link>
+        <ChevronRight className="h-3 w-3 text-muted-foreground/50" />
+        <span className="font-medium text-foreground">
+          {student.firstName} {student.lastName}
+        </span>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>

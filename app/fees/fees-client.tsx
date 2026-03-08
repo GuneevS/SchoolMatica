@@ -18,6 +18,7 @@ import { RecordPaymentDialog } from "@/components/finance/record-payment-dialog"
 import { CreateFeeStructureDialog } from "@/components/finance/create-fee-structure-dialog";
 import { CreateDiscountDialog } from "@/components/finance/create-discount-dialog";
 import { BankReconciliationTab } from "@/components/finance/bank-reconciliation-tab";
+import { BulkInvoiceDialog } from "@/components/finance/bulk-invoice-dialog";
 import { buildCSVRow } from "@/lib/utils/csv";
 import { formatCurrency } from "@/lib/utils/currency";
 
@@ -77,6 +78,7 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts, s
   const [showCreateDiscount, setShowCreateDiscount] = useState(false);
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null);
+  const [bulkInvoiceStructure, setBulkInvoiceStructure] = useState<FeeStructure | null>(null);
 
   const refresh = useCallback(() => router.refresh(), [router]);
 
@@ -394,7 +396,18 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts, s
                             </p>
                           </div>
                         </div>
-                        <div className="text-right"><p className="text-lg font-bold">{formatCurrency(structure.baseAmount)}</p><p className="text-sm text-muted-foreground">per student</p></div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right"><p className="text-lg font-bold">{formatCurrency(structure.baseAmount)}</p><p className="text-sm text-muted-foreground">per student</p></div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-[hsl(var(--accent-violet))/0.5] text-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.08]"
+                            onClick={() => setBulkInvoiceStructure(structure)}
+                          >
+                            <Receipt className="h-3.5 w-3.5 mr-1.5" />
+                            Generate Invoices
+                          </Button>
+                        </div>
                       </div>
                       {structure.components && structure.components.length > 0 && (
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
@@ -491,6 +504,18 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts, s
       <RecordPaymentDialog open={showRecordPayment} onOpenChange={setShowRecordPayment} invoices={invoices} onSuccess={refresh} />
       <CreateFeeStructureDialog open={showCreateStructure} onOpenChange={setShowCreateStructure} onSuccess={refresh} />
       <CreateDiscountDialog open={showCreateDiscount} onOpenChange={setShowCreateDiscount} feeStructures={feeStructures} onSuccess={refresh} />
+      {bulkInvoiceStructure && (
+        <BulkInvoiceDialog
+          open={!!bulkInvoiceStructure}
+          onOpenChange={(isOpen) => { if (!isOpen) setBulkInvoiceStructure(null); }}
+          feeStructureId={bulkInvoiceStructure.id}
+          feeStructureName={bulkInvoiceStructure.name}
+          grade={bulkInvoiceStructure.grade}
+          year={bulkInvoiceStructure.year}
+          baseAmount={bulkInvoiceStructure.baseAmount}
+          onSuccess={refresh}
+        />
+      )}
     </div>
   );
 }

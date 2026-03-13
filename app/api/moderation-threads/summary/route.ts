@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { authorizeWithSchool, getUserSchoolIds, isSystemAdmin } from "@/lib/auth";
+import { Prisma } from "@prisma/client";
 
 // GET - Moderation summary/dashboard stats
 export async function GET(request: NextRequest) {
@@ -11,13 +12,13 @@ export async function GET(request: NextRequest) {
   const { auth } = authResult;
 
   // Scope to user's schools unless admin
-  const schoolFilter = isSystemAdmin(auth)
+  const schoolFilter: Prisma.ModerationThreadWhereInput = isSystemAdmin(auth)
     ? {}
     : {
         OR: [
           { assessmentPlan: { classGroup: { schoolId: { in: getUserSchoolIds(auth) } } } },
           { assessment: { assessmentPlan: { classGroup: { schoolId: { in: getUserSchoolIds(auth) } } } } },
-        ] as const,
+        ],
       };
 
   const now = new Date();

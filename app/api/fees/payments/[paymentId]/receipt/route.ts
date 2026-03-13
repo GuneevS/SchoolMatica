@@ -41,6 +41,16 @@ export async function GET(
     const student = invoice.student;
     const school = student.classGroup.school;
 
+    const invoiceLineItems = Array.isArray(invoice.lineItems)
+      ? (invoice.lineItems as Array<{ description?: string; quantity?: number }>)
+      : [];
+    const invoiceDescription = invoiceLineItems.length > 0
+      ? invoiceLineItems
+          .map((item) => item.description?.trim())
+          .filter((description): description is string => Boolean(description))
+          .join(", ")
+      : invoice.notes?.trim() || "School Fees";
+
     // Verify school access
     if (!auth.isSuperAdmin && auth.user.schoolId !== school.id) {
       // Check parent access
@@ -143,7 +153,7 @@ export async function GET(
       </thead>
       <tbody>
         <tr>
-          <td>${invoice.description || "School Fees"}</td>
+          <td>${invoiceDescription}</td>
           <td>${invoice.invoiceNumber}</td>
           <td class="text-right">${formatCurrency(invoice.totalAmount)}</td>
           <td class="text-right">${formatCurrency(payment.amount)}</td>

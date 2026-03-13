@@ -114,7 +114,7 @@ async function collectionReport(schoolId: string, params: URLSearchParams) {
   const invoiceWhere = {
     schoolId,
     year,
-    ...(term && { term: parseInt(term) }),
+    ...(term && { term }),
     status: { not: "Cancelled" },
   };
 

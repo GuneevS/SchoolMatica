@@ -10,7 +10,7 @@ export default async function StudentsPage() {
   const auth = await getServerAuthContext();
   if (!auth) redirect("/login");
 
-  const school = await getAuthorizedActiveSchool(auth);
+  const school = await getAuthorizedActiveSchool();
   if (!school) {
     return (
       <div className="p-10 text-center text-muted-foreground">

@@ -10,7 +10,7 @@
  * Run with: npx tsx prisma/fix-caps-bands.ts
  */
 
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -25,7 +25,7 @@ async function main() {
   let fixed = 0;
 
   for (const config of configs) {
-    const phases = config.phasesJson as Record<string, Band[]>;
+    const phases = config.phasesJson as unknown as Record<string, Band[]>;
     let changed = false;
 
     for (const phase of Object.keys(phases)) {
@@ -49,7 +49,7 @@ async function main() {
     if (changed) {
       await prisma.gradingConfig.update({
         where: { id: config.id },
-        data: { phasesJson: phases },
+        data: { phasesJson: phases as unknown as Prisma.InputJsonValue },
       });
       fixed++;
       console.log(`Fixed grading config: ${config.id} (${config.name})`);

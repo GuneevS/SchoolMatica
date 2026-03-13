@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authorizeWithSchool, getUserSchoolIds, isSystemAdmin } from "@/lib/auth";
 import { DEFAULT_GRADING_BANDS } from "@/lib/constants/grading";
+import { Prisma } from "@prisma/client";
 
 const defaultBands = DEFAULT_GRADING_BANDS;
 
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
   const gradingConfig = await prisma.gradingConfig.create({
     data: {
       name: parsed.data.gradingName ?? `${parsed.data.name} Grading`,
-      phasesJson: parsed.data.phases ?? defaultBands,
+      phasesJson: (parsed.data.phases ?? defaultBands) as unknown as Prisma.InputJsonValue,
     },
   });
 

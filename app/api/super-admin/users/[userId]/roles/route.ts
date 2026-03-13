@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authorizeSuperAdmin } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-error-handler";
 
 const addRoleSchema = z.object({
   roleKey: z.string().min(1, "Role key is required"),
@@ -28,36 +29,30 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return result.error;
   }
 
-  const { userId } = await params;
+  try {
+    const { userId } = await params;
 
-  const assignments = await prisma.userRoleAssignment.findMany({
-    where: { userId },
-    include: {
-      role: { select: { key: true, name: true, priority: true } },
-    },
-    orderBy: { role: { priority: "desc" } },
-  });
+    const assignments = await prisma.userRoleAssignment.findMany({
+      where: { userId },
+      include: { role: { select: { key: true, name: true, priority: true } } },
+      orderBy: { role: { priority: "desc" } },
+    });
 
-  // Fetch school info for scoped assignments
-  const schoolIds = assignments
-    .filter(a => a.scopeSchoolId)
-    .map(a => a.scopeSchoolId as string);
-  
-  const schools = schoolIds.length > 0
-    ? await prisma.school.findMany({
-        where: { id: { in: schoolIds } },
-        select: { id: true, name: true, shortCode: true },
-      })
-    : [];
-  
-  const schoolMap = new Map(schools.map(s => [s.id, s]));
-  
-  const assignmentsWithSchool = assignments.map(a => ({
-    ...a,
-    scopeSchool: a.scopeSchoolId ? schoolMap.get(a.scopeSchoolId) || null : null,
-  }));
+    const schoolIds = assignments.filter(a => a.scopeSchoolId).map(a => a.scopeSchoolId as string);
+    const schools = schoolIds.length > 0
+      ? await prisma.school.findMany({ where: { id: { in: schoolIds } }, select: { id: true, name: true, shortCode: true } })
+      : [];
+    const schoolMap = new Map(schools.map(s => [s.id, s]));
 
-  return NextResponse.json(assignmentsWithSchool);
+    const assignmentsWithSchool = assignments.map(a => ({
+      ...a,
+      scopeSchool: a.scopeSchoolId ? schoolMap.get(a.scopeSchoolId) || null : null,
+    }));
+
+    return NextResponse.json(assignmentsWithSchool);
+  } catch (error) {
+    return handleApiError("GET super-admin/users/[userId]/roles", error);
+  }
 }
 
 /**
@@ -70,94 +65,63 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     return result.error;
   }
 
-  const { userId } = await params;
-
-  const json = await request.json();
-  const parsed = addRoleSchema.safeParse(json);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
-  }
-
-  // Verify user exists
-  const user = await prisma.appUser.findUnique({
-    where: { id: userId },
-  });
-  if (!user) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-
-  // Get the role
-  const role = await prisma.roleDefinition.findUnique({
-    where: { key: parsed.data.roleKey },
-  });
-  if (!role) {
-    return NextResponse.json({ error: "Role not found" }, { status: 404 });
-  }
-
-  // Prevent adding super_admin role through this endpoint
-  if (role.key === "super_admin") {
-    return NextResponse.json(
-      { error: "Cannot assign super admin role through this endpoint" },
-      { status: 403 }
-    );
-  }
-
-  // Verify school exists if scoped
-  if (parsed.data.scopeSchoolId) {
-    const school = await prisma.school.findUnique({
-      where: { id: parsed.data.scopeSchoolId },
-    });
-    if (!school) {
-      return NextResponse.json({ error: "School not found" }, { status: 404 });
+  try {
+    const { userId } = await params;
+    const json = await request.json();
+    const parsed = addRoleSchema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
     }
-  }
 
-  // Check if assignment already exists
-  const existing = await prisma.userRoleAssignment.findFirst({
-    where: {
-      userId,
-      roleId: role.id,
-      scopeSchoolId: parsed.data.scopeSchoolId ?? null,
-    },
-  });
-  if (existing) {
-    return NextResponse.json(
-      { error: "User already has this role assignment" },
-      { status: 409 }
-    );
-  }
+    const user = await prisma.appUser.findUnique({ where: { id: userId } });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
 
-  // Create the assignment
-  const assignment = await prisma.userRoleAssignment.create({
-    data: {
-      userId,
-      roleId: role.id,
-      scopeSchoolId: parsed.data.scopeSchoolId ?? null,
-    },
-    include: {
-      role: { select: { key: true, name: true, priority: true } },
-    },
-  });
+    const role = await prisma.roleDefinition.findUnique({ where: { key: parsed.data.roleKey } });
+    if (!role) {
+      return NextResponse.json({ error: "Role not found" }, { status: 404 });
+    }
 
-  // Create audit log (only if school context exists)
-  if (parsed.data.scopeSchoolId) {
-    await prisma.auditLog.create({
-      data: {
-        schoolId: parsed.data.scopeSchoolId,
-      entityType: "UserRoleAssignment",
-      entityId: assignment.id,
-      action: "ROLE_ASSIGNED",
-      actorRole: "SuperAdmin",
-      actorName: result.auth.user.displayName,
-      metadata: {
-        userId,
-        roleKey: role.key,
-        scopeSchoolId: parsed.data.scopeSchoolId,
-        assignedBy: result.auth.user.email,
-      },
-    },
+    if (role.key === "super_admin") {
+      return NextResponse.json({ error: "Cannot assign super admin role through this endpoint" }, { status: 403 });
+    }
+
+    if (parsed.data.scopeSchoolId) {
+      const school = await prisma.school.findUnique({ where: { id: parsed.data.scopeSchoolId } });
+      if (!school) {
+        return NextResponse.json({ error: "School not found" }, { status: 404 });
+      }
+    }
+
+    const existing = await prisma.userRoleAssignment.findFirst({
+      where: { userId, roleId: role.id, scopeSchoolId: parsed.data.scopeSchoolId ?? null },
     });
-  }
+    if (existing) {
+      return NextResponse.json({ error: "User already has this role assignment" }, { status: 409 });
+    }
 
-  return NextResponse.json(assignment, { status: 201 });
+    const assignment = await prisma.userRoleAssignment.create({
+      data: { userId, roleId: role.id, scopeSchoolId: parsed.data.scopeSchoolId ?? null },
+      include: { role: { select: { key: true, name: true, priority: true } } },
+    });
+
+    if (parsed.data.scopeSchoolId) {
+      await prisma.auditLog.create({
+        data: {
+          schoolId: parsed.data.scopeSchoolId,
+          entityType: "UserRoleAssignment",
+          entityId: assignment.id,
+          action: "ROLE_ASSIGNED",
+          actorRole: "SuperAdmin",
+          actorName: result.auth.user.displayName,
+          metadata: { userId, roleKey: role.key, scopeSchoolId: parsed.data.scopeSchoolId, assignedBy: result.auth.user.email },
+        },
+      });
+    }
+
+    return NextResponse.json(assignment, { status: 201 });
+  } catch (error) {
+    return handleApiError("POST super-admin/users/[userId]/roles", error);
+  }
 }

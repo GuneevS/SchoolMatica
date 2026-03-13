@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     // SECURITY: Always return success to prevent email enumeration
     // Even if user doesn't exist, we don't reveal that information
     if (!user) {
-      console.log(`[Password Reset] No user found for email: ${normalizedEmail}`);
+      console.log("[Password Reset] No user found for provided email");
       return NextResponse.json({
         success: true,
         message: "If an account with that email exists, you will receive a password reset link.",

@@ -158,7 +158,7 @@ model School {
   schoolPhase String? // primary, secondary, combined, intermediate
   province    String? // SA province code
   district    String? // Education district
-  branding    Json?   // UI branding: logoUrl, primary, secondary, accent
+  branding    Json? // UI branding: logoUrl, primary, secondary, accent
 
   gradingConfig        GradingConfig?        @relation("SchoolGradingConfig", fields: [gradingConfigId], references: [id])
   gradingConfigId      String?               @unique
@@ -188,7 +188,7 @@ model School {
   announcements  Announcement[]
 
   // Fees & Accounting
-  bankDetails   Json?   // { bankName, accountNumber, branchCode, accountHolder, reference? }
+  bankDetails   Json? // { bankName, accountNumber, branchCode, accountHolder, reference? }
   feeStructures FeeStructure[]
   invoices      Invoice[]
   ledgerEntries AccountLedger[]
@@ -293,6 +293,8 @@ model Student {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([classGroupId])
 }
 
 model Teacher {
@@ -340,9 +342,9 @@ enum ClassType {
 
 model TeacherSubjectAssignment {
   id        String   @id @default(cuid())
-  teacher   Teacher  @relation(fields: [teacherId], references: [id])
+  teacher   Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   teacherId String
-  subject   Subject  @relation(fields: [subjectId], references: [id])
+  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   subjectId String
   grade     Int?
   createdAt DateTime @default(now())
@@ -350,7 +352,7 @@ model TeacherSubjectAssignment {
 
 model ParentContact {
   id           String  @id @default(cuid())
-  student      Student @relation(fields: [studentId], references: [id])
+  student      Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId    String
   fullName     String
   relationship String
@@ -359,7 +361,7 @@ model ParentContact {
   primary      Boolean @default(true)
 
   // Link to parent user account
-  parentUser   ParentUser? @relation("ParentUserContacts", fields: [parentUserId], references: [id])
+  parentUser   ParentUser? @relation("ParentUserContacts", fields: [parentUserId], references: [id], onDelete: SetNull)
   parentUserId String?
 
   // Invitation for account creation
@@ -376,12 +378,14 @@ model GradeLevel {
   id             String               @id @default(cuid())
   name           String
   order          Int
-  school         School               @relation(fields: [schoolId], references: [id])
+  school         School               @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   schoolId       String
   classes        ClassGroup[]
   subjectConfigs GradeSubjectConfig[]
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
+
+  @@index([schoolId])
 }
 
 // Configuration for which subjects are offered per grade level
@@ -412,9 +416,9 @@ model AssessmentPlan {
   submittedByRole   String?
   approvedByRole    String?
   termWeights       Json?
-  template          CurriculumTemplate?  @relation(fields: [templateId], references: [id])
+  template          CurriculumTemplate?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
   templateId        String?
-  classGroup        ClassGroup           @relation(fields: [classGroupId], references: [id])
+  classGroup        ClassGroup           @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
   classGroupId      String
   assessments       Assessment[]
   moderationThreads ModerationThread[]
@@ -427,7 +431,7 @@ model AssessmentPlan {
 
 model Assessment {
   id                 String               @id @default(cuid())
-  assessmentPlan     AssessmentPlan       @relation(fields: [assessmentPlanId], references: [id])
+  assessmentPlan     AssessmentPlan       @relation(fields: [assessmentPlanId], references: [id], onDelete: Cascade)
   assessmentPlanId   String
   taskName           String
   term               String
@@ -450,9 +454,9 @@ model Assessment {
 
 model Mark {
   id           String     @id @default(cuid())
-  assessment   Assessment @relation(fields: [assessmentId], references: [id])
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
   assessmentId String
-  student      Student    @relation(fields: [studentId], references: [id])
+  student      Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId    String
   rawMark      Float?
   isAbsent     Boolean    @default(false)
@@ -466,12 +470,12 @@ model Mark {
 }
 
 model ModerationThread {
-  id                String               @id @default(cuid())
+  id                String                  @id @default(cuid())
   title             String?
   kind              String? // plan | assessment | moderation
-  assessmentPlan    AssessmentPlan?      @relation(fields: [assessmentPlanId], references: [id])
+  assessmentPlan    AssessmentPlan?         @relation(fields: [assessmentPlanId], references: [id])
   assessmentPlanId  String?
-  assessment        Assessment?          @relation(fields: [assessmentId], references: [id])
+  assessment        Assessment?             @relation(fields: [assessmentId], references: [id])
   assessmentId      String?
   status            String
   createdByRole     String
@@ -484,13 +488,13 @@ model ModerationThread {
   comments          ModerationComment[]
   documents         AssessmentDocument[]
   events            ModerationThreadEvent[]
-  createdAt         DateTime             @default(now())
-  updatedAt         DateTime             @updatedAt
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
 }
 
 model ModerationComment {
   id            String           @id @default(cuid())
-  thread        ModerationThread @relation(fields: [threadId], references: [id])
+  thread        ModerationThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
   threadId      String
   authorRole    String
   message       String
@@ -521,7 +525,7 @@ model CurriculumTemplate {
   phase               String
   grade               Int
   defaultTermCount    Int
-  school              School?              @relation(fields: [schoolId], references: [id])
+  school              School?              @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   schoolId            String?
   createdByRole       String
   assessmentTemplates AssessmentTemplate[]
@@ -533,7 +537,7 @@ model CurriculumTemplate {
 
 model AssessmentTemplate {
   id                   String             @id @default(cuid())
-  curriculumTemplate   CurriculumTemplate @relation(fields: [curriculumTemplateId], references: [id])
+  curriculumTemplate   CurriculumTemplate @relation(fields: [curriculumTemplateId], references: [id], onDelete: Cascade)
   curriculumTemplateId String
   taskName             String
   term                 String
@@ -569,7 +573,7 @@ model AssessmentDocument {
 
 model DocumentApproval {
   id           String             @id @default(cuid())
-  document     AssessmentDocument @relation(fields: [documentId], references: [id])
+  document     AssessmentDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
   documentId   String
   reviewerRole String
   reviewerName String?
@@ -582,7 +586,7 @@ model DocumentApproval {
 
 model AuditLog {
   id         String   @id @default(cuid())
-  school     School   @relation(fields: [schoolId], references: [id])
+  school     School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   schoolId   String
   entityType String
   entityId   String
@@ -598,7 +602,7 @@ model AuditLog {
 
 model LearnerRegistration {
   id             String      @id @default(cuid())
-  school         School      @relation(fields: [schoolId], references: [id])
+  school         School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   schoolId       String
   classGroup     ClassGroup? @relation(fields: [classGroupId], references: [id])
   classGroupId   String?
@@ -617,9 +621,9 @@ model LearnerRegistration {
 
 model MarkSnapshot {
   id               String         @id @default(cuid())
-  assessmentPlan   AssessmentPlan @relation(fields: [assessmentPlanId], references: [id])
+  assessmentPlan   AssessmentPlan @relation(fields: [assessmentPlanId], references: [id], onDelete: Cascade)
   assessmentPlanId String
-  student          Student        @relation(fields: [studentId], references: [id])
+  student          Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId        String
   term             String
   sbaPercent       Float
@@ -671,7 +675,7 @@ model TimetableSlot {
   timetableId      String
   period           TimetablePeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
   periodId         String
-  classGroup       ClassGroup      @relation(fields: [classGroupId], references: [id])
+  classGroup       ClassGroup      @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
   classGroupId     String
   teacher          Teacher?        @relation(fields: [teacherId], references: [id])
   teacherId        String?
@@ -689,9 +693,9 @@ model TimetableSlot {
 
 model LearnerComment {
   id           String     @id @default(cuid())
-  student      Student    @relation(fields: [studentId], references: [id])
+  student      Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId    String
-  classGroup   ClassGroup @relation(fields: [classGroupId], references: [id])
+  classGroup   ClassGroup @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
   classGroupId String
   term         String
   year         Int
@@ -708,9 +712,9 @@ model LearnerComment {
 
 model ReportCard {
   id                String     @id @default(cuid())
-  student           Student    @relation(fields: [studentId], references: [id])
+  student           Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId         String
-  classGroup        ClassGroup @relation(fields: [classGroupId], references: [id])
+  classGroup        ClassGroup @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
   classGroupId      String
   term              String
   year              Int
@@ -831,9 +835,9 @@ model StudentInvitation {
 // Individual behavior incident (merit or demerit)
 model BehaviorIncident {
   id           String    @id @default(cuid())
-  student      Student   @relation(fields: [studentId], references: [id])
+  student      Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId    String
-  school       School    @relation(fields: [schoolId], references: [id])
+  school       School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   schoolId     String
   type         String // "Merit" | "Demerit"
   points       Int
@@ -860,7 +864,7 @@ model BehaviorIncident {
 // School-specific behavior policies and thresholds
 model BehaviorPolicy {
   id            String   @id @default(cuid())
-  school        School   @relation(fields: [schoolId], references: [id])
+  school        School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   schoolId      String
   name          String
   type          String // "Merit" | "Demerit"
@@ -895,9 +899,9 @@ model BehaviorBalance {
 // Threshold trigger records (when student crosses a threshold)
 model BehaviorThresholdTrigger {
   id             String    @id @default(cuid())
-  student        Student   @relation(fields: [studentId], references: [id])
+  student        Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId      String
-  school         School    @relation(fields: [schoolId], references: [id])
+  school         School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   schoolId       String
   type           String // "Merit" | "Demerit"
   thresholdValue Int
@@ -920,7 +924,7 @@ model BehaviorThresholdTrigger {
 // Message thread (conversation)
 model MessageThread {
   id            String    @id @default(cuid())
-  school        School    @relation(fields: [schoolId], references: [id])
+  school        School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   schoolId      String
   type          String // "Direct", "Class", "School", "Announcement"
   subject       String?
@@ -941,7 +945,7 @@ model Message {
   id          String        @id @default(cuid())
   thread      MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
   threadId    String
-  sender      AppUser       @relation(fields: [senderId], references: [id])
+  sender      AppUser       @relation(fields: [senderId], references: [id], onDelete: Cascade)
   senderId    String
   content     String        @db.Text
   attachments Json? // Array of attachment URLs
@@ -976,7 +980,7 @@ model Notification {
 // School announcements
 model Announcement {
   id          String    @id @default(cuid())
-  school      School    @relation(fields: [schoolId], references: [id])
+  school      School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   schoolId    String
   title       String
   content     String    @db.Text
@@ -986,7 +990,7 @@ model Announcement {
   expiresAt   DateTime?
   isPinned    Boolean   @default(false)
   attachments Json?
-  createdBy   AppUser   @relation(fields: [createdById], references: [id])
+  createdBy   AppUser   @relation(fields: [createdById], references: [id], onDelete: Cascade)
   createdById String
   status      String    @default("Draft") // Draft, Published, Archived
   createdAt   DateTime  @default(now())
@@ -1003,7 +1007,7 @@ model Announcement {
 // Fee structure definitions for the school
 model FeeStructure {
   id          String        @id @default(cuid())
-  school      School        @relation(fields: [schoolId], references: [id])
+  school      School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   schoolId    String
   name        String // e.g., "Grade 10 Annual Fees 2024"
   description String?
@@ -1024,70 +1028,70 @@ model FeeStructure {
 
 // Discount/Bursary definitions
 model FeeDiscount {
-  id            String       @id @default(cuid())
-  feeStructure  FeeStructure @relation(fields: [feeStructureId], references: [id])
+  id             String            @id @default(cuid())
+  feeStructure   FeeStructure      @relation(fields: [feeStructureId], references: [id], onDelete: Cascade)
   feeStructureId String
-  name          String // e.g., "Sibling Discount", "Merit Bursary"
-  type          String // "Percentage" | "FixedAmount"
-  value         Float // Percentage (e.g., 10) or fixed amount in ZAR
-  criteria      Json? // Eligibility criteria
-  maxUsage      Int? // Maximum number of students this can apply to
-  currentUsage  Int          @default(0)
-  validFrom     DateTime?
-  validUntil    DateTime?
-  isActive      Boolean      @default(true)
-  applications  StudentDiscount[]
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  name           String // e.g., "Sibling Discount", "Merit Bursary"
+  type           String // "Percentage" | "FixedAmount"
+  value          Float // Percentage (e.g., 10) or fixed amount in ZAR
+  criteria       Json? // Eligibility criteria
+  maxUsage       Int? // Maximum number of students this can apply to
+  currentUsage   Int               @default(0)
+  validFrom      DateTime?
+  validUntil     DateTime?
+  isActive       Boolean           @default(true)
+  applications   StudentDiscount[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 }
 
 // Student-specific discount applications
 model StudentDiscount {
-  id          String      @id @default(cuid())
-  student     Student     @relation(fields: [studentId], references: [id])
-  studentId   String
-  discount    FeeDiscount @relation(fields: [discountId], references: [id])
-  discountId  String
-  approvedBy  String? // User ID who approved
-  approvedAt  DateTime?
-  notes       String?
-  status      String      @default("Pending") // Pending, Approved, Rejected, Expired
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id         String      @id @default(cuid())
+  student    Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId  String
+  discount   FeeDiscount @relation(fields: [discountId], references: [id], onDelete: Cascade)
+  discountId String
+  approvedBy String? // User ID who approved
+  approvedAt DateTime?
+  notes      String?
+  status     String      @default("Pending") // Pending, Approved, Rejected, Expired
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 
   @@unique([studentId, discountId])
 }
 
 // Invoice generation
 model Invoice {
-  id              String          @id @default(cuid())
-  invoiceNumber   String          @unique // Auto-generated: INV-2024-001
-  school          School          @relation(fields: [schoolId], references: [id])
-  schoolId        String
-  student         Student         @relation(fields: [studentId], references: [id])
-  studentId       String
-  feeStructure    FeeStructure?   @relation(fields: [feeStructureId], references: [id])
-  feeStructureId  String?
-  parentContact   ParentContact?  @relation(fields: [parentContactId], references: [id])
-  parentContactId String?
-  term            String
-  year            Int
-  subtotal        Float // Total before discounts
-  discountAmount  Float           @default(0)
-  taxAmount       Float           @default(0)
-  totalAmount     Float // Final amount due
-  paidAmount      Float           @default(0)
-  balanceDue      Float // totalAmount - paidAmount
-  status          String          @default("Draft") // Draft, Sent, Partially Paid, Paid, Overdue, Cancelled
-  dueDate         DateTime
-  sentAt          DateTime?
-  lineItems       Json // Array of line items with amounts
+  id               String         @id @default(cuid())
+  invoiceNumber    String         @unique // Auto-generated: INV-2024-001
+  school           School         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  schoolId         String
+  student          Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId        String
+  feeStructure     FeeStructure?  @relation(fields: [feeStructureId], references: [id])
+  feeStructureId   String?
+  parentContact    ParentContact? @relation(fields: [parentContactId], references: [id])
+  parentContactId  String?
+  term             String
+  year             Int
+  subtotal         Float // Total before discounts
+  discountAmount   Float          @default(0)
+  taxAmount        Float          @default(0)
+  totalAmount      Float // Final amount due
+  paidAmount       Float          @default(0)
+  balanceDue       Float // totalAmount - paidAmount
+  status           String         @default("Draft") // Draft, Sent, Partially Paid, Paid, Overdue, Cancelled
+  dueDate          DateTime
+  sentAt           DateTime?
+  lineItems        Json // Array of line items with amounts
   appliedDiscounts Json? // Discounts applied to this invoice
-  notes           String?
-  payments        Payment[]
-  creditNotes     CreditNote[]
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  notes            String?
+  payments         Payment[]
+  creditNotes      CreditNote[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
   @@index([schoolId, status])
   @@index([studentId])
@@ -1096,24 +1100,24 @@ model Invoice {
 
 // Payment records
 model Payment {
-  id              String    @id @default(cuid())
-  paymentRef      String    @unique // Auto-generated: PAY-2024-001
-  receiptNumber   String?   @unique // Auto-generated: REC-2024-001
-  invoice         Invoice   @relation(fields: [invoiceId], references: [id])
-  invoiceId       String
-  amount          Float
-  method          String // "EFT", "Card", "Cash", "ApplePay", "GooglePay", "PayFast", "Snapscan"
-  gateway         String? // Payment gateway used
-  gatewayRef      String? // External payment reference
-  status          String    @default("Pending") // Pending, Processing, Completed, Failed, Refunded
-  paidBy          String? // Name of person who made payment
-  paidByContact   String? // Email or phone
-  processedAt     DateTime?
-  failureReason   String?
-  metadata        Json? // Additional payment metadata
-  receiptUrl      String? // URL to payment receipt
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  paymentRef    String    @unique // Auto-generated: PAY-2024-001
+  receiptNumber String?   @unique // Auto-generated: REC-2024-001
+  invoice       Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceId     String
+  amount        Float
+  method        String // "EFT", "Card", "Cash", "ApplePay", "GooglePay", "PayFast", "Snapscan"
+  gateway       String? // Payment gateway used
+  gatewayRef    String? // External payment reference
+  status        String    @default("Pending") // Pending, Processing, Completed, Failed, Refunded
+  paidBy        String? // Name of person who made payment
+  paidByContact String? // Email or phone
+  processedAt   DateTime?
+  failureReason String?
+  metadata      Json? // Additional payment metadata
+  receiptUrl    String? // URL to payment receipt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@index([invoiceId])
   @@index([status])
@@ -1122,9 +1126,9 @@ model Payment {
 // Account statement/ledger for reconciliation
 model AccountLedger {
   id          String   @id @default(cuid())
-  school      School   @relation(fields: [schoolId], references: [id])
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   schoolId    String
-  student     Student  @relation(fields: [studentId], references: [id])
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId   String
   type        String // "Invoice", "Payment", "Credit", "Adjustment", "WriteOff"
   description String
@@ -1141,23 +1145,23 @@ model AccountLedger {
 
 // Credit notes for adjustments, refunds, or corrections
 model CreditNote {
-  id               String   @id @default(cuid())
-  creditNoteNumber String   @unique // Auto-generated: CN-2024-001
-  school           School   @relation(fields: [schoolId], references: [id])
+  id               String    @id @default(cuid())
+  creditNoteNumber String    @unique // Auto-generated: CN-2024-001
+  school           School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   schoolId         String
-  student          Student  @relation(fields: [studentId], references: [id])
+  student          Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId        String
-  invoice          Invoice? @relation(fields: [invoiceId], references: [id])
+  invoice          Invoice?  @relation(fields: [invoiceId], references: [id])
   invoiceId        String?
   amount           Float
   reason           String
-  status           String   @default("Issued") // Issued, Voided
+  status           String    @default("Issued") // Issued, Voided
   issuedBy         String // userId of person who issued it
   voidedAt         DateTime?
   voidedBy         String?
   voidReason       String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   @@index([schoolId, studentId])
   @@index([status])
@@ -1169,24 +1173,24 @@ model CreditNote {
 
 // Homework assignments (separate from assessments)
 model Homework {
-  id           String             @id @default(cuid())
-  school       School             @relation(fields: [schoolId], references: [id])
+  id           String               @id @default(cuid())
+  school       School               @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   schoolId     String
-  classGroup   ClassGroup         @relation(fields: [classGroupId], references: [id])
+  classGroup   ClassGroup           @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
   classGroupId String
-  teacher      Teacher            @relation(fields: [teacherId], references: [id])
+  teacher      Teacher              @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   teacherId    String
   title        String
-  description  String?            @db.Text
+  description  String?              @db.Text
   subject      String
   dueDate      DateTime
-  assignedDate DateTime           @default(now())
+  assignedDate DateTime             @default(now())
   attachments  Json? // Array of file URLs
   points       Int? // Optional points value
-  status       String             @default("Active") // Active, Completed, Cancelled
+  status       String               @default("Active") // Active, Completed, Cancelled
   submissions  HomeworkSubmission[]
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
 
   @@index([schoolId, dueDate])
   @@index([classGroupId])
@@ -1195,21 +1199,21 @@ model Homework {
 
 // Student homework submissions
 model HomeworkSubmission {
-  id           String    @id @default(cuid())
-  homework     Homework  @relation(fields: [homeworkId], references: [id])
-  homeworkId   String
-  student      Student   @relation(fields: [studentId], references: [id])
-  studentId    String
-  status       String    @default("Pending") // Pending, Submitted, Late, Missing, Excused
-  submittedAt  DateTime?
-  attachments  Json? // Submitted files
-  grade        String? // Optional grade: "Complete", "Incomplete", or numeric
-  feedback     String?
-  checkedBy    String? // Teacher who checked
-  checkedAt    DateTime?
-  parentNotified Boolean  @default(false) // Was parent notified if missing?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id             String    @id @default(cuid())
+  homework       Homework  @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  homeworkId     String
+  student        Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId      String
+  status         String    @default("Pending") // Pending, Submitted, Late, Missing, Excused
+  submittedAt    DateTime?
+  attachments    Json? // Submitted files
+  grade          String? // Optional grade: "Complete", "Incomplete", or numeric
+  feedback       String?
+  checkedBy      String? // Teacher who checked
+  checkedAt      DateTime?
+  parentNotified Boolean   @default(false) // Was parent notified if missing?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@unique([homeworkId, studentId])
   @@index([homeworkId])
@@ -1222,28 +1226,28 @@ model HomeworkSubmission {
 
 // School events
 model SchoolEvent {
-  id           String    @id @default(cuid())
-  school       School    @relation(fields: [schoolId], references: [id])
-  schoolId     String
-  title        String
-  description  String?   @db.Text
-  eventType    String // "Academic", "Sports", "Cultural", "Meeting", "Holiday", "Exam", "Other"
-  startDate    DateTime
-  endDate      DateTime?
-  startTime    String? // HH:MM format
-  endTime      String?
-  location     String?
-  isAllDay     Boolean   @default(false)
-  isRecurring  Boolean   @default(false)
-  recurrence   Json? // Recurrence rules
-  audience     Json // Who can see: ["all"] or specific grades/classes
-  color        String? // Calendar display color
-  attachments  Json?
-  reminders    Json? // Array of reminder configs
-  createdBy    String
-  status       String    @default("Active") // Active, Cancelled, Completed
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id          String    @id @default(cuid())
+  school      School    @relation(fields: [schoolId], references: [id])
+  schoolId    String
+  title       String
+  description String?   @db.Text
+  eventType   String // "Academic", "Sports", "Cultural", "Meeting", "Holiday", "Exam", "Other"
+  startDate   DateTime
+  endDate     DateTime?
+  startTime   String? // HH:MM format
+  endTime     String?
+  location    String?
+  isAllDay    Boolean   @default(false)
+  isRecurring Boolean   @default(false)
+  recurrence  Json? // Recurrence rules
+  audience    Json // Who can see: ["all"] or specific grades/classes
+  color       String? // Calendar display color
+  attachments Json?
+  reminders   Json? // Array of reminder configs
+  createdBy   String
+  status      String    @default("Active") // Active, Cancelled, Completed
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([schoolId, startDate])
   @@index([eventType])

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { authorizeWithSchool, getUserSchoolIds, isSystemAdmin } from "@/lib/auth";
 import { DEFAULT_GRADING_BANDS } from "@/lib/constants/grading";
 import { Prisma } from "@prisma/client";
+import { handleApiError } from "@/lib/api-error-handler";
 
 const defaultBands = DEFAULT_GRADING_BANDS;
 
@@ -23,23 +24,29 @@ export async function GET(request: NextRequest) {
   if ("error" in result) {
     return result.error;
   }
-  
-  const { auth } = result;
-  
-  // System admins can see all schools
-  const whereClause = isSystemAdmin(auth) 
-    ? {}
-    : { id: { in: getUserSchoolIds(auth) } };
-  
-  const schools = await prisma.school.findMany({
-    where: whereClause,
-    include: {
-      gradingConfig: true,
-      _count: { select: { classes: true, subjects: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-  return NextResponse.json(schools);
+
+  try {
+    
+    const { auth } = result;
+    
+    // System admins can see all schools
+    const whereClause = isSystemAdmin(auth) 
+      ? {}
+      : { id: { in: getUserSchoolIds(auth) } };
+    
+    const schools = await prisma.school.findMany({
+      where: whereClause,
+      include: {
+        gradingConfig: true,
+        _count: { select: { classes: true, subjects: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return NextResponse.json(schools);
+
+  } catch (error) {
+    return handleApiError("GET schools", error);
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -47,36 +54,42 @@ export async function POST(request: NextRequest) {
   if ("error" in result) {
     return result.error;
   }
-  
-  const { auth } = result;
-  
-  // Only system admins can create schools
-  if (!isSystemAdmin(auth)) {
-    return NextResponse.json({ error: "Only system administrators can create schools" }, { status: 403 });
+
+  try {
+    
+    const { auth } = result;
+    
+    // Only system admins can create schools
+    if (!isSystemAdmin(auth)) {
+      return NextResponse.json({ error: "Only system administrators can create schools" }, { status: 403 });
+    }
+    
+    const json = await request.json();
+    const parsed = createSchema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
+    }
+
+    const gradingConfig = await prisma.gradingConfig.create({
+      data: {
+        name: parsed.data.gradingName ?? `${parsed.data.name} Grading`,
+        phasesJson: (parsed.data.phases ?? defaultBands) as unknown as Prisma.InputJsonValue,
+      },
+    });
+
+    const school = await prisma.school.create({
+      data: {
+        name: parsed.data.name,
+        shortCode: parsed.data.shortCode,
+        gradingConfig: { connect: { id: gradingConfig.id } },
+      },
+      include: { gradingConfig: true },
+    });
+
+    return NextResponse.json(school, { status: 201 });
+
+  } catch (error) {
+    return handleApiError("POST schools", error);
   }
-  
-  const json = await request.json();
-  const parsed = createSchema.safeParse(json);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
-  }
-
-  const gradingConfig = await prisma.gradingConfig.create({
-    data: {
-      name: parsed.data.gradingName ?? `${parsed.data.name} Grading`,
-      phasesJson: (parsed.data.phases ?? defaultBands) as unknown as Prisma.InputJsonValue,
-    },
-  });
-
-  const school = await prisma.school.create({
-    data: {
-      name: parsed.data.name,
-      shortCode: parsed.data.shortCode,
-      gradingConfig: { connect: { id: gradingConfig.id } },
-    },
-    include: { gradingConfig: true },
-  });
-
-  return NextResponse.json(school, { status: 201 });
 }
 

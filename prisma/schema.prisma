@@ -69,9 +69,9 @@ model AppUser {
   accounts Account[]
   sessions Session[]
 
-  school          School?              @relation(fields: [schoolId], references: [id])
+  school          School?              @relation(fields: [schoolId], references: [id], onDelete: SetNull)
   schoolId        String?
-  teacher         Teacher?             @relation("TeacherAccount", fields: [teacherId], references: [id])
+  teacher         Teacher?             @relation("TeacherAccount", fields: [teacherId], references: [id], onDelete: SetNull)
   teacherId       String?              @unique
   roleAssignments UserRoleAssignment[]
 
@@ -93,6 +93,9 @@ model AppUser {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([schoolId])
+  @@index([email])
 }
 
 model RoleDefinition {
@@ -122,9 +125,9 @@ model PermissionDefinition {
 
 model RolePermission {
   id           String               @id @default(cuid())
-  role         RoleDefinition       @relation(fields: [roleId], references: [id])
+  role         RoleDefinition       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   roleId       String
-  permission   PermissionDefinition @relation(fields: [permissionId], references: [id])
+  permission   PermissionDefinition @relation(fields: [permissionId], references: [id], onDelete: Cascade)
   permissionId String
   createdAt    DateTime             @default(now())
 
@@ -133,9 +136,9 @@ model RolePermission {
 
 model UserRoleAssignment {
   id            String         @id @default(cuid())
-  user          AppUser        @relation(fields: [userId], references: [id])
+  user          AppUser        @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId        String
-  role          RoleDefinition @relation(fields: [roleId], references: [id])
+  role          RoleDefinition @relation(fields: [roleId], references: [id], onDelete: Cascade)
   roleId        String
   scopeSchoolId String?
   scopeClassId  String?
@@ -214,7 +217,7 @@ model Subject {
   name               String
   code               String
   phase              String
-  school             School                     @relation(fields: [schoolId], references: [id])
+  school             School                     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   schoolId           String
   classes            ClassGroup[]
   teacherAssignments ClassTeacherAssignment[]
@@ -228,15 +231,15 @@ model ClassGroup {
   grade                Int // Grade R = 0, Grades 1-12 = 1-12. See lib/constants/grading.ts for phase mapping.
   year                 Int
   classType            ClassType                @default(Subject)
-  subject              Subject?                 @relation(fields: [subjectId], references: [id])
+  subject              Subject?                 @relation(fields: [subjectId], references: [id], onDelete: SetNull)
   subjectId            String?
-  school               School                   @relation(fields: [schoolId], references: [id])
+  school               School                   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   schoolId             String
-  curriculumTemplate   CurriculumTemplate?      @relation(fields: [curriculumTemplateId], references: [id])
+  curriculumTemplate   CurriculumTemplate?      @relation(fields: [curriculumTemplateId], references: [id], onDelete: SetNull)
   curriculumTemplateId String?
-  gradeLevel           GradeLevel?              @relation(fields: [gradeLevelId], references: [id])
+  gradeLevel           GradeLevel?              @relation(fields: [gradeLevelId], references: [id], onDelete: SetNull)
   gradeLevelId         String?
-  primaryTeacher       Teacher?                 @relation("PrimaryClassTeacher", fields: [primaryTeacherId], references: [id])
+  primaryTeacher       Teacher?                 @relation("PrimaryClassTeacher", fields: [primaryTeacherId], references: [id], onDelete: SetNull)
   primaryTeacherId     String?
   students             Student[]
   assessmentPlans      AssessmentPlan[]
@@ -248,6 +251,9 @@ model ClassGroup {
   homework             Homework[]
   createdAt            DateTime                 @default(now())
   updatedAt            DateTime                 @updatedAt
+
+  @@index([schoolId])
+  @@index([gradeLevelId])
 }
 
 model Student {
@@ -256,9 +262,9 @@ model Student {
   firstName        String
   lastName         String
   gender           String
-  classGroup       ClassGroup            @relation(fields: [classGroupId], references: [id])
+  classGroup       ClassGroup            @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
   classGroupId     String
-  advisor          Teacher?              @relation("AdvisorTeacher", fields: [advisorTeacherId], references: [id])
+  advisor          Teacher?              @relation("AdvisorTeacher", fields: [advisorTeacherId], references: [id], onDelete: SetNull)
   advisorTeacherId String?
   marks            Mark[]
   registrations    LearnerRegistration[]
@@ -297,7 +303,7 @@ model Teacher {
   phone              String?
   role               String                     @default("Teacher")
   bio                String?
-  school             School                     @relation(fields: [schoolId], references: [id])
+  school             School                     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   schoolId           String
   primaryClasses     ClassGroup[]               @relation("PrimaryClassTeacher")
   classAssignments   ClassTeacherAssignment[]
@@ -309,16 +315,18 @@ model Teacher {
   homework           Homework[]
   createdAt          DateTime                   @default(now())
   updatedAt          DateTime                   @updatedAt
+
+  @@index([schoolId])
 }
 
 model ClassTeacherAssignment {
   id           String     @id @default(cuid())
-  classGroup   ClassGroup @relation(fields: [classGroupId], references: [id])
+  classGroup   ClassGroup @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
   classGroupId String
-  teacher      Teacher    @relation(fields: [teacherId], references: [id])
+  teacher      Teacher    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   teacherId    String
   role         String     @default("Support")
-  subject      Subject?   @relation(fields: [subjectId], references: [id])
+  subject      Subject?   @relation(fields: [subjectId], references: [id], onDelete: SetNull)
   subjectId    String?
   createdAt    DateTime   @default(now())
 

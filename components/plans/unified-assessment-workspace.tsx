@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Assessment, AssessmentPlan } from "@prisma/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
@@ -16,7 +15,6 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip, Cell } from "recharts";
 import {
-  GripVertical,
   Plus,
   Trash2,
   Info,
@@ -28,12 +26,11 @@ import {
   Send,
   ThumbsUp,
   Lock,
-  Unlock,
   AlertCircle,
   Clock
 } from "lucide-react";
 import type { AssessmentWeightInsightMap, TermWeights } from "@/lib/calculations";
-import { useAuth, useCurrentRole } from "@/lib/hooks/use-auth";
+import { useCurrentRole } from "@/lib/hooks/use-auth";
 
 interface Props {
   plan: AssessmentPlan & { assessments: Assessment[] };
@@ -41,13 +38,10 @@ interface Props {
   weightInsights?: AssessmentWeightInsightMap;
 }
 
-export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeights, weightInsights }: Props) {
+export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeights }: Props) {
   const router = useRouter();
-  const { user } = useAuth();
   const currentRole = useCurrentRole();
   const [isPending, startTransition] = useTransition();
-  const [mounted, setMounted] = useState(false);
-  const { activeRoleKey } = useAuth();
 
   // Normalize role for UI checks - FIX APPLIED HERE
   const activeRoleName = currentRole?.role.name ?? "Teacher";
@@ -185,28 +179,80 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
   const updateAssessmentByPercentage = (id: string, newPercent: number, term: string) => {
     if (!canEdit) return;
 
-    // 1. Get other assessments in this term
     const termAsms = assessments.filter(a => a.term === term && a.id !== id);
-    const otherRawTotal = termAsms.reduce((sum, a) => sum + (a.rawWeight || 10), 0);
+    const otherRawTotal = termAsms.reduce((sum, a) => sum + a.rawWeight, 0);
 
-    // 2. Edge Case: If this is the only assessment, it MUST be 100%
+    const safePercent = Math.min(Math.max(newPercent, 0), 100);
+
+    // If this is the only assessment, force it to 100
     if (termAsms.length === 0) {
-      if (newPercent !== 100) {
-        // Force 100 or show warning? For simplicity, ignore non-100 logic or reset rawWeight to nice number
+      if (safePercent !== 100) {
         updateAssessment(id, { rawWeight: 100 });
       }
       return;
     }
 
-    // 3. Edge Case: Prevent 100% if others exist (would imply others are 0, which implies raw=infinity? No, if raw=Infinity, math breaks)
-    // If user wants 100%, others must become 0? 
-    // Let's Cap at 99.9% for safety or handle gracefully.
-    const safePercent = Math.min(Math.max(newPercent, 0), 99.9);
+    // Edge Case: user sets this to 100%. We must zero out other assessments in this term.
+    if (safePercent === 100) {
+      setAssessments(prev => prev.map(a => 
+        a.term === term && a.id !== id ? { ...a, rawWeight: 0 } 
+        : a.id === id ? { ...a, rawWeight: 100 } : a
+      ));
+      setHasChanges(true);
 
-    // 4. Calculate new Raw Weight
-    // formula: Raw = (Target% * OtherTotal) / (100 - Target%)
+      startTransition(async () => {
+        await Promise.all(termAsms.map(a => fetch(`/api/assessments/${a.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rawWeight: 0 }),
+        })));
+        await fetch(`/api/assessments/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rawWeight: 100 }),
+        });
+        await fetch("/api/revalidate?path=/dashboard", { method: "POST" });
+        router.refresh();
+      });
+      return;
+    }
+
+    if (safePercent === 0) {
+      updateAssessment(id, { rawWeight: 0 });
+      return;
+    }
+
+    // Logic when all other tasks are 0 but user wants < 100% for this task.
+    // They must share the remaining percentage points.
+    if (otherRawTotal === 0) {
+      const targetOtherRaw = 100 - safePercent;
+      const perOther = targetOtherRaw / termAsms.length;
+
+      setAssessments(prev => prev.map(a => 
+        a.term === term && a.id !== id ? { ...a, rawWeight: perOther } 
+        : a.id === id ? { ...a, rawWeight: safePercent } : a
+      ));
+      setHasChanges(true);
+
+      startTransition(async () => {
+        await Promise.all(termAsms.map(a => fetch(`/api/assessments/${a.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rawWeight: perOther }),
+        })));
+        await fetch(`/api/assessments/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rawWeight: safePercent }),
+        });
+        await fetch("/api/revalidate?path=/dashboard", { method: "POST" });
+        router.refresh();
+      });
+      return;
+    }
+
+    // Normal calculation adjusting raw weight against existing other weights
     const newRaw = (safePercent * otherRawTotal) / (100 - safePercent);
-
     updateAssessment(id, { rawWeight: Number(newRaw.toFixed(2)) });
   };
 
@@ -486,7 +532,7 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
                       }}
                     />
                     <Pie
-                      data={assessments.map((a, idx) => ({
+                      data={assessments.map((a) => ({
                         name: a.taskName,
                         value: Number(a.weightPercent.toFixed(2)),
                       }))}

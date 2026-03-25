@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Teacher, ClassTeacherAssignment } from "@prisma/client";
+import { Teacher, ClassTeacherAssignment, Subject } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,11 +34,13 @@ interface Props {
   classId: string;
   assignments: TeacherWithAssignment[];
   allTeachers: Teacher[];
+  subjects?: { id: string; name: string }[];
 }
 
-export function ManageTeachers({ classId, assignments, allTeachers }: Props) {
+export function ManageTeachers({ classId, assignments, allTeachers, subjects = [] }: Props) {
   const [open, setOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<string>("");
+  const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [role, setRole] = useState("Support");
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -59,6 +61,7 @@ export function ManageTeachers({ classId, assignments, allTeachers }: Props) {
           body: JSON.stringify({
             teacherId: selectedTeacher,
             role: role,
+            subjectId: selectedSubject || undefined,
           }),
         });
 
@@ -69,6 +72,7 @@ export function ManageTeachers({ classId, assignments, allTeachers }: Props) {
 
         setOpen(false);
         setSelectedTeacher("");
+        setSelectedSubject("");
         router.refresh();
       } catch (error) {
         console.error(error);
@@ -142,11 +146,31 @@ export function ManageTeachers({ classId, assignments, allTeachers }: Props) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Lead">Lead Teacher</SelectItem>
+                      <SelectItem value="Subject">Subject Teacher</SelectItem>
                       <SelectItem value="Support">Support Teacher</SelectItem>
                       <SelectItem value="Substitute">Substitute</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+                {subjects.length > 0 && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="subject">Subject (optional)</Label>
+                    <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select subject" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No specific subject</SelectItem>
+                        {subjects.map((subject) => (
+                          <SelectItem key={subject.id} value={subject.id}>
+                            {subject.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Specify which subject this teacher will teach in this class</p>
+                  </div>
+                )}
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
@@ -184,9 +208,14 @@ export function ManageTeachers({ classId, assignments, allTeachers }: Props) {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Badge variant={assignment.role === "Lead" ? "default" : "secondary"}>
+                  <Badge variant={assignment.role === "Lead" ? "default" : assignment.role === "Subject" ? "outline" : "secondary"}>
                     {assignment.role}
                   </Badge>
+                  {assignment.subjectId && subjects.length > 0 && (
+                    <Badge variant="outline" className="text-xs">
+                      {subjects.find(s => s.id === assignment.subjectId)?.name || "Subject"}
+                    </Badge>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"

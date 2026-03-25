@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Progress } from "@/components/ui/progress";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CreditCard, Receipt, TrendingUp, FileText, Plus, Download, Eye, Send, Check, AlertCircle, Clock, Wallet, PiggyBank, Activity, Landmark, Loader2 } from "lucide-react";
+import { CreditCard, Receipt, TrendingUp, FileText, Plus, Download, Eye, Send, Check, AlertCircle, Clock, Wallet, PiggyBank, Activity, Landmark, Loader2, Archive } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CreateInvoiceDialog } from "@/components/finance/create-invoice-dialog";
 import { RecordPaymentDialog } from "@/components/finance/record-payment-dialog";
@@ -81,6 +81,17 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts, s
   const [bulkInvoiceStructure, setBulkInvoiceStructure] = useState<FeeStructure | null>(null);
 
   const refresh = useCallback(() => router.refresh(), [router]);
+
+  const handleDeactivateStructure = async (structureId: string) => {
+    if (!confirm("Deactivate this fee structure? It will no longer appear in the active list.")) return;
+    try {
+      const res = await fetch(`/api/fees/structures/${structureId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to deactivate");
+      refresh();
+    } catch (err) {
+      console.error("Deactivate error:", err);
+    }
+  };
 
   const totalCollected = invoices.reduce((sum, inv) => sum + inv.paid, 0);
   const totalOutstanding = invoices.reduce((sum, inv) => sum + inv.balance, 0);
@@ -392,7 +403,7 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts, s
                           <div>
                             <p className="font-medium">{structure.name}</p>
                             <p className="text-sm text-muted-foreground">
-                              {structure.grade > 0 ? `Grade ${structure.grade}` : "All Grades"} • {structure.year} • {structure.term || "Annual"} • {structure.students} students
+                              {structure.grade != null ? `Grade ${structure.grade === 0 ? "R" : structure.grade}` : "All Grades"} • {structure.year} • {structure.term || "Annual"} • {structure.students} students
                             </p>
                           </div>
                         </div>
@@ -406,6 +417,15 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts, s
                           >
                             <Receipt className="h-3.5 w-3.5 mr-1.5" />
                             Generate Invoices
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-muted-foreground hover:text-destructive"
+                            onClick={() => handleDeactivateStructure(structure.id)}
+                            title="Deactivate fee structure"
+                          >
+                            <Archive className="h-3.5 w-3.5" />
                           </Button>
                         </div>
                       </div>

@@ -113,6 +113,14 @@ const navGroups: NavGroup[] = [
         icon: BarChart3,
         canAccess: (auth) => hasPermission(auth, "report:read"),
       },
+      {
+        label: "Moderation",
+        href: "/moderation",
+        icon: Shield,
+        canAccess: (auth) =>
+          hasRoleKey(auth, ["hod", "deputy", "principal", "admin", "smt"]) ||
+          hasAnyPermission(auth, ["moderation:read", "moderation:create"]),
+      },
     ],
   },
   {

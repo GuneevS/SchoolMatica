@@ -57,9 +57,10 @@ interface Props {
 
 // Helper to determine default class type based on grade
 function getDefaultClassType(grade: number): "Homeroom" | "Subject" {
-  // Foundation (R-3) and Intermediate (4-6) phases typically use homeroom
-  // Senior (7-9) and FET (10-12) typically use subject-specific classes
-  return grade <= 6 ? "Homeroom" : "Subject";
+  // Foundation (R-3) defaults to homeroom, but user can always override
+  // Intermediate (4-6) defaults to homeroom but many schools use subject classes
+  // Senior (7-9) and FET (10-12) default to subject-specific classes
+  return grade <= 3 ? "Homeroom" : grade <= 6 ? "Homeroom" : "Subject";
 }
 
 export function CreateClassDialog({ subjects, teachers, grades }: Props) {
@@ -88,14 +89,15 @@ export function CreateClassDialog({ subjects, teachers, grades }: Props) {
   const primaryTeacherId = useWatch({ control: form.control, name: "primaryTeacherId" }) ?? "";
   const [selectedSubject, setSelectedSubject] = useState("");
 
-  // Auto-update class type suggestion when grade changes
+  // Auto-update class type default when grade changes (suggestion only, not forced)
   useEffect(() => {
     const suggestedType = getDefaultClassType(gradeValue);
-    // Only auto-switch if it makes sense for SA school context
-    if (gradeValue <= 6 && classType === "Subject") {
-      form.setValue("classType", "Homeroom");
+    // Only auto-update if the form hasn't been touched for classType
+    // This provides a smart default without overriding the user's explicit choice
+    if (!form.formState.dirtyFields.classType) {
+      form.setValue("classType", suggestedType);
     }
-  }, [gradeValue, classType, form]);
+  }, [gradeValue, form]);
 
   // Update name placeholder based on class type
   const namePlaceholder = classType === "Homeroom" 
@@ -189,7 +191,19 @@ export function CreateClassDialog({ subjects, teachers, grades }: Props) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <Label>Grade</Label>
-              <Input type="number" min={0} max={12} {...form.register("grade", { valueAsNumber: true })} />
+              <Select
+                value={String(gradeValue)}
+                onValueChange={(v) => form.setValue("grade", parseInt(v), { shouldDirty: false })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select grade" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 13 }, (_, i) => (
+                    <SelectItem key={i} value={String(i)}>Grade {i === 0 ? "R" : i}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
               <Label>Year</Label>

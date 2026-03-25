@@ -387,16 +387,16 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
           "group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm transition-all duration-200",
           compact ? "font-semibold" : "font-medium pl-11",
           isActive
-            ? "bg-indigo-50 text-slate-900 shadow-ambient-sm"
-            : "text-muted-foreground hover:text-slate-900 hover:bg-slate-100/60",
+            ? "bg-[hsl(var(--accent-iris))/0.1] text-foreground shadow-ambient-sm"
+            : "text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--surface-soft))/0.8]",
         )}
       >
         <span
           className={cn(
-            "flex h-7 w-7 items-center justify-center rounded-xl border border-transparent",
+            "flex h-7 w-7 items-center justify-center rounded-xl border border-transparent transition-colors",
             isActive
-              ? "bg-indigo-100 text-indigo-700"
-              : "bg-white text-slate-400 group-hover:text-slate-600",
+              ? "bg-[hsl(var(--accent-iris))/0.15] text-[hsl(var(--accent-iris))]"
+              : "bg-[hsl(var(--surface-strong))] text-muted-foreground group-hover:text-foreground",
           )}
         >
           <Icon className="h-3.5 w-3.5" />
@@ -428,16 +428,16 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
           className={cn(
             "flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm font-semibold transition-all duration-200",
             hasActiveChild
-              ? "text-slate-900"
-              : "text-muted-foreground hover:text-slate-900 hover:bg-slate-100/60",
+              ? "text-foreground"
+              : "text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--surface-soft))/0.8]",
           )}
         >
           <span
             className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-xl border border-transparent",
+              "flex h-7 w-7 items-center justify-center rounded-xl border border-transparent transition-colors",
               hasActiveChild
-                ? "bg-indigo-100 text-indigo-700"
-                : "bg-white text-slate-400",
+                ? "bg-[hsl(var(--accent-iris))/0.15] text-[hsl(var(--accent-iris))]"
+                : "bg-[hsl(var(--surface-strong))] text-muted-foreground",
             )}
           >
             <GroupIcon className="h-3.5 w-3.5" />
@@ -478,7 +478,7 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
       />
 
       {/* ---- Desktop Sidebar ---- */}
-      <aside className="relative z-10 hidden w-72 flex-col border-r border-slate-200/60 bg-white/95 px-5 py-8 shadow-ambient-sm backdrop-blur lg:flex">
+      <aside className="relative z-10 hidden w-72 flex-col border-r border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))/0.95] px-5 py-8 shadow-ambient-sm backdrop-blur lg:flex">
         <Link href="/dashboard" className="mb-8 flex items-center gap-3 transition-opacity hover:opacity-90">
           <UnifiedLogo variant="icon" size="sm" colorScheme="gradient" />
           <div>
@@ -487,7 +487,7 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
           </div>
         </Link>
 
-        <div className="rounded-3xl border border-slate-200/60 bg-slate-50/80 p-4 shadow-ambient-sm">
+        <div className="rounded-3xl border border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-soft))/0.8] p-4 shadow-ambient-sm">
           <div className="flex items-center gap-3">
             <SchoolMark
               name={initialSchool?.name ?? "School"}
@@ -537,7 +537,7 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
 
       {/* ---- Main content area ---- */}
       <div className="relative z-10 flex flex-1 flex-col">
-        <header className="sticky top-0 z-20 border-b border-slate-200/50 bg-white/90 px-6 py-4 backdrop-blur-xl">
+        <header className="sticky top-0 z-20 border-b border-[hsl(var(--border-strong))/0.5] bg-[hsl(var(--surface-strong))/0.9] px-6 py-4 backdrop-blur-xl">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-6">
             <div className="flex items-center gap-3">
               {/* Mobile hamburger */}
@@ -549,7 +549,7 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
                       <span className="sr-only">Open navigation</span>
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="left" className="bg-white overflow-y-auto">
+                  <SheetContent side="left" className="bg-[hsl(var(--surface-strong))] border-r-[hsl(var(--border-strong))/0.6] overflow-y-auto">
                     <SheetHeader>
                       <SheetTitle className="flex items-center gap-2">
                         <UnifiedLogo variant="icon" size="sm" colorScheme="gradient" />

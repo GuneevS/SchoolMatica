@@ -31,7 +31,6 @@ export function LoginForm() {
   
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = React.useState<LoginRole>("teacher");
   const [showPassword, setShowPassword] = React.useState(false);
   const showQuickAccess =
     process.env.NODE_ENV !== "production" ||
@@ -83,49 +82,49 @@ export function LoginForm() {
       {
         id: "platform",
         label: "Platform Admin",
-        role: "platform" as LoginRole,
+        role: "platform",
         email: "platform@schoolmatica.dev",
         password: "Password123!",
       },
       {
         id: "school-admin",
         label: "School Admin",
-        role: "school" as LoginRole,
+        role: "school",
         email: "admin@nimbus.edu",
         password: "Password123!",
       },
       {
         id: "hod",
         label: "HOD",
-        role: "hod" as LoginRole,
+        role: "hod",
         email: "hod@nimbus.edu",
         password: "Password123!",
       },
       {
         id: "teacher",
         label: "Teacher",
-        role: "teacher" as LoginRole,
+        role: "teacher",
         email: "teacher@nimbus.edu",
         password: "Password123!",
       },
       {
         id: "smt",
         label: "SMT",
-        role: "smt" as LoginRole,
+        role: "smt",
         email: "smt@nimbus.edu",
         password: "Password123!",
       },
       {
         id: "parent",
         label: "Parent",
-        role: "parent" as LoginRole,
+        role: "parent",
         email: "parent@nimbus.edu",
         password: "Password123!",
       },
       {
         id: "student",
         label: "Student",
-        role: "student" as LoginRole,
+        role: "student",
         email: "student@nimbus.edu",
         password: "Password123!",
       },
@@ -134,16 +133,14 @@ export function LoginForm() {
   );
 
   async function onSubmit(values: FormData) {
-    await performLogin(values.email, values.password, selectedRole);
+    await performLogin(values.email, values.password);
   }
 
   const handleQuickLogin = async (preset: (typeof quickLogins)[number]) => {
-    setSelectedRole(preset.role);
     form.setValue("email", preset.email);
     form.setValue("password", preset.password);
-    await performLogin(preset.email, preset.password, preset.role);
+    await performLogin(preset.email, preset.password);
   };
-  
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -158,11 +155,6 @@ export function LoginForm() {
         <p className="text-muted-foreground mt-1">
           South Africa&apos;s complete school management platform
         </p>
-      </div>
-
-      {/* Role Selector */}
-      <div className="mb-6">
-        <RoleLoginTabs value={selectedRole} onChange={setSelectedRole} />
       </div>
 
       <div className="bg-white/95 backdrop-blur-xl border border-[hsl(var(--border-strong))/0.6] rounded-2xl shadow-ambient-lg p-6 sm:p-8 transition-all hover:shadow-ambient-xl duration-500 hover:border-[hsl(var(--border-strong))]">

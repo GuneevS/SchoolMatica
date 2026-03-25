@@ -77,6 +77,51 @@
     --chart-surface-bg: linear-gradient(145deg, #faf8ff 0%, #f5f3ff 55%, #f8f7fc 100%);
   }
 
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: var(--brand-primary);
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 32% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 32% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 32% 17%;
+    --border-strong: 217 32% 25%;
+    --input: 217 32% 17%;
+    --ring: var(--brand-primary);
+
+    --canvas: 222 47% 5%;
+    --canvas-glow-a: rgba(139, 92, 246, 0.15);
+    --canvas-glow-b: rgba(168, 85, 247, 0.12);
+    --canvas-glow-c: rgba(124, 58, 237, 0.10);
+    --canvas-gradient: radial-gradient(circle at 16% 18%, var(--canvas-glow-a), transparent 55%),
+      radial-gradient(circle at 82% 8%, var(--canvas-glow-b), transparent 60%),
+      radial-gradient(circle at 70% 85%, var(--canvas-glow-c), transparent 65%),
+      linear-gradient(180deg, #0f111a 0%, #090a0f 45%, #050508 100%);
+      
+    --surface-soft: 222 47% 11%;
+    --surface-strong: 222 47% 14%;
+    --text-muted-strong: 215 20% 70%;
+    --shadow-rgb: 0 0 0;
+
+    --status-draft: 217 32% 25%;
+    
+    --aurora-panel-bg:
+      radial-gradient(120% 120% at 0% 0%, var(--canvas-glow-a), transparent 60%),
+      radial-gradient(120% 120% at 100% 0%, var(--canvas-glow-b), transparent 65%),
+      radial-gradient(140% 140% at 20% 100%, var(--canvas-glow-c), transparent 65%),
+      linear-gradient(135deg, #13151f 0%, #0d0f17 55%, #0a0b12 100%);
+    --chart-surface-bg: linear-gradient(145deg, #13151f 0%, #0d0f17 55%, #0a0b12 100%);
+  }
 }
 
 @layer base {

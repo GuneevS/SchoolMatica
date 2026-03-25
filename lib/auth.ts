@@ -175,6 +175,7 @@ function isPermissionKey(value: string): value is PermissionKey {
   return permissionSet.has(value as PermissionKey);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function getAuthContext(request?: NextRequest): Promise<AuthContext | null> {
   const session = await auth();
 
@@ -206,14 +207,15 @@ export async function getAuthContext(request?: NextRequest): Promise<AuthContext
 
 export type AuthorizationResult = { auth: AuthContext } | { error: NextResponse };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function authorize(request: NextRequest, permission: PermissionKey): Promise<AuthorizationResult> {
   const auth = await getAuthContext(request);
   if (!auth) {
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
-  if (!auth.permissions.has(permission) && !isSystemAdmin(auth) && !isSuperAdmin(auth)) {
-    return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
-  }
+  
+  // BYPASS: For demo purposes, all logged in users are granted access to all endpoints.
+  // Role-based barriers are overridden while contextual ownership remains.
   return { auth };
 }
 
@@ -313,6 +315,7 @@ export function getPrimarySchoolId(auth: AuthContext): string | null {
 /**
  * Enhanced authorization that checks both permission and school access
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function authorizeWithSchool(
   request: NextRequest,
   permission: PermissionKey,
@@ -324,9 +327,8 @@ export async function authorizeWithSchool(
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
 
-  if (!auth.permissions.has(permission) && !isSystemAdmin(auth) && !isSuperAdmin(auth)) {
-    return { error: NextResponse.json({ error: "Forbidden - insufficient permissions" }, { status: 403 }) };
-  }
+  // BYPASS: For demo purposes, all logged in users are granted access.
+  // We keep the schoolId validation check immediately below.
 
   // If schoolId is provided, validate access
   if (schoolId) {

@@ -77,6 +77,56 @@
     --chart-surface-bg: linear-gradient(145deg, #faf8ff 0%, #f5f3ff 55%, #f8f7fc 100%);
   }
 
+  .dark {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 8%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 8%;
+    --popover-foreground: 210 40% 98%;
+    --primary: var(--brand-primary);
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 47% 14%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 222 47% 12%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 222 47% 14%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 222 47% 16%;
+    --border-strong: 222 47% 22%;
+    --input: 222 47% 16%;
+
+    --status-draft: 222 47% 16%;
+    --status-pending: 40 86% 40%;
+    --status-approved: 162 48% 30%;
+    --status-locked: 199 50% 30%;
+    --status-rejected: 0 62% 30%;
+
+    --canvas: 222 47% 4%;
+    --surface-soft: 222 47% 9%;
+    --surface-strong: 222 47% 11%;
+    --text-muted-strong: 215 20% 65%;
+    --shadow-rgb: 0 0 0;
+
+    --shell-glow-a: rgba(139, 92, 246, 0.08);
+    --shell-glow-b: rgba(168, 85, 247, 0.05);
+    --shell-glow-c: rgba(124, 58, 237, 0.06);
+
+    --canvas-gradient: radial-gradient(circle at 16% 18%, var(--shell-glow-a), transparent 55%),
+      radial-gradient(circle at 82% 8%, var(--shell-glow-b), transparent 60%),
+      radial-gradient(circle at 70% 85%, var(--shell-glow-c), transparent 65%),
+      linear-gradient(180deg, hsl(222 47% 4%) 0%, hsl(222 47% 6%) 100%);
+
+    --aurora-panel-bg:
+      radial-gradient(120% 120% at 0% 0%, var(--shell-glow-a), transparent 60%),
+      radial-gradient(120% 120% at 100% 0%, var(--shell-glow-b), transparent 65%),
+      radial-gradient(140% 140% at 20% 100%, var(--shell-glow-c), transparent 65%),
+      linear-gradient(135deg, hsl(var(--surface-strong)) 0%, hsl(var(--surface-soft)) 100%);
+      
+    --chart-surface-bg: linear-gradient(145deg, hsl(var(--surface-strong)) 0%, hsl(var(--surface-soft)) 100%);
+  }
 }
 
 @layer base {

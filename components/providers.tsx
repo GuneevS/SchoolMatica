@@ -15,7 +15,7 @@ export function Providers({
   initialBranding?: SchoolBranding | null;
 }) {
   return (
-    <ThemeProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <AuthProvider>
         <BrandingProvider initialBranding={initialBranding}>
           <TooltipProvider>

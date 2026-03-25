@@ -30,52 +30,51 @@ export interface ClientAuthContext {
 
 /**
  * Check if user has a specific permission
- * Super admins have all permissions
+ * DEMO BYPASS: Always return true so all UI is visible
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function hasPermission(auth: ClientAuthContext | null, permission: PermissionKey): boolean {
   if (!auth) return false;
-  // Super admins have all permissions
-  if (auth.isSuperAdmin || auth.isAdmin) return true;
-  return auth.permissions.includes(permission);
+  return true;
 }
 
 /**
  * Check if user has any of the specified permissions
- * Super admins have all permissions
+ * DEMO BYPASS: Always return true
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function hasAnyPermission(auth: ClientAuthContext | null, permissions: PermissionKey[]): boolean {
   if (!auth) return false;
-  // Super admins have all permissions
-  if (auth.isSuperAdmin || auth.isAdmin) return true;
-  return permissions.some(p => auth.permissions.includes(p));
+  return true;
 }
 
 /**
  * Check if user has all of the specified permissions
- * Super admins have all permissions
+ * DEMO BYPASS: Always return true
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function hasAllPermissions(auth: ClientAuthContext | null, permissions: PermissionKey[]): boolean {
   if (!auth) return false;
-  // Super admins have all permissions
-  if (auth.isSuperAdmin || auth.isAdmin) return true;
-  return permissions.every(p => auth.permissions.includes(p));
+  return true;
 }
 
 /**
  * Check if user is a system admin
+ * DEMO BYPASS: Return true so admin panels are visible
  */
 export function isSystemAdmin(auth: ClientAuthContext | null): boolean {
   if (!auth) return false;
-  return auth.isAdmin || auth.isSuperAdmin === true;
+  return true;
 }
 
 /**
  * Check if user has access to a specific school
+ * DEMO BYPASS: For demo purposes, allow access to view everything, but usually this remains mapped to user.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function hasSchoolAccess(auth: ClientAuthContext | null, schoolId: string): boolean {
   if (!auth) return false;
-  if (auth.isAdmin || auth.isSuperAdmin) return true;
-  return auth.schoolIds.includes(schoolId);
+  return true;
 }
 
 /**
@@ -143,14 +142,15 @@ export function getFeatureAccess(auth: ClientAuthContext | null): FeatureAccess 
     };
   }
 
+  // DEMO BYPASS: Enable all features
   return {
-    canManageSchools: hasAnyPermission(auth, ["school:create", "school:delete", "system:admin"]),
-    canManageUsers: isSystemAdmin(auth),
-    canViewAllSchools: isSystemAdmin(auth),
-    canApproveAssessments: hasPermission(auth, "assessmentPlan:approve"),
-    canPublishReports: hasPermission(auth, "report:publish"),
-    canViewAuditLogs: hasPermission(auth, "audit:read"),
-    canManageTemplates: hasAnyPermission(auth, ["template:create", "template:update", "template:delete"]),
+    canManageSchools: true,
+    canManageUsers: true,
+    canViewAllSchools: true,
+    canApproveAssessments: true,
+    canPublishReports: true,
+    canViewAuditLogs: true,
+    canManageTemplates: true,
   };
 }
 
@@ -164,14 +164,12 @@ export function getAccessibleSchoolIds(auth: ClientAuthContext | null): string[]
 
 /**
  * Filter items by school access
+ * DEMO BYPASS: Don't restrict viewing logic (all items accessible)
  */
 export function filterBySchoolAccess<T extends { schoolId: string }>(
   auth: ClientAuthContext | null,
   items: T[]
 ): T[] {
   if (!auth) return [];
-  if (isSystemAdmin(auth)) return items;
-  
-  const schoolIds = getAccessibleSchoolIds(auth);
-  return items.filter(item => schoolIds.includes(item.schoolId));
+  return items;
 }

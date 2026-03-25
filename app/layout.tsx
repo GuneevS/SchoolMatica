@@ -8,20 +8,6 @@ import { getServerAuthContext } from "@/lib/auth-server";
 import { type SchoolBranding } from "@/lib/branding";
 import "./globals.css";
 
-// Force light mode only - dark mode disabled
-const themeInitScript = `
-(() => {
-  try {
-    const root = document.documentElement;
-    root.classList.remove("dark");
-    root.dataset.colorMode = "light";
-    window.localStorage.setItem("schoolmatica-theme", "light");
-  } catch (error) {
-    console.warn("theme init error", error);
-  }
-})();
-`;
-
 const sora = Sora({
   variable: "--font-display",
   subsets: ["latin"],
@@ -55,12 +41,11 @@ export default async function RootLayout({
     isSuperAdmin = auth?.isSuperAdmin ?? false;
   } catch (error) {
     // Database unavailable - this is fine for marketing pages
-    console.warn("Database unavailable, proceeding without active school context");
+    console.warn("Database unavailable, proceeding without active school context", error);
   }
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${sora.variable} ${manrope.variable} antialiased`}>
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <HydrationErrorFilter />
         <Providers initialBranding={activeSchool?.branding as SchoolBranding | null | undefined}>
           <AppShell

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -37,6 +37,7 @@ import { useBranding } from "@/components/brand/branding-provider";
 import { NotificationDropdown } from "@/components/notifications";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { SkipToContent } from "@/components/layout/skip-to-content";
 import { useAuth } from "@/lib/hooks/use-auth";
 import {
   hasPermission,
@@ -210,8 +211,7 @@ const navGroups: NavGroup[] = [
   },
 ];
 
-// Flatten for permission filtering
-const allNavItems = navGroups.flatMap(g => g.items);
+// Flatten for permission filtering (used by filterNavItems below)
 
 function filterNavItems(items: NavItem[], auth: ClientAuthContext | null): NavItem[] {
   if (!auth) return [];
@@ -285,11 +285,35 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
   const { user: authUser, permissions, isAdmin, isSuperAdmin: isSuperAdminFromHook, schoolIds, isLoading, activeRoleKey, setActiveRole } = useAuth();
   const { branding } = useBranding();
 
-  // Collapsible sidebar state — persisted via localStorage
-  const [openSections, setOpenSections] = useState<string[]>(() => loadOpenSections());
+  // Collapsible sidebar state — SSR-safe default (all groups open) prevents
+  // hydration mismatch. The real saved state is loaded after mount.
+  const [openSections, setOpenSections] = useState<string[]>(() =>
+    navGroups.map((g) => g.key),
+  );
+  const hasHydratedSidebar = useRef(false);
 
-  // Persist whenever it changes
+  // Hydrate from localStorage on mount only, then merge active-page group.
   useEffect(() => {
+    const stored = loadOpenSections();
+    let next = stored;
+    if (pathname) {
+      for (const g of navGroups) {
+        if (g.items.some((i) => pathname.startsWith(i.href)) && !next.includes(g.key)) {
+          next = [...next, g.key];
+          break;
+        }
+      }
+    }
+    setOpenSections(next);
+    hasHydratedSidebar.current = true;
+    // pathname is intentionally read once on mount; route changes don't
+    // require re-collapsing user-toggled sections.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist on user-driven changes only (skip the hydration write).
+  useEffect(() => {
+    if (!hasHydratedSidebar.current) return;
     saveOpenSections(openSections);
   }, [openSections]);
 
@@ -340,16 +364,11 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
 
   const groupsToRender = fallbackGroups ?? visibleGroups;
 
-  // Auto-expand the section containing the active page
-  useEffect(() => {
-    if (!pathname) return;
-    for (const g of navGroups) {
-      if (g.items.some(i => pathname.startsWith(i.href))) {
-        setOpenSections(prev => prev.includes(g.key) ? prev : [...prev, g.key]);
-        break;
-      }
-    }
-  }, [pathname]);
+  // NOTE: Auto-expand for the active page section is handled in the useState
+  // initial value computation above (on mount). Subsequent navigations trigger
+  // Next.js client-side routing which re-invokes the component.
+  // If sections need re-expansion on soft navigation, toggle them from the
+  // nav link click handler instead of using an effect.
 
   // ---- Shell bypass for special page types ----
   const isMarketingPage = pathname && marketingPaths.includes(pathname);
@@ -379,16 +398,16 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
           "group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm transition-all duration-200",
           compact ? "font-semibold" : "font-medium pl-11",
           isActive
-            ? "bg-indigo-50 text-slate-900 shadow-ambient-sm"
-            : "text-muted-foreground hover:text-slate-900 hover:bg-slate-100/60",
+            ? "bg-primary/10 text-foreground shadow-ambient-sm dark:bg-primary/20"
+            : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
         )}
       >
         <span
           className={cn(
             "flex h-7 w-7 items-center justify-center rounded-xl border border-transparent",
             isActive
-              ? "bg-indigo-100 text-indigo-700"
-              : "bg-white text-slate-400 group-hover:text-slate-600",
+              ? "bg-primary/15 text-primary dark:bg-primary/25"
+              : "bg-[hsl(var(--surface-strong))] text-muted-foreground group-hover:text-foreground/80",
           )}
         >
           <Icon className="h-3.5 w-3.5" />
@@ -420,16 +439,16 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
           className={cn(
             "flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm font-semibold transition-all duration-200",
             hasActiveChild
-              ? "text-slate-900"
-              : "text-muted-foreground hover:text-slate-900 hover:bg-slate-100/60",
+              ? "text-foreground"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
           )}
         >
           <span
             className={cn(
               "flex h-7 w-7 items-center justify-center rounded-xl border border-transparent",
               hasActiveChild
-                ? "bg-indigo-100 text-indigo-700"
-                : "bg-white text-slate-400",
+                ? "bg-primary/15 text-primary dark:bg-primary/25"
+                : "bg-[hsl(var(--surface-strong))] text-muted-foreground",
             )}
           >
             <GroupIcon className="h-3.5 w-3.5" />
@@ -437,7 +456,7 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
           <span className="flex-1 text-left">{group.label}</span>
           <ChevronDown
             className={cn(
-              "h-3.5 w-3.5 text-slate-400 transition-transform duration-200",
+              "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200",
               isOpen && "rotate-180",
             )}
           />
@@ -460,6 +479,7 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
 
   return (
     <div className="relative flex min-h-screen bg-canvas text-foreground">
+      <SkipToContent />
       <div
         className="pointer-events-none absolute inset-0 z-0 opacity-70 blur-3xl"
         style={{
@@ -470,7 +490,7 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
       />
 
       {/* ---- Desktop Sidebar ---- */}
-      <aside className="relative z-10 hidden w-72 flex-col border-r border-slate-200/60 bg-white/95 px-5 py-8 shadow-ambient-sm backdrop-blur lg:flex">
+      <aside className="relative z-10 hidden w-72 flex-col border-r border-[hsl(var(--border))/0.6] bg-[hsl(var(--surface-strong))]/95 px-5 py-8 shadow-ambient-sm backdrop-blur lg:flex" aria-label="Primary navigation">
         <Link href="/dashboard" className="mb-8 flex items-center gap-3 transition-opacity hover:opacity-90">
           <UnifiedLogo variant="icon" size="sm" colorScheme="gradient" />
           <div>
@@ -479,7 +499,7 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
           </div>
         </Link>
 
-        <div className="rounded-3xl border border-slate-200/60 bg-slate-50/80 p-4 shadow-ambient-sm">
+        <div className="rounded-3xl border border-[hsl(var(--border))/0.6] bg-muted/80 p-4 shadow-ambient-sm">
           <div className="flex items-center gap-3">
             <SchoolMark
               name={initialSchool?.name ?? "School"}
@@ -506,7 +526,7 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
           {isLoading ? (
             <div className="space-y-2">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-10 rounded-2xl bg-slate-100 animate-pulse" />
+                <div key={i} className="h-10 rounded-2xl bg-muted animate-pulse" />
               ))}
             </div>
           ) : (
@@ -529,7 +549,7 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
 
       {/* ---- Main content area ---- */}
       <div className="relative z-10 flex flex-1 flex-col">
-        <header className="sticky top-0 z-20 border-b border-slate-200/50 bg-white/90 px-6 py-4 backdrop-blur-xl">
+        <header className="sticky top-0 z-20 border-b border-[hsl(var(--border))/0.5] bg-[hsl(var(--surface-strong))]/90 px-6 py-4 backdrop-blur-xl">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-6">
             <div className="flex items-center gap-3">
               {/* Mobile hamburger */}
@@ -541,7 +561,7 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
                       <span className="sr-only">Open navigation</span>
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="left" className="bg-white overflow-y-auto">
+                  <SheetContent side="left" className="bg-[hsl(var(--surface-strong))] overflow-y-auto">
                     <SheetHeader>
                       <SheetTitle className="flex items-center gap-2">
                         <UnifiedLogo variant="icon" size="sm" colorScheme="gradient" />
@@ -605,8 +625,8 @@ export function AppShell({ children, initialSchool, isSuperAdmin: isSuperAdminPr
             </div>
           </div>
         </header>
-        <main className="relative flex-1 overflow-y-auto px-6 py-8 md:px-10">
-          <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">{children}</div>
+        <main id="main-content" tabIndex={-1} className="relative flex-1 overflow-y-auto px-6 py-8 md:px-10 focus:outline-none">
+          <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">{children}</div>
         </main>
       </div>
       <HelpButton

@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { useRoleStore } from "@/lib/stores/role-store";
 import { formatDateReadable } from "@/lib/date-utils";
 import { FileText, Upload, CheckCircle, AlertCircle, Clock } from "lucide-react";
@@ -34,13 +35,6 @@ const DOCUMENT_REQUIREMENTS = [
 ];
 
 const statusFilters = ["All", "Submitted", "InReview", "Approved", "Rejected"] as const;
-const statusTone: Record<string, string> = {
-  Draft: "bg-slate-100 text-slate-600",
-  Submitted: "bg-amber-100 text-amber-700",
-  InReview: "bg-blue-100 text-blue-700",
-  Approved: "bg-emerald-100 text-emerald-700",
-  Rejected: "bg-rose-100 text-rose-700",
-};
 
 const UNASSIGNED_VALUE = "__UNASSIGNED__";
 
@@ -317,7 +311,7 @@ export function RegistrationManager({ schoolId, registrations, classes }: Props)
                   <span className="font-semibold">
                     {registration.learnerData.firstName as string} {registration.learnerData.lastName as string}
                   </span>
-                  <Badge className={statusTone[registration.status] ?? "bg-slate-100 text-slate-600"}>{registration.status}</Badge>
+                  <StatusBadge status={registration.status} />
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Submitted {formatDateReadable(registration.createdAt)}
@@ -532,7 +526,7 @@ function DocumentChecklist({ supportingDocs, registrationId, status, onUpdate }:
                     ? "bg-blue-50 border-blue-200"
                     : doc.required
                     ? "bg-red-50/50 border-red-200/50"
-                    : "bg-white border-slate-200"
+                    : "bg-card border-border"
                 }`}
               >
                 <div className="flex-shrink-0 mt-0.5">
@@ -543,7 +537,7 @@ function DocumentChecklist({ supportingDocs, registrationId, status, onUpdate }:
                   ) : doc.required ? (
                     <AlertCircle className="h-5 w-5 text-red-400" />
                   ) : (
-                    <div className="h-5 w-5 rounded-full border-2 border-slate-300" />
+                    <div className="h-5 w-5 rounded-full border-2 border-border" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">

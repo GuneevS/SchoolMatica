@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const { entries, matchTolerance } = parsed.data;
+        const { entries } = parsed.data;
 
         // Get all unpaid/partially paid invoices for the school
         const openInvoices = await prisma.invoice.findMany({

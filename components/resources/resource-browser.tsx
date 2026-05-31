@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -23,12 +23,11 @@ import {
   FileImage,
   File,
   Calendar,
-  User,
   BookOpen,
   Grid,
   List,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+
 
 interface Resource {
   id: string;
@@ -83,7 +82,7 @@ const getCategoryColor = (category: string) => {
     case "Question Paper":
       return "bg-blue-100 text-blue-700";
     default:
-      return "bg-slate-100 text-slate-700";
+      return "bg-muted text-muted-foreground";
   }
 };
 
@@ -104,7 +103,7 @@ export function ResourceBrowser({ resources, subjects, gradeLevels }: ResourceBr
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   // Get unique years from resources
-  const years = useMemo(() => {
+  const _years = useMemo(() => {
     const uniqueYears = [...new Set(resources.map((r) => r.year))];
     return uniqueYears.sort((a, b) => b - a);
   }, [resources]);

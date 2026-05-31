@@ -4,15 +4,19 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const alertVariants = cva(
-  "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
+  "relative w-full rounded-xl border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
   {
     variants: {
       variant: {
-        default: "bg-background text-foreground",
-        destructive: "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
-        success: "border-emerald-500/50 bg-emerald-50 text-emerald-900 dark:border-emerald-500 [&>svg]:text-emerald-600",
-        warning: "border-amber-500/50 bg-amber-50 text-amber-900 dark:border-amber-500 [&>svg]:text-amber-600",
-        info: "border-blue-500/50 bg-blue-50 text-blue-900 dark:border-blue-500 [&>svg]:text-blue-600",
+        default: "bg-card text-foreground border-border",
+        destructive:
+          "border-destructive/40 bg-destructive/5 text-destructive dark:border-destructive/60 dark:bg-destructive/15 dark:text-destructive-foreground [&>svg]:text-destructive",
+        success:
+          "border-emerald-500/40 bg-emerald-50 text-emerald-900 dark:border-emerald-500/50 dark:bg-emerald-500/10 dark:text-emerald-100 [&>svg]:text-emerald-600 dark:[&>svg]:text-emerald-400",
+        warning:
+          "border-amber-500/40 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-500/10 dark:text-amber-100 [&>svg]:text-amber-600 dark:[&>svg]:text-amber-400",
+        info:
+          "border-blue-500/40 bg-blue-50 text-blue-900 dark:border-blue-500/50 dark:bg-blue-500/10 dark:text-blue-100 [&>svg]:text-blue-600 dark:[&>svg]:text-blue-400",
       },
     },
     defaultVariants: {

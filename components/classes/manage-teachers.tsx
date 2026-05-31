@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Teacher, ClassTeacherAssignment, Subject } from "@prisma/client";
+import { toast } from "sonner";
+import type { Teacher, ClassTeacherAssignment } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 
 interface TeacherWithAssignment extends ClassTeacherAssignment {
@@ -43,6 +45,7 @@ export function ManageTeachers({ classId, assignments, allTeachers, subjects = [
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [role, setRole] = useState("Support");
   const [isPending, startTransition] = useTransition();
+  const [removeTarget, setRemoveTarget] = useState<TeacherWithAssignment | null>(null);
   const router = useRouter();
 
   // Filter out teachers already assigned
@@ -76,28 +79,25 @@ export function ManageTeachers({ classId, assignments, allTeachers, subjects = [
         router.refresh();
       } catch (error) {
         console.error(error);
-        alert("Failed to assign teacher");
+        toast.error("Could not assign teacher. Please try again.");
       }
     });
   };
 
-  const handleRemove = async (teacherId: string) => {
-    if (!confirm("Are you sure you want to remove this teacher from the class?")) return;
-    
-    startTransition(async () => {
-      try {
-        const res = await fetch(`/api/classes/${classId}/teachers?teacherId=${teacherId}`, {
-          method: "DELETE",
-        });
-
-        if (!res.ok) throw new Error("Failed to remove teacher");
-
-        router.refresh();
-      } catch (error) {
-        console.error(error);
-        alert("Failed to remove teacher");
-      }
-    });
+  // Awaitable so ConfirmDialog can keep its loader visible until done.
+  const performRemove = async (teacherId: string) => {
+    try {
+      const res = await fetch(
+        `/api/classes/${classId}/teachers?teacherId=${teacherId}`,
+        { method: "DELETE" },
+      );
+      if (!res.ok) throw new Error("Failed to remove teacher");
+      toast.success("Teacher removed from class");
+      router.refresh();
+    } catch (error) {
+      console.error("[ManageTeachers] remove failed:", error);
+      toast.error("Could not remove teacher. Please try again.");
+    }
   };
 
   return (
@@ -220,10 +220,10 @@ export function ManageTeachers({ classId, assignments, allTeachers, subjects = [
                     variant="ghost"
                     size="icon"
                     className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                    onClick={() => handleRemove(assignment.teacherId)}
-                    disabled={isPending}
+                    onClick={() => setRemoveTarget(assignment)}
+                    aria-label={`Remove ${assignment.teacher.firstName} ${assignment.teacher.lastName} from class`}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 aria-hidden="true" className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -231,6 +231,28 @@ export function ManageTeachers({ classId, assignments, allTeachers, subjects = [
           )}
         </div>
       </CardContent>
+
+      <ConfirmDialog
+        open={!!removeTarget}
+        onOpenChange={(o) => !o && setRemoveTarget(null)}
+        title="Remove teacher from class?"
+        description={
+          removeTarget ? (
+            <span>
+              <span className="font-medium text-foreground">
+                {removeTarget.teacher.firstName} {removeTarget.teacher.lastName}
+              </span>{" "}
+              will no longer be assigned to this class. Their other class
+              assignments and the teacher record itself remain unchanged.
+            </span>
+          ) : undefined
+        }
+        confirmLabel="Remove teacher"
+        confirmVariant="destructive"
+        onConfirm={async () => {
+          if (removeTarget) await performRemove(removeTarget.teacherId);
+        }}
+      />
     </Card>
   );
 }

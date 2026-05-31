@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
-import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AlertTriangle, RefreshCw, Home, Copy, Check } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function Error({
   error,
@@ -11,41 +12,68 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const [copied, setCopied] = useState(false);
+
   useEffect(() => {
     console.error("[SchoolMatica] Page error:", error);
   }, [error]);
 
+  const copyErrorId = async () => {
+    if (!error.digest) return;
+    try {
+      await navigator.clipboard.writeText(error.digest);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard unavailable */
+    }
+  };
+
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 px-4 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50 text-red-500">
-        <AlertTriangle className="h-8 w-8" />
+    <div
+      role="alert"
+      aria-live="assertive"
+      className="flex min-h-[60vh] flex-col items-center justify-center gap-6 px-4 text-center"
+    >
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+        <AlertTriangle aria-hidden="true" className="h-8 w-8" />
       </div>
       <div>
-        <h2 className="text-xl font-semibold text-foreground">Something went wrong</h2>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          Something went wrong
+        </h1>
         <p className="mt-2 max-w-md text-sm text-muted-foreground">
-          An unexpected error occurred. This has been logged and our team will look into it.
-          {error.digest && (
-            <span className="mt-1 block text-xs text-muted-foreground/60">
-              Error ID: {error.digest}
-            </span>
-          )}
+          An unexpected error occurred. Our team has been notified.
         </p>
+        {error.digest && (
+          <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-border bg-muted/60 px-3 py-1 text-xs text-muted-foreground">
+            <span className="font-mono">{error.digest}</span>
+            <button
+              type="button"
+              onClick={copyErrorId}
+              aria-label={copied ? "Error ID copied" : "Copy error ID"}
+              className="inline-flex h-5 w-5 items-center justify-center rounded-full hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {copied ? (
+                <Check aria-hidden="true" className="h-3 w-3" />
+              ) : (
+                <Copy aria-hidden="true" className="h-3 w-3" />
+              )}
+            </button>
+          </div>
+        )}
       </div>
-      <div className="flex items-center gap-3">
-        <button
-          onClick={reset}
-          className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-slate-50"
-        >
-          <RefreshCw className="h-4 w-4" />
-          Try Again
-        </button>
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
-        >
-          <Home className="h-4 w-4" />
-          Dashboard
-        </Link>
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <Button variant="outline" onClick={reset}>
+          <RefreshCw aria-hidden="true" className="h-4 w-4" />
+          Try again
+        </Button>
+        <Button asChild>
+          <Link href="/dashboard">
+            <Home aria-hidden="true" className="h-4 w-4" />
+            Back to dashboard
+          </Link>
+        </Button>
       </div>
     </div>
   );

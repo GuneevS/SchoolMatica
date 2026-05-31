@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth-config"; // Import from new config
+import { isDemoMode } from "@/lib/demo-mode";
 import type { Prisma } from "@prisma/client";
 
 export const PERMISSION_KEYS = [
@@ -207,16 +208,44 @@ export async function getAuthContext(request?: NextRequest): Promise<AuthContext
 
 export type AuthorizationResult = { auth: AuthContext } | { error: NextResponse };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function authorize(request: NextRequest, permission: PermissionKey): Promise<AuthorizationResult> {
+/**
+ * Server-side permission check used by API route handlers.
+ *
+ * - When `NEXT_PUBLIC_DEMO_MODE !== "false"` (the default), authenticated
+ *   users are granted access to every permission-gated endpoint. This keeps
+ *   the live demo browsable.
+ * - When `NEXT_PUBLIC_DEMO_MODE === "false"`, the `permission` argument is
+ *   evaluated against the user's resolved permission set (with super-admin
+ *   and system-admin treated as wildcards). Returns a 403 envelope on miss.
+ */
+export async function authorize(
+  request: NextRequest,
+  permission: PermissionKey,
+): Promise<AuthorizationResult> {
   const auth = await getAuthContext(request);
   if (!auth) {
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
-  
-  // BYPASS: For demo purposes, all logged in users are granted access to all endpoints.
-  // Role-based barriers are overridden while contextual ownership remains.
-  return { auth };
+
+  if (isDemoMode()) {
+    return { auth };
+  }
+
+  if (isSystemAdmin(auth) || auth.permissions.has(permission)) {
+    return { auth };
+  }
+
+  return {
+    error: NextResponse.json(
+      {
+        error: {
+          code: "forbidden",
+          message: `Missing permission: ${permission}`,
+        },
+      },
+      { status: 403 },
+    ),
+  };
 }
 
 export function getPrimaryRoleName(auth: AuthContext): string | null {
@@ -313,13 +342,18 @@ export function getPrimarySchoolId(auth: AuthContext): string | null {
 }
 
 /**
- * Enhanced authorization that checks both permission and school access
+ * Enhanced authorization that checks both permission and (optionally)
+ * school access. Same demo-mode semantics as `authorize`:
+ *
+ * - When `NEXT_PUBLIC_DEMO_MODE !== "false"`, the permission argument is
+ *   skipped while the schoolId tenancy guard still applies.
+ * - When `NEXT_PUBLIC_DEMO_MODE === "false"`, the permission is enforced
+ *   in addition to the school check.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function authorizeWithSchool(
   request: NextRequest,
   permission: PermissionKey,
-  schoolId?: string
+  schoolId?: string,
 ): Promise<{ auth: AuthContext; schoolId?: string } | { error: NextResponse }> {
   const auth = await getAuthContext(request);
 
@@ -327,10 +361,22 @@ export async function authorizeWithSchool(
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
 
-  // BYPASS: For demo purposes, all logged in users are granted access.
-  // We keep the schoolId validation check immediately below.
+  // Permission check (skipped while in demo mode).
+  if (!isDemoMode() && !isSystemAdmin(auth) && !auth.permissions.has(permission)) {
+    return {
+      error: NextResponse.json(
+        {
+          error: {
+            code: "forbidden",
+            message: `Missing permission: ${permission}`,
+          },
+        },
+        { status: 403 },
+      ),
+    };
+  }
 
-  // If schoolId is provided, validate access
+  // Tenancy / school-scope check applies in all modes.
   if (schoolId) {
     if (!hasSchoolAccess(auth, schoolId)) {
       return { error: NextResponse.json({ error: "Access denied to this school" }, { status: 403 }) };

@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Bell, CheckCheck, Trash2, ExternalLink, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 
 function LoadingState() {
@@ -209,18 +211,17 @@ export default function NotificationsPage() {
     }
   };
   
-  const clearAll = async () => {
-    if (!confirm("Are you sure you want to delete all notifications? This cannot be undone.")) {
-      return;
-    }
-    
+  const [clearAllOpen, setClearAllOpen] = useState(false);
+
+  const performClearAll = async () => {
     try {
-      await fetch("/api/notifications", {
-        method: "DELETE",
-      });
+      const res = await fetch("/api/notifications", { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to clear notifications");
+      toast.success("All notifications cleared");
       await fetchNotifications();
     } catch (error) {
-      console.error("Failed to clear notifications:", error);
+      console.error("[Notifications] clear all failed:", error);
+      toast.error("Could not clear notifications. Please try again.");
     }
   };
   
@@ -250,9 +251,13 @@ export default function NotificationsPage() {
               Mark All Read
             </Button>
           )}
-          <Button variant="outline" onClick={clearAll}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            Clear All
+          <Button
+            variant="outline"
+            onClick={() => setClearAllOpen(true)}
+            disabled={notifications.length === 0}
+          >
+            <Trash2 aria-hidden="true" className="h-4 w-4 mr-2" />
+            Clear all
           </Button>
         </div>
       </div>
@@ -272,13 +277,23 @@ export default function NotificationsPage() {
         </TabsList>
 
         <div className="mt-6">
-          <NotificationList 
-            notifications={filteredNotifications} 
+          <NotificationList
+            notifications={filteredNotifications}
             onMarkAsRead={markAsRead}
             onRefresh={fetchNotifications}
           />
         </div>
       </Tabs>
+
+      <ConfirmDialog
+        open={clearAllOpen}
+        onOpenChange={setClearAllOpen}
+        title="Clear all notifications?"
+        description={`This will permanently delete ${notifications.length} notification${notifications.length === 1 ? "" : "s"}. This action cannot be undone.`}
+        confirmLabel="Clear all"
+        confirmVariant="destructive"
+        onConfirm={performClearAll}
+      />
     </div>
   );
 }

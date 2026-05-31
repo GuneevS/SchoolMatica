@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthContext, hasSchoolAccess, isSuperAdmin, isSystemAdmin } from "@/lib/auth";
 import { auditMessageAction } from "@/lib/chat-audit";
-import { triggerNewMessage, triggerMessageRead, NewMessagePayload } from "@/lib/pusher";
+import { triggerNewMessage, NewMessagePayload } from "@/lib/pusher";
 
 export const dynamic = "force-dynamic";
 

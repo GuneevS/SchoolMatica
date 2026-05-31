@@ -64,7 +64,12 @@ export function ManageTeachers({ classId, assignments, allTeachers, subjects = [
           body: JSON.stringify({
             teacherId: selectedTeacher,
             role: role,
-            subjectId: selectedSubject || undefined,
+            // "none" is the sentinel for "No specific subject" — don't send it
+            // as a relation id or Prisma rejects it with an FK/connect error.
+            subjectId:
+              selectedSubject && selectedSubject !== "none"
+                ? selectedSubject
+                : undefined,
           }),
         });
 

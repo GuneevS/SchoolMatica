@@ -1,5 +1,11 @@
 import { redirect } from "next/navigation";
-import { getAuthContext, isSuperAdmin, hasSchoolAccess } from "@/lib/auth";
+import {
+  getAuthContext,
+  isSuperAdmin,
+  isSystemAdmin,
+  hasAnyPermission,
+} from "@/lib/auth";
+import { isDemoMode } from "@/lib/demo-mode";
 import { prisma } from "@/lib/prisma";
 import { ModerationHubClient } from "./moderation-client";
 
@@ -10,9 +16,25 @@ export const metadata = {
   description: "Manage assessment moderation workflows — review, approve, escalate, and track assessment quality assurance.",
 };
 
+// Roles that may access the Moderation Hub (mirrors the sidebar nav gate).
+const MODERATION_ROLE_KEYS = ["hod", "deputy", "principal", "admin", "smt"];
+
 export default async function ModerationPage() {
   const auth = await getAuthContext();
   if (!auth) redirect("/login");
+
+  // Authorization gate — block signed-in users who lack moderation access.
+  // Skipped in demo mode (everyone sees everything), matching the moderation
+  // APIs (`authorizeWithSchool(..., "moderation:read")`) and the nav visibility.
+  const canModerate =
+    isSystemAdmin(auth) ||
+    hasAnyPermission(auth, ["moderation:read", "moderation:create"]) ||
+    auth.user.roleAssignments.some((ra) =>
+      MODERATION_ROLE_KEYS.includes(ra.role.key),
+    );
+  if (!isDemoMode() && !canModerate) {
+    redirect("/dashboard?error=forbidden");
+  }
 
   let schoolId = auth.user.schoolId;
   if (!schoolId && isSuperAdmin(auth)) {

@@ -41,7 +41,7 @@ export default async function EventsPage() {
     isAllDay: event.isAllDay,
   }));
 
-  return <EventsPageClient events={transformedEvents} />;
+  return <EventsPageClient events={transformedEvents} schoolId={schoolId} />;
 }
 
 function getEventColor(eventType: string): string {

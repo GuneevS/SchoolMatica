@@ -15,7 +15,7 @@ export function RolePersonalizedHighlights({ data }: Props) {
   if (role === "Teacher") {
     return (
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="glass-panel border border-primary/20">
+        <Card className="rounded-[24px] border border-[hsl(var(--border-strong))/0.4] bg-[hsl(var(--surface-strong))/0.6] backdrop-blur-xl shadow-ambient-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base font-semibold">
               <ClipboardList className="h-4 w-4 text-primary" />
@@ -46,7 +46,7 @@ export function RolePersonalizedHighlights({ data }: Props) {
             </ul>
           </CardContent>
         </Card>
-        <Card className="glass-panel border border-[hsl(var(--border))/0.5]">
+        <Card className="rounded-[24px] border border-[hsl(var(--border-strong))/0.4] bg-[hsl(var(--surface-strong))/0.6] backdrop-blur-xl shadow-ambient-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base font-semibold">
               <CheckCircle2 className="h-4 w-4 text-[hsl(var(--accent-mint))]" />
@@ -69,7 +69,7 @@ export function RolePersonalizedHighlights({ data }: Props) {
     const registrationsAwaiting = data.registrations.Submitted + data.registrations.InReview;
     return (
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="glass-panel border border-[hsl(var(--border-strong))/0.5]">
+        <Card className="rounded-[24px] border border-[hsl(var(--border-strong))/0.4] bg-[hsl(var(--surface-strong))/0.6] backdrop-blur-xl shadow-ambient-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base font-semibold">
               <AlertCircle className="h-4 w-4 text-amber-500" />
@@ -95,7 +95,7 @@ export function RolePersonalizedHighlights({ data }: Props) {
             </div>
           </CardContent>
         </Card>
-        <Card className="glass-panel border border-[hsl(var(--border))/0.5]">
+        <Card className="rounded-[24px] border border-[hsl(var(--border-strong))/0.4] bg-[hsl(var(--surface-strong))/0.6] backdrop-blur-xl shadow-ambient-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-semibold">Next best actions</CardTitle>
           </CardHeader>
@@ -122,7 +122,7 @@ export function RolePersonalizedHighlights({ data }: Props) {
 
 function HighlightTile({ label, value, helper }: { label: string; value: string; helper: string }) {
   return (
-    <Card className="glass-panel border border-[hsl(var(--border))/0.4]">
+    <Card className="rounded-[24px] border border-[hsl(var(--border-strong))/0.4] bg-[hsl(var(--surface-strong))/0.6] backdrop-blur-xl shadow-ambient-sm">
       <CardHeader className="pb-2">
         <CardTitle className="text-xs uppercase text-muted-foreground tracking-[0.3em]">{label}</CardTitle>
       </CardHeader>

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { Assessment, AssessmentPlan } from "@prisma/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
@@ -15,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip, Cell } from "recharts";
 import {
+  GripVertical,
   Plus,
   Trash2,
   Info,
@@ -26,11 +28,12 @@ import {
   Send,
   ThumbsUp,
   Lock,
+  Unlock,
   AlertCircle,
   Clock
 } from "lucide-react";
 import type { AssessmentWeightInsightMap, TermWeights } from "@/lib/calculations";
-import { useCurrentRole } from "@/lib/hooks/use-auth";
+import { useAuth, useCurrentRole } from "@/lib/hooks/use-auth";
 
 interface Props {
   plan: AssessmentPlan & { assessments: Assessment[] };
@@ -38,24 +41,29 @@ interface Props {
   weightInsights?: AssessmentWeightInsightMap;
 }
 
-export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeights }: Props) {
+export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeights, weightInsights }: Props) {
   const router = useRouter();
+  const { user, isAdmin, isSuperAdmin } = useAuth();
   const currentRole = useCurrentRole();
   const [isPending, startTransition] = useTransition();
+  const [mounted, setMounted] = useState(false);
+  const { activeRoleKey } = useAuth();
 
   // Normalize role for UI checks - FIX APPLIED HERE
   const activeRoleName = currentRole?.role.name ?? "Teacher";
   const role = activeRoleName === "Head of Department" ? "HOD" :
     activeRoleName === "System Administrator" ? "SMT" :
       activeRoleName;
+  const isSystemLevel = isAdmin || isSuperAdmin;
 
   // Local state for real-time updates
   const [assessments, setAssessments] = useState(plan.assessments);
 
   // Editing permissions based on status and role
-  // Teachers can edit Draft plans, HOD/SMT can edit Draft and Approved plans
+  // Teachers can edit Draft plans, HOD/SMT/Admins can edit Draft and Approved plans
   // No one can edit Locked or PendingApproval plans
   const canEdit = (() => {
+    if (isSystemLevel) return true; // Admins override normal workflow bounds
     if (plan.status === "Locked") return false; // No one can edit locked plans
     if (plan.status === "PendingApproval") return false; // No edits while pending approval
     if (plan.status === "Draft") return true; // Teachers, HODs, and SMT can all edit drafts
@@ -63,14 +71,14 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
     return false;
   })();
   
-  // Check if user can submit for approval (only plan owner or any role above)
+  // Check if user can submit for approval
   const canSubmit = plan.status === "Draft" && assessments.length > 0;
   
-  // Check if user can approve (HOD or SMT only)
-  const canApprove = (role === "HOD" || role === "SMT") && plan.status === "PendingApproval";
+  // Check if user can approve (HOD, SMT, or Admin only)
+  const canApprove = (isSystemLevel || role === "HOD" || role === "SMT") && plan.status === "PendingApproval";
   
-  // Check if user can lock (SMT only)
-  const canLock = role === "SMT" && plan.status === "Approved";
+  // Check if user can lock (SMT or Admin only)
+  const canLock = (isSystemLevel || role === "SMT") && plan.status === "Approved";
   const [termWeights, setTermWeights] = useState<Record<string, number>>(() => {
     if (initialTermWeights) return initialTermWeights;
     const equal = 100 / plan.termCount;
@@ -84,6 +92,41 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
   const totalWeight = assessments.reduce((sum, a) => sum + a.weightPercent, 0);
   const termWeightTotal = Object.values(termWeights).reduce((sum, w) => sum + w, 0);
   const isTermWeightsValid = Math.abs(termWeightTotal - 100) < 0.01;
+
+  // Auto-balancing term weights
+  const handleTermWeightChange = (changedTerm: string, newWeightRaw: number) => {
+    const terms = Object.keys(termWeights);
+    if (terms.length <= 1) return; // Cannot balance single term
+
+    const clampedWeight = Math.min(Math.max(newWeightRaw, 0), 100);
+    const oldWeight = termWeights[changedTerm];
+    const diff = clampedWeight - oldWeight;
+
+    if (diff === 0) return;
+
+    const amountToDistribute = -diff;
+    const otherTerms = terms.filter(t => t !== changedTerm);
+    const otherTotal = otherTerms.reduce((sum, t) => sum + termWeights[t], 0);
+
+    const newWeights = { ...termWeights, [changedTerm]: clampedWeight };
+
+    if (otherTotal === 0) {
+      // If all others were 0, distribute evenly
+      const distributeEvenly = amountToDistribute / otherTerms.length;
+      otherTerms.forEach(t => {
+        newWeights[t] = Math.max(0, distributeEvenly);
+      });
+    } else {
+      // Distribute proportionally
+      otherTerms.forEach(t => {
+        const proportion = termWeights[t] / otherTotal;
+        newWeights[t] = Math.max(0, termWeights[t] + (amountToDistribute * proportion));
+      });
+    }
+
+    setTermWeights(newWeights);
+    setHasChanges(true);
+  };
 
   // Group by term
   const termGroups = assessments.reduce((acc, assessment) => {
@@ -179,81 +222,48 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
   const updateAssessmentByPercentage = (id: string, newPercent: number, term: string) => {
     if (!canEdit) return;
 
-    const termAsms = assessments.filter(a => a.term === term && a.id !== id);
-    const otherRawTotal = termAsms.reduce((sum, a) => sum + a.rawWeight, 0);
+    const termAsms = assessments.filter(a => a.term === term);
+    if (termAsms.length <= 1) return; // Cannot balance 1 assessment
 
     const safePercent = Math.min(Math.max(newPercent, 0), 100);
+    const targetAsm = termAsms.find(a => a.id === id);
+    if (!targetAsm) return;
 
-    // If this is the only assessment, force it to 100
-    if (termAsms.length === 0) {
-      if (safePercent !== 100) {
-        updateAssessment(id, { rawWeight: 100 });
+    const others = termAsms.filter(a => a.id !== id);
+    const otherRawTotal = others.reduce((sum, a) => sum + a.rawWeight, 0);
+
+    const amountForOthers = 100 - safePercent;
+
+    const updates = others.map(a => {
+      let newOtherRaw = 0;
+      if (otherRawTotal === 0) {
+        newOtherRaw = amountForOthers / others.length;
+      } else {
+        newOtherRaw = (a.rawWeight / otherRawTotal) * amountForOthers;
       }
-      return;
-    }
+      return { id: a.id, data: { rawWeight: Number(newOtherRaw.toFixed(2)) } };
+    });
 
-    // Edge Case: user sets this to 100%. We must zero out other assessments in this term.
-    if (safePercent === 100) {
-      setAssessments(prev => prev.map(a => 
-        a.term === term && a.id !== id ? { ...a, rawWeight: 0 } 
-        : a.id === id ? { ...a, rawWeight: 100 } : a
+    updates.push({ id, data: { rawWeight: Number(safePercent.toFixed(2)) } });
+
+    // Optimistically update all
+    setAssessments(prev => prev.map(a => {
+      const update = updates.find(u => u.id === a.id);
+      return update ? { ...a, ...update.data } : a;
+    }));
+    setHasChanges(true);
+
+    startTransition(async () => {
+      await Promise.all(updates.map(u => 
+        fetch(`/api/assessments/${u.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(u.data),
+        })
       ));
-      setHasChanges(true);
-
-      startTransition(async () => {
-        await Promise.all(termAsms.map(a => fetch(`/api/assessments/${a.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ rawWeight: 0 }),
-        })));
-        await fetch(`/api/assessments/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ rawWeight: 100 }),
-        });
-        await fetch("/api/revalidate?path=/dashboard", { method: "POST" });
-        router.refresh();
-      });
-      return;
-    }
-
-    if (safePercent === 0) {
-      updateAssessment(id, { rawWeight: 0 });
-      return;
-    }
-
-    // Logic when all other tasks are 0 but user wants < 100% for this task.
-    // They must share the remaining percentage points.
-    if (otherRawTotal === 0) {
-      const targetOtherRaw = 100 - safePercent;
-      const perOther = targetOtherRaw / termAsms.length;
-
-      setAssessments(prev => prev.map(a => 
-        a.term === term && a.id !== id ? { ...a, rawWeight: perOther } 
-        : a.id === id ? { ...a, rawWeight: safePercent } : a
-      ));
-      setHasChanges(true);
-
-      startTransition(async () => {
-        await Promise.all(termAsms.map(a => fetch(`/api/assessments/${a.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ rawWeight: perOther }),
-        })));
-        await fetch(`/api/assessments/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ rawWeight: safePercent }),
-        });
-        await fetch("/api/revalidate?path=/dashboard", { method: "POST" });
-        router.refresh();
-      });
-      return;
-    }
-
-    // Normal calculation adjusting raw weight against existing other weights
-    const newRaw = (safePercent * otherRawTotal) / (100 - safePercent);
-    updateAssessment(id, { rawWeight: Number(newRaw.toFixed(2)) });
+      await fetch("/api/revalidate?path=/dashboard", { method: "POST" });
+      router.refresh();
+    });
   };
 
   const updatePlanStatus = async (targetStatus: "Draft" | "PendingApproval" | "Approved" | "Locked") => {
@@ -532,7 +542,7 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
                       }}
                     />
                     <Pie
-                      data={assessments.map((a) => ({
+                      data={assessments.map((a, idx) => ({
                         name: a.taskName,
                         value: Number(a.weightPercent.toFixed(2)),
                       }))}
@@ -629,11 +639,7 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
                           <Input
                             type="number"
                             value={termWeights[term]?.toFixed(1) || 0}
-                            onChange={(e) => {
-                              const value = Number(e.target.value);
-                              setTermWeights(prev => ({ ...prev, [term]: value }));
-                              setHasChanges(true);
-                            }}
+                            onChange={(e) => handleTermWeightChange(term, Number(e.target.value))}
                             className="w-20 text-center font-bold"
                             min="0"
                             max="100"
@@ -645,10 +651,7 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
                       </div>
                       <Slider
                         value={[termWeights[term] || 0]}
-                        onValueChange={([value]) => {
-                          setTermWeights(prev => ({ ...prev, [term]: value }));
-                          setHasChanges(true);
-                        }}
+                        onValueChange={([value]) => handleTermWeightChange(term, value)}
                         min={0}
                         max={100}
                         step={0.5}
@@ -798,6 +801,15 @@ export function UnifiedAssessmentWorkspace({ plan, termWeights: initialTermWeigh
                                     />
                                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
                                   </div>
+                                  <Slider
+                                    value={[isOnlyOne ? 100 : calculatedPercent]}
+                                    onValueChange={([val]) => updateAssessmentByPercentage(assessment.id, val, term)}
+                                    min={0}
+                                    max={100}
+                                    step={0.5}
+                                    disabled={!canEdit || isOnlyOne}
+                                    className="pt-3 pb-1 cursor-pointer"
+                                  />
                                 </div>
 
                                 <div className="space-y-1">

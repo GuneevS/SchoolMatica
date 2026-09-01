@@ -70,6 +70,7 @@
     "typescript": "^5"
   },
   "overrides": {
-    "deepmerge-ts": "^8.0.1"
+    "deepmerge-ts": "^8.0.1",
+    "@babel/core": "^7.29.6"
   }
 }

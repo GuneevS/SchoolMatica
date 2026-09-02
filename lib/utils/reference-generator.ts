@@ -21,23 +21,21 @@ export async function generateInvoiceNumber(
   schoolId: string,
   year: number
 ): Promise<string> {
-  // Use findMany with orderBy to get the latest invoice number atomically
-  const latest = await tx.invoice.findFirst({
-    where: { schoolId, year },
-    orderBy: { invoiceNumber: "desc" },
+  const prefix = `INV-${year}-`;
+  const existing = await tx.invoice.findMany({
+    where: { schoolId, invoiceNumber: { startsWith: prefix } },
     select: { invoiceNumber: true },
   });
 
-  let nextNum = 1;
-  if (latest?.invoiceNumber) {
-    // Extract the numeric part from "INV-2026-00005" -> 5
-    const match = latest.invoiceNumber.match(/INV-\d{4}-(\d+)/);
+  let max = 0;
+  for (const row of existing) {
+    const match = row.invoiceNumber.match(/^INV-\d{4}-(\d+)$/);
     if (match) {
-      nextNum = parseInt(match[1], 10) + 1;
+      max = Math.max(max, parseInt(match[1], 10));
     }
   }
 
-  return `INV-${year}-${String(nextNum).padStart(5, "0")}`;
+  return `${prefix}${String(max + 1).padStart(5, "0")}`;
 }
 
 /**
@@ -50,26 +48,21 @@ export async function generatePaymentRef(
   tx: PrismaTransactionClient,
   year: number
 ): Promise<string> {
-  const latest = await tx.payment.findFirst({
-    where: {
-      createdAt: {
-        gte: new Date(`${year}-01-01`),
-        lt: new Date(`${year + 1}-01-01`),
-      },
-    },
-    orderBy: { paymentRef: "desc" },
+  const prefix = `PAY-${year}-`;
+  const existing = await tx.payment.findMany({
+    where: { paymentRef: { startsWith: prefix } },
     select: { paymentRef: true },
   });
 
-  let nextNum = 1;
-  if (latest?.paymentRef) {
-    const match = latest.paymentRef.match(/PAY-\d{4}-(\d+)/);
+  let max = 0;
+  for (const row of existing) {
+    const match = row.paymentRef.match(/^PAY-\d{4}-(\d+)$/);
     if (match) {
-      nextNum = parseInt(match[1], 10) + 1;
+      max = Math.max(max, parseInt(match[1], 10));
     }
   }
 
-  return `PAY-${year}-${String(nextNum).padStart(5, "0")}`;
+  return `${prefix}${String(max + 1).padStart(5, "0")}`;
 }
 
 /**
@@ -82,27 +75,21 @@ export async function generateReceiptNumber(
   tx: PrismaTransactionClient,
   year: number
 ): Promise<string> {
-  const latest = await tx.payment.findFirst({
-    where: {
-      receiptNumber: { not: null },
-      createdAt: {
-        gte: new Date(`${year}-01-01`),
-        lt: new Date(`${year + 1}-01-01`),
-      },
-    },
-    orderBy: { receiptNumber: "desc" },
+  const prefix = `REC-${year}-`;
+  const existing = await tx.payment.findMany({
+    where: { receiptNumber: { startsWith: prefix } },
     select: { receiptNumber: true },
   });
 
-  let nextNum = 1;
-  if (latest?.receiptNumber) {
-    const match = latest.receiptNumber.match(/REC-\d{4}-(\d+)/);
+  let max = 0;
+  for (const row of existing) {
+    const match = row.receiptNumber?.match(/^REC-\d{4}-(\d+)$/);
     if (match) {
-      nextNum = parseInt(match[1], 10) + 1;
+      max = Math.max(max, parseInt(match[1], 10));
     }
   }
 
-  return `REC-${year}-${String(nextNum).padStart(5, "0")}`;
+  return `${prefix}${String(max + 1).padStart(5, "0")}`;
 }
 
 /**

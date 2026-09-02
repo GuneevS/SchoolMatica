@@ -158,7 +158,15 @@ export function LoginForm() {
       </div>
 
       <div className="bg-white/95 backdrop-blur-xl border border-[hsl(var(--border-strong))/0.6] rounded-2xl shadow-ambient-lg p-6 sm:p-8 transition-all hover:shadow-ambient-xl duration-500 hover:border-[hsl(var(--border-strong))]">
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form
+          method="post"
+          action="/login"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void form.handleSubmit(onSubmit)(event);
+          }}
+          className="space-y-6"
+        >
           {error && (
             <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-sm text-red-600 dark:text-red-400 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
               <div className="w-1 mt-0.5 rounded bg-red-500 self-stretch" />

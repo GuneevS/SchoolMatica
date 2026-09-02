@@ -86,6 +86,36 @@ export async function POST(request: NextRequest) {
       include: { gradingConfig: true },
     });
 
+    // Attach the creating user to the new school so they can operate it immediately.
+    if (!auth.user.schoolId) {
+      await prisma.appUser.update({
+        where: { id: auth.user.id },
+        data: { schoolId: school.id },
+      });
+    }
+
+    const adminRole = await prisma.roleDefinition.findUnique({
+      where: { key: "admin" },
+    });
+    if (adminRole) {
+      const existingAssignment = await prisma.userRoleAssignment.findFirst({
+        where: {
+          userId: auth.user.id,
+          roleId: adminRole.id,
+          scopeSchoolId: school.id,
+        },
+      });
+      if (!existingAssignment) {
+        await prisma.userRoleAssignment.create({
+          data: {
+            userId: auth.user.id,
+            roleId: adminRole.id,
+            scopeSchoolId: school.id,
+          },
+        });
+      }
+    }
+
     return NextResponse.json(school, { status: 201 });
 
   } catch (error) {

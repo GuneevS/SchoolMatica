@@ -179,8 +179,10 @@ const navGroups: NavGroup[] = [
         href: "/fees",
         icon: CreditCard,
         canAccess: (auth) =>
-          hasRoleKey(auth, ["admin", "principal", "deputy", "bursar", "finance"]) ||
-          auth?.isAdmin === true,
+          hasRoleKey(auth, ["admin", "super_admin", "principal", "deputy", "bursar", "finance"]) ||
+          auth?.isAdmin === true ||
+          auth?.isSuperAdmin === true ||
+          hasPermission(auth, "finance:read"),
       },
       {
         label: "Registrations",

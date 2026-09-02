@@ -11,18 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RoleLoginTabs, LoginRole, roleOptions } from "./role-login-tabs";
-import { SchoolSelector } from "./school-selector";
-import {
-  Loader2,
-  Eye,
-  EyeOff,
-  ArrowRight,
-  Mail,
-  Lock,
-  Shield,
-  AlertCircle,
-} from "lucide-react";
+import { Loader2, Eye, EyeOff, ArrowRight, Mail, Lock, Shield } from "lucide-react";
 import { UnifiedLogo } from "@/components/brand/unified-logo";
 import { cn } from "@/lib/utils";
 
@@ -42,7 +31,6 @@ export function LoginForm() {
   
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = React.useState<LoginRole>("teacher");
   const [showPassword, setShowPassword] = React.useState(false);
   const showQuickAccess =
     process.env.NODE_ENV !== "production" ||
@@ -53,27 +41,12 @@ export function LoginForm() {
     defaultValues: {
       email: "",
       password: "",
-      schoolId: "",
       rememberMe: false,
     },
   });
 
-  // Determine if school selector should be shown (hidden for School Admin and Platform Admin)
-  const showSchoolSelector = selectedRole !== "school" && selectedRole !== "platform";
-
-  const resolveRedirect = React.useCallback(
-    (role: LoginRole) => {
-      if (role === "platform") return "/super-admin";
-      if (role === "parent") return "/parent";
-      if (role === "student") return "/student";
-      return callbackUrl;
-    },
-    [callbackUrl],
-  );
-
   const performLogin = React.useCallback(
-    async (email: string, password: string, roleOverride?: LoginRole) => {
-      const role = roleOverride ?? selectedRole;
+    async (email: string, password: string) => {
       setIsLoading(true);
       setError(null);
 
@@ -93,7 +66,7 @@ export function LoginForm() {
           }
           setIsLoading(false);
         } else {
-          router.push(resolveRedirect(role));
+          router.push(callbackUrl);
           router.refresh();
         }
       } catch {
@@ -101,7 +74,7 @@ export function LoginForm() {
         setIsLoading(false);
       }
     },
-    [callbackUrl, resolveRedirect, router, selectedRole],
+    [callbackUrl, router],
   );
 
   const quickLogins = React.useMemo(
@@ -109,49 +82,49 @@ export function LoginForm() {
       {
         id: "platform",
         label: "Platform Admin",
-        role: "platform" as LoginRole,
+        role: "platform",
         email: "platform@schoolmatica.dev",
         password: "Password123!",
       },
       {
         id: "school-admin",
         label: "School Admin",
-        role: "school" as LoginRole,
+        role: "school",
         email: "admin@nimbus.edu",
         password: "Password123!",
       },
       {
         id: "hod",
         label: "HOD",
-        role: "hod" as LoginRole,
+        role: "hod",
         email: "hod@nimbus.edu",
         password: "Password123!",
       },
       {
         id: "teacher",
         label: "Teacher",
-        role: "teacher" as LoginRole,
+        role: "teacher",
         email: "teacher@nimbus.edu",
         password: "Password123!",
       },
       {
         id: "smt",
         label: "SMT",
-        role: "smt" as LoginRole,
+        role: "smt",
         email: "smt@nimbus.edu",
         password: "Password123!",
       },
       {
         id: "parent",
         label: "Parent",
-        role: "parent" as LoginRole,
+        role: "parent",
         email: "parent@nimbus.edu",
         password: "Password123!",
       },
       {
         id: "student",
         label: "Student",
-        role: "student" as LoginRole,
+        role: "student",
         email: "student@nimbus.edu",
         password: "Password123!",
       },
@@ -160,16 +133,14 @@ export function LoginForm() {
   );
 
   async function onSubmit(values: FormData) {
-    await performLogin(values.email, values.password, selectedRole);
+    await performLogin(values.email, values.password);
   }
 
   const handleQuickLogin = async (preset: (typeof quickLogins)[number]) => {
-    setSelectedRole(preset.role);
     form.setValue("email", preset.email);
     form.setValue("password", preset.password);
-    await performLogin(preset.email, preset.password, preset.role);
+    await performLogin(preset.email, preset.password);
   };
-  
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -186,284 +157,177 @@ export function LoginForm() {
         </p>
       </div>
 
-      {/* Role Selector */}
-      <div className="mb-6">
-        <RoleLoginTabs value={selectedRole} onChange={setSelectedRole} />
-      </div>
+      <div className="bg-white/95 backdrop-blur-xl border border-[hsl(var(--border-strong))/0.6] rounded-2xl shadow-ambient-lg p-6 sm:p-8 transition-all hover:shadow-ambient-xl duration-500 hover:border-[hsl(var(--border-strong))]">
+        <form
+          method="post"
+          action="/login"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void form.handleSubmit(onSubmit)(event);
+          }}
+          className="space-y-6"
+        >
+          {error && (
+            <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-sm text-red-600 dark:text-red-400 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+              <div className="w-1 mt-0.5 rounded bg-red-500 self-stretch" />
+              <p className="font-medium">{error}</p>
+            </div>
+          )}
 
-      {/* Login Card - SOLID BACKGROUND */}
-      <div className="relative">
-        {/* Subtle glow effect */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-[hsl(var(--accent-violet))]/10 via-[hsl(var(--accent-iris))]/10 to-[hsl(var(--accent-flamingo))]/10 rounded-3xl blur-xl" />
-        
-        {/* Main card with SOLID background */}
-        <div className="relative bg-[hsl(var(--surface-strong))] rounded-2xl border border-[hsl(var(--border-strong))] shadow-2xl p-6 sm:p-8">
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-            {/* School Selector - for non-admin roles */}
-            {showSchoolSelector && (
-              <div className="space-y-2">
-                <Label htmlFor="school" className="text-sm font-medium text-foreground">
-                  School
-                </Label>
-                <SchoolSelector
-                  value={form.watch("schoolId")}
-                  onSelect={(schoolId) => form.setValue("schoolId", schoolId)}
-                  disabled={isLoading}
-                  placeholder="Search for your school..."
-                />
-                <p className="text-xs text-muted-foreground">
-                  Can&apos;t find your school?{" "}
-                  <Link href="/register" className="text-[hsl(var(--accent-violet))] hover:underline font-medium">
-                    Register it here
-                  </Link>
-                </p>
-              </div>
-            )}
-
-            {/* Email Field */}
+          <div className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-foreground">
-                Email Address
-              </Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Label htmlFor="email" className="font-semibold text-slate-700">Email Address</Label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-muted-foreground group-focus-within:text-[hsl(var(--accent-violet))] transition-colors">
+                  <Mail className="h-4.5 w-4.5" />
+                </div>
                 <Input
                   id="email"
                   type="email"
-                  placeholder={
-                    selectedRole === "platform"
-                      ? "superadmin@schoolmatica.co.za"
-                      : selectedRole === "school"
-                      ? "admin@school.co.za"
-                      : selectedRole === "smt"
-                      ? "smt@school.co.za"
-                      : selectedRole === "hod"
-                      ? "hod@school.co.za"
-                      : selectedRole === "teacher"
-                      ? "teacher@school.co.za"
-                      : selectedRole === "parent"
-                      ? "parent@email.co.za"
-                      : "student@school.co.za"
-                  }
+                  placeholder="name@school.co.za"
+                  className={cn(
+                    "pl-10 h-12 bg-slate-50 border-slate-200 rounded-xl focus:bg-white transition-all shadow-sm",
+                    form.formState.errors.email && "border-red-500 focus-visible:ring-red-500"
+                  )}
                   {...form.register("email")}
                   disabled={isLoading}
-                  className="pl-10 h-11 bg-[hsl(var(--surface-soft))] border-[hsl(var(--border))] text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[hsl(var(--accent-violet))] focus:border-[hsl(var(--accent-violet))]"
+                  autoComplete="email"
                 />
               </div>
               {form.formState.errors.email && (
-                <p className="text-sm text-[hsl(var(--destructive))] flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" />
+                <p className="text-sm font-medium text-red-500 flex items-center gap-1.5 mt-1.5 animate-in slide-in-from-top-1">
+                  <span className="h-1 w-1 rounded-full bg-red-500" />
                   {form.formState.errors.email.message}
                 </p>
               )}
             </div>
 
-            {/* Password Field */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-sm font-medium text-foreground">
-                  Password
-                </Label>
+                <Label htmlFor="password" className="font-semibold text-slate-700">Password</Label>
                 <Link
                   href="/forgot-password"
-                  className="text-xs text-[hsl(var(--accent-violet))] hover:underline font-medium"
+                  className="text-sm font-medium text-[hsl(var(--accent-violet))] hover:text-[hsl(var(--accent-violet-dark))] hover:underline transition-colors"
+                  tabIndex={-1}
                 >
                   Forgot password?
                 </Link>
               </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-muted-foreground group-focus-within:text-[hsl(var(--accent-violet))] transition-colors">
+                  <Lock className="h-4.5 w-4.5" />
+                </div>
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
+                  className={cn(
+                    "pl-10 pr-10 h-12 bg-slate-50 border-slate-200 rounded-xl focus:bg-white transition-all shadow-sm",
+                    form.formState.errors.password && "border-red-500 focus-visible:ring-red-500"
+                  )}
                   {...form.register("password")}
                   disabled={isLoading}
-                  className="pl-10 pr-10 h-11 bg-[hsl(var(--surface-soft))] border-[hsl(var(--border))] text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-[hsl(var(--accent-violet))] focus:border-[hsl(var(--accent-violet))]"
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-muted-foreground hover:text-foreground focus:outline-none transition-colors"
+                  tabIndex={-1}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+                  <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
                 </button>
               </div>
               {form.formState.errors.password && (
-                <p className="text-sm text-[hsl(var(--destructive))] flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" />
+                <p className="text-sm font-medium text-red-500 flex items-center gap-1.5 mt-1.5 animate-in slide-in-from-top-1">
+                  <span className="h-1 w-1 rounded-full bg-red-500" />
                   {form.formState.errors.password.message}
                 </p>
               )}
             </div>
 
-            {/* Remember Me */}
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="rememberMe"
-                checked={form.watch("rememberMe")}
-                onCheckedChange={(checked) =>
-                  form.setValue("rememberMe", checked as boolean)
-                }
-                disabled={isLoading}
-                className="border-[hsl(var(--border))] data-[state=checked]:bg-[hsl(var(--accent-violet))] data-[state=checked]:border-[hsl(var(--accent-violet))]"
-              />
-              <Label
-                htmlFor="rememberMe"
-                className="text-sm text-muted-foreground cursor-pointer"
-              >
-                Remember me for 30 days
-              </Label>
-            </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="p-3 rounded-lg bg-[hsl(var(--destructive))]/10 border border-[hsl(var(--destructive))]/30 text-[hsl(var(--destructive))] text-sm flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                {error}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id="remember-me"
+                  checked={form.watch("rememberMe")}
+                  onCheckedChange={(checked) => form.setValue("rememberMe", checked as boolean)}
+                  className="h-5 w-5 rounded-md data-[state=checked]:bg-[hsl(var(--accent-violet))] data-[state=checked]:border-[hsl(var(--accent-violet))]"
+                />
+                <Label htmlFor="remember-me" className="text-sm font-medium cursor-pointer text-slate-700 select-none">
+                  Remember me for 30 days
+                </Label>
               </div>
-            )}
+            </div>
+          </div>
 
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-11 bg-gradient-to-r from-[hsl(var(--accent-violet))] to-[hsl(var(--accent-iris))] hover:from-[hsl(var(--accent-violet))]/90 hover:to-[hsl(var(--accent-iris))]/90 text-white font-medium shadow-lg shadow-[hsl(var(--accent-violet))]/25 transition-all duration-300"
-            >
+          <Button
+            type="submit"
+            className="w-full h-12 text-base font-semibold rounded-xl bg-gradient-to-r from-[hsl(var(--accent-teal))] to-[hsl(var(--accent-mint))] hover:from-[hsl(var(--accent-teal-dark,210,80%,35%))] hover:to-[hsl(var(--accent-mint-dark,160,80%,40%))] text-white shadow-lg hover:shadow-xl transition-all duration-300 group mt-4 overflow-hidden relative"
+            disabled={isLoading}
+          >
+            <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent shadow-[0_0_20px_white/10]" />
+            
+            <span className="flex items-center justify-center gap-2 relative z-10 w-full">
               {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
-                </>
+                <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
                 <>
                   Sign In
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  <ArrowRight className="h-5 w-5 group-hover:translate-x-1.5 transition-transform" />
                 </>
               )}
-            </Button>
+            </span>
+          </Button>
+        </form>
 
-            {showQuickAccess && (
-              <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--surface-soft))] p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-                    Quick access
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Password: <span className="font-medium text-foreground">Password123!</span>
-                  </p>
-                </div>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {quickLogins.map((preset) => {
-                    const roleMeta = roleOptions.find((role) => role.id === preset.role);
-                    const Icon = roleMeta?.icon ?? Mail;
-                    return (
-                      <Button
-                        key={preset.id}
-                        type="button"
-                        variant="outline"
-                        disabled={isLoading}
-                        onClick={() => handleQuickLogin(preset)}
-                        className="h-auto justify-between border-[hsl(var(--border))] bg-[hsl(var(--surface-strong))] px-3 py-2 text-left hover:border-[hsl(var(--accent-violet))/0.4]"
-                      >
-                        <span className="flex items-center gap-3">
-                          <span
-                            className={cn(
-                              "flex h-9 w-9 items-center justify-center rounded-xl",
-                              roleMeta?.iconBg ?? "bg-[hsl(var(--accent-violet))]/10 text-[hsl(var(--accent-violet))]"
-                            )}
-                          >
-                            <Icon className="h-4 w-4" />
-                          </span>
-                          <span>
-                            <span className="block text-sm font-semibold text-foreground">
-                              {preset.label}
-                            </span>
-                            <span className="block text-xs text-muted-foreground">
-                              {preset.email}
-                            </span>
-                          </span>
-                        </span>
-                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                      </Button>
-                    );
-                  })}
-                </div>
-                <p className="mt-3 text-xs text-muted-foreground">
-                  Demo accounts are tied to <span className="font-medium text-foreground">Nimbus Academy</span>.
-                </p>
-              </div>
-            )}
-          </form>
-
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[hsl(var(--border))]" />
+        {showQuickAccess && (
+          <div className="mt-8 pt-6 border-t border-slate-100 bg-slate-50/50 -mx-6 sm:-mx-8 px-6 sm:px-8 -mb-6 sm:-mb-8 pb-6 sm:pb-8 rounded-b-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-xs font-bold tracking-[0.2em] text-slate-500 uppercase">
+                Q u i c k &nbsp; A c c e s s
+              </p>
+              <p className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded-md border border-slate-200">
+                Password: Password123!
+              </p>
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-[hsl(var(--surface-strong))] px-3 text-muted-foreground">
-                New to SchoolMatica?
-              </span>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {quickLogins.slice(0, 4).map((login) => {
+                return (
+                  <button
+                    key={login.id}
+                    type="button"
+                    onClick={() => performLogin(login.email, login.password)}
+                    disabled={isLoading}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 transition-all text-left group hover:shadow-sm"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-slate-900 truncate">
+                        {login.label}
+                      </p>
+                      <p className="text-xs text-slate-500 font-mono truncate">
+                        {login.email.split('@')[0]}
+                      </p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
+                  </button>
+                );
+              })}
+            </div>
+            
+            <div className="mt-4 text-center">
+              <p className="text-[11px] text-slate-500">
+                Demo accounts are tied to Nimbus Academy.
+              </p>
             </div>
           </div>
-
-          {/* Register Link - Only for Schools */}
-          <div className="text-center">
-            {selectedRole === "platform" ? (
-              <p className="text-sm text-muted-foreground">
-                Platform Admin access is restricted.{" "}
-                <Link href="/contact" className="text-[hsl(var(--accent-violet))] hover:underline font-medium">
-                  Contact SchoolMatica
-                </Link>{" "}
-                for access.
-              </p>
-            ) : selectedRole === "school" ? (
-              <Button variant="outline" asChild className="w-full h-11 border-[hsl(var(--border))] hover:bg-[hsl(var(--surface-soft))]">
-                <Link href="/register">
-                  Register Your School
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                {selectedRole === "teacher" ? (
-                  <>
-                    Ask your school administrator to invite you, or{" "}
-                    <Link href="/register" className="text-[hsl(var(--accent-violet))] hover:underline font-medium">
-                      register your school
-                    </Link>
-                  </>
-                ) : selectedRole === "parent" ? (
-                  <>
-                    Parent accounts are created by the school.{" "}
-                    <Link href="/contact" className="text-[hsl(var(--accent-violet))] hover:underline font-medium">
-                      Contact your school
-                    </Link>{" "}
-                    for access.
-                  </>
-                ) : (
-                  <>
-                    Student accounts are managed by your school.{" "}
-                    <Link href="/contact" className="text-[hsl(var(--accent-violet))] hover:underline font-medium">
-                      Contact your school
-                    </Link>{" "}
-                    for access.
-                  </>
-                )}
-              </p>
-            )}
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Security Badge */}
-      <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+      <div className="mt-8 flex items-center justify-center gap-2 text-xs font-medium text-slate-500">
         <Shield className="h-4 w-4" />
         <span>POPIA Compliant • Secure • South African Hosted</span>
       </div>

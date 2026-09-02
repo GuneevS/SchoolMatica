@@ -1,6 +1,13 @@
 import { authMiddleware } from "@/lib/auth-edge";
 import { NextResponse } from "next/server";
 
+/**
+ * Header injected by middleware so server components (root layout) can read
+ * the request pathname and decide whether to skip DB-heavy initialization
+ * (e.g., marketing/auth pages don't need the school+auth context fetch).
+ */
+const PATHNAME_HEADER = "x-pathname";
+
 // Marketing/landing pages that should be publicly accessible without authentication
 const publicMarketingPaths = ["/"];
 
@@ -18,7 +25,6 @@ const studentPortalPaths = ["/student"];
 
 export default authMiddleware(async (req) => {
     const isAuth = !!req.auth;
-    const userEmail = req.auth?.user?.email;
     const pathname = req.nextUrl.pathname;
     const isAuthPage = publicAuthPaths.some(p => pathname.startsWith(p));
     const isPublicPage = pathname.startsWith("/api/auth") || pathname.startsWith("/api/health");
@@ -27,9 +33,18 @@ export default authMiddleware(async (req) => {
     const isParentPortal = parentPortalPaths.some(p => pathname.startsWith(p));
     const isStudentPortal = studentPortalPaths.some(p => pathname.startsWith(p));
 
+    // Helper: pass through with the pathname header attached so server
+    // components (e.g., root layout) can adapt — marketing pages skip the
+    // auth/branding DB fetch, dynamic pages do it.
+    const passThrough = () => {
+        const requestHeaders = new Headers(req.headers);
+        requestHeaders.set(PATHNAME_HEADER, pathname);
+        return NextResponse.next({ request: { headers: requestHeaders } });
+    };
+
     // Allow marketing pages to be publicly accessible
     if (isMarketingPage) {
-        return null;
+        return passThrough();
     }
 
     if (isAuthPage) {
@@ -38,7 +53,7 @@ export default authMiddleware(async (req) => {
             // In production, check user's role and redirect appropriately
             return Response.redirect(new URL("/dashboard", req.nextUrl));
         }
-        return null;
+        return passThrough();
     }
 
     if (!isAuth && !isPublicPage) {
@@ -63,21 +78,24 @@ export default authMiddleware(async (req) => {
         }
         // Note: Detailed permission check happens in the page components
         // Middleware doesn't have access to database to check permissions
-        return null;
+        return passThrough();
     }
 
     // Parent portal pages - auth required, page handles role verification
     if (isParentPortal && isAuth) {
-        return null;
+        return passThrough();
     }
 
     // Student portal pages - auth required, page handles role verification
     if (isStudentPortal && isAuth) {
-        return null;
+        return passThrough();
     }
 
-    return null;
+    return passThrough();
 });
+
+/** Exported so server code can read the same header name. */
+export const PATHNAME_HEADER_NAME = PATHNAME_HEADER;
 
 export const config = {
     matcher: ["/((?!api/auth|api/health|_next/static|_next/image|favicon.ico).*)"],

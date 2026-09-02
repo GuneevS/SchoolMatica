@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthContext, hasSchoolAccess } from "@/lib/auth";
-import { getPusherServer, CHANNEL_NAMES } from "@/lib/pusher";
+import { getPusherServer } from "@/lib/pusher";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";

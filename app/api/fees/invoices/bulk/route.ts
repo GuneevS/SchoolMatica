@@ -192,7 +192,14 @@ export async function POST(request: NextRequest) {
                     },
                 });
 
-                // Create ledger entry
+                // Calculate cumulative running balance
+                const agg = await tx.accountLedger.aggregate({
+                    where: { studentId: student.id },
+                    _sum: { debit: true, credit: true },
+                });
+                const prevBalance = (agg._sum.debit ?? 0) - (agg._sum.credit ?? 0);
+
+                // Create ledger entry with correct running balance
                 await tx.accountLedger.create({
                     data: {
                         schoolId,
@@ -201,7 +208,7 @@ export async function POST(request: NextRequest) {
                         description: `Invoice ${invNum} - ${student.firstName} ${student.lastName}`,
                         debit: totalAmount,
                         credit: 0,
-                        balance: totalAmount,
+                        balance: prevBalance + totalAmount,
                         reference: invoice.id,
                         createdBy: auth.user.id,
                     },

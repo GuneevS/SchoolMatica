@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { UserProfileMenu } from "@/components/ui/user-profile-menu";
 import { UnifiedLogo } from "@/components/brand/unified-logo";
+import { SkipToContent } from "@/components/layout/skip-to-content";
 
 const navItems = [
   { label: "Dashboard", href: "/super-admin", icon: LayoutDashboard },
@@ -41,6 +42,7 @@ export function SuperAdminShell({ children, user }: Props) {
 
   return (
     <div className="relative flex min-h-screen bg-canvas text-foreground">
+      <SkipToContent />
       <div
         className="pointer-events-none absolute inset-0 z-0 opacity-60 blur-3xl"
         style={{
@@ -51,7 +53,7 @@ export function SuperAdminShell({ children, user }: Props) {
       />
 
       {/* Sidebar */}
-      <aside className="relative z-10 hidden w-64 flex-col border-r border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))/0.9] px-6 py-8 shadow-ambient-sm backdrop-blur lg:flex xl:w-72">
+      <aside className="relative z-10 hidden w-64 flex-col border-r border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))/0.9] px-6 py-8 shadow-ambient-sm backdrop-blur lg:flex xl:w-72" aria-label="Super admin navigation">
         <div className="mb-8 flex items-center gap-3">
           <UnifiedLogo variant="icon" size="sm" colorScheme="gradient" />
           <div>
@@ -119,12 +121,12 @@ export function SuperAdminShell({ children, user }: Props) {
       <div className="lg:hidden fixed top-4 left-4 z-50">
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="bg-white shadow-md">
+            <Button variant="outline" size="icon" className="bg-[hsl(var(--surface-strong))] shadow-md">
               <Menu className="h-5 w-5" />
               <span className="sr-only">Open navigation</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="bg-white w-72">
+          <SheetContent side="left" className="bg-[hsl(var(--surface-strong))] w-72">
             <SheetHeader>
               <SheetTitle className="flex items-center gap-2">
                 <UnifiedLogo variant="icon" size="sm" colorScheme="gradient" />
@@ -146,7 +148,7 @@ export function SuperAdminShell({ children, user }: Props) {
                       "flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-medium transition-all",
                       isActive
                         ? "bg-[hsl(var(--accent-iris))]/12 text-foreground"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/60"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -158,7 +160,7 @@ export function SuperAdminShell({ children, user }: Props) {
             <div className="mt-6 px-2">
               <Link
                 href="/dashboard"
-                className="flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-slate-100/80 hover:text-foreground"
+                className="flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
               >
                 <ChevronRight className="h-4 w-4" />
                 Back to Dashboard
@@ -200,7 +202,7 @@ export function SuperAdminShell({ children, user }: Props) {
         </header>
 
         {/* Main content */}
-        <main className="relative flex-1 overflow-y-auto px-6 py-8 md:px-10">
+        <main id="main-content" tabIndex={-1} className="relative flex-1 overflow-y-auto px-6 py-8 md:px-10 focus:outline-none">
           <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">{children}</div>
         </main>
       </div>

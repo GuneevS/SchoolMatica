@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect } from "react";
+import { useId, useState, useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, User, Users, Loader2 } from "lucide-react";
+import { Search, User, Users, Loader2, X } from "lucide-react";
 
 interface Recipient {
   id: string;
@@ -51,6 +52,11 @@ export function NewConversationDialog({
   onCreateThread,
   schoolId,
 }: NewConversationDialogProps) {
+  const typeId = useId();
+  const searchId = useId();
+  const subjectId = useId();
+  const messageId = useId();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [recipients, setRecipients] = useState<Recipient[]>([]);
   const [selectedRecipients, setSelectedRecipients] = useState<Recipient[]>([]);
@@ -60,61 +66,96 @@ export function NewConversationDialog({
   const [initialMessage, setInitialMessage] = useState("");
   const [threadType, setThreadType] = useState<"Direct" | "Class" | "School">("Direct");
 
-  // Search for users when query changes
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Debounced + cancellable user search
   useEffect(() => {
     if (!searchQuery.trim() || searchQuery.length < 2) {
       setRecipients([]);
       return;
     }
 
-    const searchUsers = async () => {
-      setIsSearching(true);
-      try {
-        const response = await fetch(
-          `/api/users/search?q=${encodeURIComponent(searchQuery)}&schoolId=${schoolId}`
-        );
-        if (response.ok) {
+    const debounce = setTimeout(() => {
+      // Cancel any in-flight request before starting a new one
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      const searchUsers = async () => {
+        setIsSearching(true);
+        try {
+          const response = await fetch(
+            `/api/users/search?q=${encodeURIComponent(searchQuery)}&schoolId=${schoolId}`,
+            { signal: controller.signal },
+          );
+          if (!response.ok) throw new Error("Search failed");
           const data = await response.json();
           setRecipients(
-            data.users.map((u: { id: string; displayName?: string; name?: string; email?: string; role?: string }) => ({
-              id: u.id,
-              name: u.displayName || u.name || u.email || "Unknown",
-              email: u.email,
-              role: u.role || "User",
-              initials: (u.displayName || u.name || "??")
-                .split(" ")
-                .map((n: string) => n[0])
-                .join("")
-                .toUpperCase()
-                .slice(0, 2),
-            }))
+            data.users.map(
+              (u: {
+                id: string;
+                displayName?: string;
+                name?: string;
+                email?: string;
+                role?: string;
+              }) => ({
+                id: u.id,
+                name: u.displayName || u.name || u.email || "Unknown",
+                email: u.email,
+                role: u.role || "User",
+                initials: (u.displayName || u.name || "??")
+                  .split(" ")
+                  .map((n: string) => n[0])
+                  .join("")
+                  .toUpperCase()
+                  .slice(0, 2),
+              }),
+            ),
           );
+        } catch (error) {
+          if ((error as Error).name === "AbortError") return;
+          console.error("[NewConversation] search failed:", error);
+        } finally {
+          if (!controller.signal.aborted) setIsSearching(false);
         }
-      } catch (error) {
-        console.error("Failed to search users:", error);
-      } finally {
-        setIsSearching(false);
-      }
-    };
+      };
 
-    const debounce = setTimeout(searchUsers, 300);
-    return () => clearTimeout(debounce);
+      searchUsers();
+    }, 300);
+
+    return () => {
+      clearTimeout(debounce);
+      abortRef.current?.abort();
+    };
   }, [searchQuery, schoolId]);
 
   const handleSelectRecipient = (recipient: Recipient) => {
-    if (!selectedRecipients.find((r) => r.id === recipient.id)) {
-      setSelectedRecipients([...selectedRecipients, recipient]);
-    }
+    setSelectedRecipients((prev) =>
+      prev.find((r) => r.id === recipient.id) ? prev : [...prev, recipient],
+    );
     setSearchQuery("");
     setRecipients([]);
   };
 
   const handleRemoveRecipient = (recipientId: string) => {
-    setSelectedRecipients(selectedRecipients.filter((r) => r.id !== recipientId));
+    setSelectedRecipients((prev) => prev.filter((r) => r.id !== recipientId));
+  };
+
+  const resetState = () => {
+    setSelectedRecipients([]);
+    setSubject("");
+    setInitialMessage("");
+    setSearchQuery("");
+    setRecipients([]);
+  };
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next) resetState();
+    onOpenChange(next);
   };
 
   const handleCreate = async () => {
-    if (selectedRecipients.length === 0) return;
+    if (selectedRecipients.length === 0 || isCreating) return;
 
     setIsCreating(true);
     try {
@@ -130,108 +171,117 @@ export function NewConversationDialog({
       });
 
       if (result) {
-        // Reset form and close dialog
-        setSelectedRecipients([]);
-        setSubject("");
-        setInitialMessage("");
-        setSearchQuery("");
+        toast.success("Conversation started");
+        resetState();
         onOpenChange(false);
+      } else {
+        toast.error("Could not start the conversation. Please try again.");
       }
     } catch (error) {
-      console.error("Failed to create conversation:", error);
+      console.error("[NewConversation] create failed:", error);
+      toast.error("Could not start the conversation. Please try again.");
     } finally {
       setIsCreating(false);
     }
   };
 
-  const handleClose = () => {
-    setSelectedRecipients([]);
-    setSubject("");
-    setInitialMessage("");
-    setSearchQuery("");
-    setRecipients([]);
-    onOpenChange(false);
-  };
-
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
-          <DialogTitle>New Conversation</DialogTitle>
+          <DialogTitle>New conversation</DialogTitle>
           <DialogDescription>
             Start a new conversation with a parent, teacher, or staff member.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          {/* Thread Type */}
+        <div className="space-y-5 py-2">
+          {/* Thread type */}
           <div className="space-y-2">
-            <Label>Conversation Type</Label>
-            <Select value={threadType} onValueChange={(v) => setThreadType(v as typeof threadType)}>
-              <SelectTrigger>
+            <Label htmlFor={typeId}>Conversation type</Label>
+            <Select
+              value={threadType}
+              onValueChange={(v) => setThreadType(v as typeof threadType)}
+            >
+              <SelectTrigger id={typeId} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Direct">
                   <div className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Direct Message
+                    <User aria-hidden="true" className="h-4 w-4" />
+                    Direct message
                   </div>
                 </SelectItem>
                 <SelectItem value="Class">
                   <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    Class Discussion
+                    <Users aria-hidden="true" className="h-4 w-4" />
+                    Class discussion
                   </div>
                 </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* Recipient Search */}
+          {/* Recipient search */}
           <div className="space-y-2">
-            <Label>Recipients</Label>
+            <Label htmlFor={searchId}>
+              Recipients <span aria-hidden="true" className="text-destructive">*</span>
+            </Label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              />
               <Input
-                placeholder="Search for users..."
+                id={searchId}
+                placeholder="Search for users…"
                 className="pl-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                aria-describedby={`${searchId}-help`}
               />
               {isSearching && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-slate-400" />
+                <Loader2
+                  aria-hidden="true"
+                  className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground"
+                />
               )}
             </div>
+            <p id={`${searchId}-help`} className="text-xs text-muted-foreground">
+              Type at least 2 characters to search.
+            </p>
 
-            {/* Search Results */}
             {recipients.length > 0 && (
-              <ScrollArea className="h-40 border rounded-md">
-                <div className="p-2 space-y-1">
+              <ScrollArea className="h-40 rounded-xl border">
+                <ul className="space-y-1 p-2" role="listbox" aria-label="Search results">
                   {recipients.map((recipient) => (
-                    <button
-                      key={recipient.id}
-                      onClick={() => handleSelectRecipient(recipient)}
-                      className="w-full flex items-center gap-3 p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-left"
-                    >
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="text-xs bg-gradient-to-br from-[hsl(var(--accent-iris))] to-[hsl(var(--accent-flamingo))] text-white">
-                          {recipient.initials}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{recipient.name}</p>
-                        <p className="text-xs text-slate-500 truncate">{recipient.role}</p>
-                      </div>
-                    </button>
+                    <li key={recipient.id}>
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={!!selectedRecipients.find((r) => r.id === recipient.id)}
+                        onClick={() => handleSelectRecipient(recipient)}
+                        className="flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--accent-iris))] to-[hsl(var(--accent-flamingo))] text-xs text-white">
+                            {recipient.initials}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{recipient.name}</p>
+                          <p className="truncate text-xs text-muted-foreground">{recipient.role}</p>
+                        </div>
+                      </button>
+                    </li>
                   ))}
-                </div>
+                </ul>
               </ScrollArea>
             )}
 
-            {/* Selected Recipients */}
             {selectedRecipients.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div className="mt-2 flex flex-wrap gap-1.5">
                 {selectedRecipients.map((recipient) => (
                   <Badge
                     key={recipient.id}
@@ -240,10 +290,12 @@ export function NewConversationDialog({
                   >
                     {recipient.name}
                     <button
+                      type="button"
                       onClick={() => handleRemoveRecipient(recipient.id)}
-                      className="ml-1 h-4 w-4 rounded-full hover:bg-slate-300 dark:hover:bg-slate-600 flex items-center justify-center"
+                      aria-label={`Remove ${recipient.name}`}
+                      className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full transition-colors hover:bg-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
-                      ×
+                      <X aria-hidden="true" className="h-3 w-3" />
                     </button>
                   </Badge>
                 ))}
@@ -251,22 +303,24 @@ export function NewConversationDialog({
             )}
           </div>
 
-          {/* Subject (optional) */}
+          {/* Subject */}
           <div className="space-y-2">
-            <Label>Subject (optional)</Label>
+            <Label htmlFor={subjectId}>Subject (optional)</Label>
             <Input
+              id={subjectId}
               placeholder="e.g., Regarding homework assignment"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
             />
           </div>
 
-          {/* Initial Message (optional) */}
+          {/* Initial message */}
           <div className="space-y-2">
-            <Label>Message (optional)</Label>
+            <Label htmlFor={messageId}>Message (optional)</Label>
             <textarea
-              className="w-full min-h-[80px] px-3 py-2 text-sm rounded-md border border-input bg-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              placeholder="Start the conversation..."
+              id={messageId}
+              className="min-h-[88px] w-full rounded-xl border border-[hsl(var(--border))/0.9] bg-[hsl(var(--surface-strong))] px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:border-white/15 dark:bg-white/5"
+              placeholder="Start the conversation…"
               value={initialMessage}
               onChange={(e) => setInitialMessage(e.target.value)}
             />
@@ -274,21 +328,20 @@ export function NewConversationDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>
             Cancel
           </Button>
           <Button
             onClick={handleCreate}
             disabled={selectedRecipients.length === 0 || isCreating}
-            className="bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]"
           >
             {isCreating ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Creating...
+                <Loader2 aria-hidden="true" className="mr-2 h-4 w-4 animate-spin" />
+                Creating…
               </>
             ) : (
-              "Start Conversation"
+              "Start conversation"
             )}
           </Button>
         </DialogFooter>

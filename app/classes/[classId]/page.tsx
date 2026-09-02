@@ -78,12 +78,19 @@ export default async function ClassMarkbookPage({ params, searchParams }: Props)
 
   const markbook = payload as MarkbookPayload;
   const students = payload.rows.map(row => row.student);
-  const teacherOptions = schoolData
-    ? await prisma.teacher.findMany({
-        where: { schoolId: schoolData.id },
-        orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-      })
-    : [];
+  const [teacherOptions, subjectOptions] = schoolData
+    ? await Promise.all([
+        prisma.teacher.findMany({
+          where: { schoolId: schoolData.id },
+          orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+        }),
+        prisma.subject.findMany({
+          where: { schoolId: schoolData.id },
+          select: { id: true, name: true },
+          orderBy: { name: "asc" },
+        }),
+      ])
+    : [[], []];
   
   const currentPlan = markbook.assessmentPlan;
   const rosterSize = markbook.rows.length;
@@ -187,6 +194,7 @@ export default async function ClassMarkbookPage({ params, searchParams }: Props)
                     classId={markbook.classGroup.id}
                     assignments={assignments}
                     allTeachers={teacherOptions}
+                    subjects={subjectOptions}
                 />
             </TabsContent>
 

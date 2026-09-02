@@ -81,7 +81,7 @@ services:
       NEXT_PUBLIC_SHOW_DEMO_LOGIN: "true"
       DATABASE_URL: "postgresql://schoolmatica:dev_password_only@postgres:5432/schoolmatica?schema=public"
       NEXTAUTH_SECRET: "dev_secret_key_change_in_production"
-      NEXTAUTH_URL: "http://localhost:13807"
+      NEXTAUTH_URL: "http://192.168.0.233:13807"
       AUTH_TRUST_HOST: "true"
       # Redis (optional)
       REDIS_URL: "redis://redis:6379"

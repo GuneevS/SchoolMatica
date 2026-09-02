@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Teacher, ClassTeacherAssignment } from "@prisma/client";
+import { toast } from "sonner";
+import type { Teacher, ClassTeacherAssignment } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 
 interface TeacherWithAssignment extends ClassTeacherAssignment {
@@ -34,13 +36,16 @@ interface Props {
   classId: string;
   assignments: TeacherWithAssignment[];
   allTeachers: Teacher[];
+  subjects?: { id: string; name: string }[];
 }
 
-export function ManageTeachers({ classId, assignments, allTeachers }: Props) {
+export function ManageTeachers({ classId, assignments, allTeachers, subjects = [] }: Props) {
   const [open, setOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<string>("");
+  const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [role, setRole] = useState("Support");
   const [isPending, startTransition] = useTransition();
+  const [removeTarget, setRemoveTarget] = useState<TeacherWithAssignment | null>(null);
   const router = useRouter();
 
   // Filter out teachers already assigned
@@ -59,6 +64,12 @@ export function ManageTeachers({ classId, assignments, allTeachers }: Props) {
           body: JSON.stringify({
             teacherId: selectedTeacher,
             role: role,
+            // "none" is the sentinel for "No specific subject" — don't send it
+            // as a relation id or Prisma rejects it with an FK/connect error.
+            subjectId:
+              selectedSubject && selectedSubject !== "none"
+                ? selectedSubject
+                : undefined,
           }),
         });
 
@@ -69,31 +80,29 @@ export function ManageTeachers({ classId, assignments, allTeachers }: Props) {
 
         setOpen(false);
         setSelectedTeacher("");
+        setSelectedSubject("");
         router.refresh();
       } catch (error) {
         console.error(error);
-        alert("Failed to assign teacher");
+        toast.error("Could not assign teacher. Please try again.");
       }
     });
   };
 
-  const handleRemove = async (teacherId: string) => {
-    if (!confirm("Are you sure you want to remove this teacher from the class?")) return;
-    
-    startTransition(async () => {
-      try {
-        const res = await fetch(`/api/classes/${classId}/teachers?teacherId=${teacherId}`, {
-          method: "DELETE",
-        });
-
-        if (!res.ok) throw new Error("Failed to remove teacher");
-
-        router.refresh();
-      } catch (error) {
-        console.error(error);
-        alert("Failed to remove teacher");
-      }
-    });
+  // Awaitable so ConfirmDialog can keep its loader visible until done.
+  const performRemove = async (teacherId: string) => {
+    try {
+      const res = await fetch(
+        `/api/classes/${classId}/teachers?teacherId=${teacherId}`,
+        { method: "DELETE" },
+      );
+      if (!res.ok) throw new Error("Failed to remove teacher");
+      toast.success("Teacher removed from class");
+      router.refresh();
+    } catch (error) {
+      console.error("[ManageTeachers] remove failed:", error);
+      toast.error("Could not remove teacher. Please try again.");
+    }
   };
 
   return (
@@ -142,11 +151,31 @@ export function ManageTeachers({ classId, assignments, allTeachers }: Props) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Lead">Lead Teacher</SelectItem>
+                      <SelectItem value="Subject">Subject Teacher</SelectItem>
                       <SelectItem value="Support">Support Teacher</SelectItem>
                       <SelectItem value="Substitute">Substitute</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+                {subjects.length > 0 && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="subject">Subject (optional)</Label>
+                    <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select subject" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No specific subject</SelectItem>
+                        {subjects.map((subject) => (
+                          <SelectItem key={subject.id} value={subject.id}>
+                            {subject.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Specify which subject this teacher will teach in this class</p>
+                  </div>
+                )}
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
@@ -184,17 +213,22 @@ export function ManageTeachers({ classId, assignments, allTeachers }: Props) {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Badge variant={assignment.role === "Lead" ? "default" : "secondary"}>
+                  <Badge variant={assignment.role === "Lead" ? "default" : assignment.role === "Subject" ? "outline" : "secondary"}>
                     {assignment.role}
                   </Badge>
+                  {assignment.subjectId && subjects.length > 0 && (
+                    <Badge variant="outline" className="text-xs">
+                      {subjects.find(s => s.id === assignment.subjectId)?.name || "Subject"}
+                    </Badge>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"
                     className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                    onClick={() => handleRemove(assignment.teacherId)}
-                    disabled={isPending}
+                    onClick={() => setRemoveTarget(assignment)}
+                    aria-label={`Remove ${assignment.teacher.firstName} ${assignment.teacher.lastName} from class`}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 aria-hidden="true" className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -202,6 +236,28 @@ export function ManageTeachers({ classId, assignments, allTeachers }: Props) {
           )}
         </div>
       </CardContent>
+
+      <ConfirmDialog
+        open={!!removeTarget}
+        onOpenChange={(o) => !o && setRemoveTarget(null)}
+        title="Remove teacher from class?"
+        description={
+          removeTarget ? (
+            <span>
+              <span className="font-medium text-foreground">
+                {removeTarget.teacher.firstName} {removeTarget.teacher.lastName}
+              </span>{" "}
+              will no longer be assigned to this class. Their other class
+              assignments and the teacher record itself remain unchanged.
+            </span>
+          ) : undefined
+        }
+        confirmLabel="Remove teacher"
+        confirmVariant="destructive"
+        onConfirm={async () => {
+          if (removeTarget) await performRemove(removeTarget.teacherId);
+        }}
+      />
     </Card>
   );
 }

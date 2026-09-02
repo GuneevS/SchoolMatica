@@ -26,7 +26,7 @@ function TabsList({
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cn(
-        "inline-flex h-10 w-fit flex-wrap items-center justify-center gap-1 rounded-full border border-slate-200/60 bg-slate-100/80 p-1 backdrop-blur-sm",
+        "inline-flex h-10 w-fit flex-wrap items-center justify-center gap-1 rounded-full border border-border/60 bg-muted/80 p-1 backdrop-blur-sm",
         className
       )}
       {...props}
@@ -42,7 +42,7 @@ function TabsTrigger({
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-full border border-transparent px-3 text-xs font-semibold uppercase tracking-[0.25em] text-slate-600 hover:text-slate-900 transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:ring-ring/40 focus-visible:outline-none data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-md data-[state=active]:border-slate-200/50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-full border border-transparent px-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-[color,box-shadow] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:outline-none data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:border-border/50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
       {...props}

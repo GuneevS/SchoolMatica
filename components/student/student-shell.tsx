@@ -24,6 +24,7 @@ import { UserProfileMenu } from "@/components/ui/user-profile-menu";
 import { UnifiedLogo } from "@/components/brand/unified-logo";
 import { SchoolMark } from "@/components/brand/school-mark";
 import { useBranding } from "@/components/brand/branding-provider";
+import { SkipToContent } from "@/components/layout/skip-to-content";
 import { type SchoolBranding } from "@/lib/branding";
 import { useEffect } from "react";
 
@@ -86,16 +87,17 @@ export function StudentShell({
   const navItems = getNavItems(unreadMessageCount, homeworkCount, reportCount);
   const { setBranding } = useBranding();
 
-  // Set branding once on mount only - empty deps to prevent loops
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (branding) {
       setBranding(branding);
     }
+  // Only run on mount - branding prop is stable from server
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className="relative flex min-h-screen bg-canvas text-foreground">
+      <SkipToContent />
       <div
         className="pointer-events-none absolute inset-0 z-0 opacity-60 blur-3xl"
         style={{
@@ -105,7 +107,7 @@ export function StudentShell({
         aria-hidden
       />
 
-      <aside className="relative z-10 hidden w-64 flex-col border-r border-slate-200/60 bg-white/95 px-6 py-8 shadow-ambient-sm backdrop-blur lg:flex xl:w-72">
+      <aside className="relative z-10 hidden w-64 flex-col border-r border-[hsl(var(--border))/0.6] bg-[hsl(var(--surface-strong))]/95 px-6 py-8 shadow-ambient-sm backdrop-blur lg:flex xl:w-72" aria-label="Student portal navigation">
         <Link href="/student" className="mb-8 flex items-center gap-3 hover:opacity-90 transition-opacity">
           <UnifiedLogo variant="icon" size="sm" colorScheme="gradient" />
           <div>
@@ -114,7 +116,7 @@ export function StudentShell({
           </div>
         </Link>
 
-        <div className="rounded-3xl border border-slate-200/60 bg-slate-50/80 p-4 shadow-ambient-sm">
+        <div className="rounded-3xl border border-[hsl(var(--border))/0.6] bg-muted/80 p-4 shadow-ambient-sm">
           <div className="flex items-center gap-3">
             <SchoolMark name={schoolName ?? "School"} logoUrl={branding?.logoUrl} size="sm" />
             <div>
@@ -142,7 +144,7 @@ export function StudentShell({
                   "flex items-center justify-between rounded-2xl px-4 py-2.5 transition-all duration-200",
                   isActive
                     ? "bg-[hsl(var(--accent-iris))]/12 text-foreground shadow-ambient-sm"
-                    : "hover:text-slate-900 hover:bg-slate-100/60",
+                    : "hover:text-foreground hover:bg-muted/60",
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -172,7 +174,7 @@ export function StudentShell({
       </aside>
 
       <div className="relative z-10 flex flex-1 flex-col">
-        <header className="sticky top-0 z-20 border-b border-slate-200/50 bg-white/90 px-6 py-4 backdrop-blur-xl">
+        <header className="sticky top-0 z-20 border-b border-[hsl(var(--border))/0.5] bg-[hsl(var(--surface-strong))]/90 px-6 py-4 backdrop-blur-xl">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-6">
             <div className="flex items-center gap-3">
               {/* Mobile menu */}
@@ -184,7 +186,7 @@ export function StudentShell({
                       <span className="sr-only">Open navigation</span>
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="left" className="bg-white w-72">
+                  <SheetContent side="left" className="bg-[hsl(var(--surface-strong))] w-72">
                     <SheetHeader>
                       <SheetTitle className="flex items-center gap-2">
                         <UnifiedLogo variant="icon" size="sm" colorScheme="gradient" />
@@ -206,7 +208,7 @@ export function StudentShell({
                               "flex items-center justify-between rounded-2xl px-4 py-2.5 text-sm font-medium transition-all",
                               isActive
                                 ? "bg-[hsl(var(--accent-iris))]/12 text-foreground"
-                                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/60"
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                             )}
                           >
                             <div className="flex items-center gap-3">
@@ -253,8 +255,8 @@ export function StudentShell({
           </div>
         </header>
 
-        <main className="relative flex-1 overflow-y-auto px-6 py-8 md:px-10">
-          <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">{children}</div>
+        <main id="main-content" tabIndex={-1} className="relative flex-1 overflow-y-auto px-6 py-8 md:px-10 focus:outline-none">
+          <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">{children}</div>
         </main>
       </div>
     </div>

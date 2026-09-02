@@ -1,0 +1,18 @@
+tunnel: 5cc28f1e-3f8f-4292-b1a6-6e05794ceb33
+credentials-file: /Users/guneev/.cloudflared/5cc28f1e-3f8f-4292-b1a6-6e05794ceb33.json
+
+ingress:
+  - hostname: schoolmatic.cloud
+    service: http://127.0.0.1:44777
+    originRequest:
+      connectTimeout: 30s
+      keepAliveTimeout: 90s
+  - hostname: www.schoolmatic.cloud
+    service: http://127.0.0.1:44777
+    originRequest:
+      connectTimeout: 30s
+  - hostname: schoolmatic.themediavault.app
+    service: http://127.0.0.1:44777
+    originRequest:
+      connectTimeout: 30s
+  - service: http_status:404

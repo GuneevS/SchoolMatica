@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
-import { useRoleStore } from "@/lib/stores/role-store";
+import { useCurrentRole } from "@/lib/hooks/use-auth";
 
 interface ThreadEvent {
   id: string;
@@ -34,7 +34,13 @@ const STATUS_BADGE: Record<string, "default" | "secondary" | "destructive" | "ou
 };
 
 export function ModerationPanel({ planId, threads }: Props) {
-  const role = useRoleStore((state) => state.role);
+  const currentRole = useCurrentRole();
+  const activeRoleName = currentRole?.role.name ?? "Teacher";
+  const roleForApi = activeRoleName === "Head of Department" ? "HOD" :
+      activeRoleName === "System Administrator" ? "SMT" :
+      activeRoleName;
+  const canModerate = ["HOD", "SMT", "System Administrator", "Platform Admin", "Super Admin"].includes(activeRoleName) || activeRoleName !== "Teacher";
+
   const [message, setMessage] = useState("");
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
   const [resolutionSummary, setResolutionSummary] = useState<Record<string, string>>({});
@@ -43,7 +49,6 @@ export function ModerationPanel({ planId, threads }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
-  const canModerate = role !== "Teacher";
 
   function createThread() {
     if (!message) return;
@@ -52,7 +57,7 @@ export function ModerationPanel({ planId, threads }: Props) {
       const res = await fetch("/api/moderation-threads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assessmentPlanId: planId, createdByRole: role, message }),
+        body: JSON.stringify({ assessmentPlanId: planId, createdByRole: roleForApi, message }),
       });
       if (res.ok) {
         setMessage("");
@@ -77,7 +82,7 @@ export function ModerationPanel({ planId, threads }: Props) {
       const res = await fetch(`/api/moderation-threads/${threadId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ authorRole: role, message: draft }),
+        body: JSON.stringify({ authorRole: roleForApi, message: draft }),
       });
       if (res.ok) {
         setCommentDrafts((s) => ({ ...s, [threadId]: "" }));
@@ -164,7 +169,7 @@ export function ModerationPanel({ planId, threads }: Props) {
         )}
 
         <div className="space-y-2">
-          <p className="text-xs uppercase text-muted-foreground">Posting as {role}</p>
+          <p className="text-xs uppercase text-muted-foreground">Posting as {activeRoleName}</p>
           <Textarea
             placeholder="Open a moderation thread"
             value={message}

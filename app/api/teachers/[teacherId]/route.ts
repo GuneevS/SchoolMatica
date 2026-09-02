@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authorizeWithSchool, hasSchoolAccess } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-error-handler";
 
 const updateSchema = z.object({
   firstName: z.string().optional(),
@@ -22,33 +23,37 @@ export async function PATCH(
   }
   const { auth } = authResult;
 
-  const { teacherId } = await params;
-  
-  // Get teacher to verify school access
-  const existingTeacher = await prisma.teacher.findUnique({
-    where: { id: teacherId },
-    select: { schoolId: true },
-  });
-  
-  if (!existingTeacher) {
-    return NextResponse.json({ error: "Teacher not found" }, { status: 404 });
-  }
-  
-  // Verify user has access to this school
-  if (!hasSchoolAccess(auth, existingTeacher.schoolId)) {
-    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
-  }
+  try {
+    const { teacherId } = await params;
+    
+    // Get teacher to verify school access
+    const existingTeacher = await prisma.teacher.findUnique({
+      where: { id: teacherId },
+      select: { schoolId: true },
+    });
+    
+    if (!existingTeacher) {
+      return NextResponse.json({ error: "Teacher not found" }, { status: 404 });
+    }
+    
+    // Verify user has access to this school
+    if (!hasSchoolAccess(auth, existingTeacher.schoolId)) {
+      return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+    }
 
-  const payload = await request.json();
-  const parsed = updateSchema.safeParse(payload);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
+    const payload = await request.json();
+    const parsed = updateSchema.safeParse(payload);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
+    }
+    const teacher = await prisma.teacher.update({
+      where: { id: teacherId },
+      data: parsed.data,
+    });
+    return NextResponse.json(teacher);
+  } catch (error) {
+    return handleApiError("PATCH teachers/[teacherId]", error);
   }
-  const teacher = await prisma.teacher.update({
-    where: { id: teacherId },
-    data: parsed.data,
-  });
-  return NextResponse.json(teacher);
 }
 
 export async function DELETE(
@@ -62,24 +67,27 @@ export async function DELETE(
   }
   const { auth } = authResult;
 
-  const { teacherId } = await params;
-  
-  // Get teacher to verify school access
-  const existingTeacher = await prisma.teacher.findUnique({
-    where: { id: teacherId },
-    select: { schoolId: true },
-  });
-  
-  if (!existingTeacher) {
-    return NextResponse.json({ error: "Teacher not found" }, { status: 404 });
-  }
-  
-  // Verify user has access to this school
-  if (!hasSchoolAccess(auth, existingTeacher.schoolId)) {
-    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
-  }
+  try {
+    const { teacherId } = await params;
+    
+    // Get teacher to verify school access
+    const existingTeacher = await prisma.teacher.findUnique({
+      where: { id: teacherId },
+      select: { schoolId: true },
+    });
+    
+    if (!existingTeacher) {
+      return NextResponse.json({ error: "Teacher not found" }, { status: 404 });
+    }
+    
+    // Verify user has access to this school
+    if (!hasSchoolAccess(auth, existingTeacher.schoolId)) {
+      return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+    }
 
-  await prisma.teacher.delete({ where: { id: teacherId } });
-  return NextResponse.json({ success: true });
+    await prisma.teacher.delete({ where: { id: teacherId } });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return handleApiError("DELETE teachers/[teacherId]", error);
+  }
 }
-

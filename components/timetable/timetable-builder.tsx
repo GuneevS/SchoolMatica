@@ -14,7 +14,7 @@ import type {
   TimetablePeriod,
   TimetableSlot,
 } from "@prisma/client";
-import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useDraggable, useDroppable } from "@dnd-kit/core";
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useDraggable } from "@dnd-kit/core";
 import { TimetableGrid } from "@/components/timetable/timetable-grid";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -117,84 +117,7 @@ function DraggableSubject({ subject, isDragging }: { subject: Subject; isDraggin
   );
 }
 
-// Droppable Period Cell Component
-function DroppablePeriodCell({ 
-  period, 
-  slot, 
-  isBreak,
-  onSlotClick, 
-  onEmptyClick,
-  highlightClassId 
-}: { 
-  period: TimetablePeriod;
-  slot?: TimetableSlotWithRelations;
-  isBreak: boolean;
-  onSlotClick: (slot: TimetableSlotWithRelations) => void;
-  onEmptyClick: (period: TimetablePeriod) => void;
-  highlightClassId?: string;
-}) {
-  const { isOver, setNodeRef } = useDroppable({
-    id: `period-${period.id}`,
-    data: { type: 'period', period },
-  });
 
-  const isDimmed = Boolean(highlightClassId && slot && slot.classGroupId !== highlightClassId);
-
-  return (
-    <div 
-      ref={setNodeRef}
-      className={cn(
-        "p-2 border-r last:border-0 min-h-[120px] relative group/cell transition-colors",
-        isOver && !slot && !isBreak && "bg-primary/10 ring-2 ring-primary ring-inset"
-      )}
-    >
-      {slot ? (
-        <div 
-          onClick={() => onSlotClick(slot)}
-          className={cn(
-            "h-full w-full rounded-lg bg-primary/5 border border-primary/10 p-3 cursor-pointer hover:bg-primary/10 hover:border-primary/30 transition-all hover:shadow-sm flex flex-col gap-1",
-            isDimmed && "opacity-50 hover:opacity-80",
-          )}
-        >
-          <div className="flex items-start justify-between">
-            <span className="font-semibold text-sm text-primary line-clamp-1">
-              {slot.classGroup.subject?.name || slot.classGroup.name}
-            </span>
-          </div>
-          <div className="mt-auto space-y-1">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Users2 className="h-3 w-3" />
-              <span className="line-clamp-1">
-                {slot.teacher ? `${slot.teacher.firstName[0]}. ${slot.teacher.lastName}` : 'No Teacher'}
-              </span>
-            </div>
-          </div>
-        </div>
-      ) : isBreak ? (
-        <div className="h-full w-full rounded-lg border border-dashed border-amber-400/40 bg-amber-500/10 flex items-center justify-center">
-          <span className="text-xs font-semibold uppercase tracking-wider text-amber-600">
-            {period.name}
-          </span>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => onEmptyClick(period)}
-          className={cn(
-            "h-full w-full rounded-lg border border-dashed flex items-center justify-center transition",
-            isOver 
-              ? "border-primary bg-primary/5 text-primary" 
-              : "border-transparent hover:border-primary/40 hover:bg-primary/5 text-muted-foreground/60"
-          )}
-        >
-          <span className="text-xs font-medium uppercase tracking-wider">
-            {isOver ? "Drop here" : "Add class"}
-          </span>
-        </button>
-      )}
-    </div>
-  );
-}
 
 export function TimetableBuilder({ timetable, classes, teachers, assessmentPlans, subjects, gradeSubjectConfigs }: TimetableBuilderProps) {
   const router = useRouter();
@@ -311,6 +234,44 @@ export function TimetableBuilder({ timetable, classes, teachers, assessmentPlans
     };
   }, [periods, slots]);
 
+  const saveSlotInstantly = async (period: TimetablePeriod, classId: string, subject: Subject) => {
+    setIsSavingSlot(true);
+    setSlotError(null);
+    const rememberedTeacher = teacherBySubject.get(subject.id);
+    const payload = {
+      classGroupId: classId,
+      teacherId: rememberedTeacher ?? null,
+      room: null,
+      notes: null,
+      assessmentPlanId: null,
+      periodId: period.id,
+    };
+
+    try {
+      const response = await fetch(`/api/timetables/${timetable.id}/slots`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        setSlotError(errorData?.error ?? "Unable to save this slot instantly.");
+        openCreateSlotWithDefaults(period, classId, subject);
+        return;
+      }
+
+      const savedSlot = (await response.json()) as TimetableSlotWithRelations;
+      setSlots((current) => [...current, savedSlot]);
+      startTransition(() => router.refresh());
+    } catch (error) {
+      console.error("Failed to auto-save slot:", error);
+      openCreateSlotWithDefaults(period, classId, subject);
+    } finally {
+      setIsSavingSlot(false);
+    }
+  };
+
   // Drag-and-drop handlers
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const { active } = event;
@@ -334,20 +295,24 @@ export function TimetableBuilder({ timetable, classes, teachers, assessmentPlans
       const existingSlot = slots.find(s => s.periodId === targetPeriod.id);
       if (existingSlot) return; // Don't replace existing slots
       
-      // Find or create a class for this subject
-      // First, try to find a class that matches the subject
-      const subjectClass = classes.find(c => c.subjectId === droppedSubject.id);
+      // Try to predict the intended class
+      let targetClassId = selectedClassId !== "all" ? selectedClassId : null;
       
-      if (subjectClass) {
-        // Use the existing subject class
-        openCreateSlotWithDefaults(targetPeriod, subjectClass.id, droppedSubject);
+      if (!targetClassId) {
+        const subjectClass = classes.find(c => c.subjectId === droppedSubject.id);
+        if (subjectClass) targetClassId = subjectClass.id;
+      }
+      
+      if (targetClassId) {
+        // Auto-save instantly for a seamless experience
+        saveSlotInstantly(targetPeriod, targetClassId, droppedSubject);
       } else {
-        // Use the first homeroom class and open the dialog
+        // Fallback to the dialog if we cannot confidently guess the class
         const defaultClass = homeroomClasses[0]?.id ?? classes[0]?.id ?? "";
         openCreateSlotWithDefaults(targetPeriod, defaultClass, droppedSubject);
       }
     }
-  }, [slots, classes, homeroomClasses]);
+  }, [slots, classes, homeroomClasses, selectedClassId, timetable.id, teacherBySubject]);
 
   // Open slot dialog with pre-filled subject info
   function openCreateSlotWithDefaults(period: TimetablePeriod, classId: string, subject?: Subject) {

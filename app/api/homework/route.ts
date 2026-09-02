@@ -213,6 +213,31 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // School admins can assign homework even without a pre-linked teacher row.
+    if (!teacherId && auth.user.email) {
+      const existingTeacher = await prisma.teacher.findUnique({
+        where: { email: auth.user.email },
+      });
+      if (existingTeacher) {
+        teacherId = existingTeacher.id;
+      } else {
+        const createdTeacher = await prisma.teacher.create({
+          data: {
+            firstName: auth.user.displayName?.split(" ")[0] || "School",
+            lastName: auth.user.displayName?.split(" ").slice(1).join(" ") || "Admin",
+            email: auth.user.email,
+            role: "Administrator",
+            schoolId: classGroup.school.id,
+          },
+        });
+        teacherId = createdTeacher.id;
+      }
+      await prisma.appUser.update({
+        where: { id: auth.user.id },
+        data: { teacherId },
+      });
+    }
+
     if (!teacherId) {
       return NextResponse.json(
         { error: "No teacher record found for this user" },

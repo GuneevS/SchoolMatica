@@ -28,6 +28,9 @@ export async function GET(request: NextRequest) {
     if (!auth) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    if (!auth.isAdmin && !auth.isSuperAdmin && !auth.permissions.has("finance:read")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
@@ -98,6 +101,14 @@ export async function POST(request: NextRequest) {
     const auth = await getServerAuthContext();
     if (!auth) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (
+      !auth.isAdmin &&
+      !auth.isSuperAdmin &&
+      !auth.permissions.has("finance:write") &&
+      !auth.permissions.has("finance:manage")
+    ) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const body = await request.json();

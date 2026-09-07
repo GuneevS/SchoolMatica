@@ -25,7 +25,7 @@ export function CreateFeeStructureDialog({ open, onOpenChange, onSuccess }: Crea
     const [loading, setLoading] = useState(false);
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
-    const [grade, setGrade] = useState<string>("");
+    const [grade, setGrade] = useState<string>("none");
     const [year, setYear] = useState(new Date().getFullYear());
     const [term, setTerm] = useState("Annual");
     const [components, setComponents] = useState<Array<{ name: string; amount: number; optional: boolean; description: string }>>([
@@ -56,7 +56,7 @@ export function CreateFeeStructureDialog({ open, onOpenChange, onSuccess }: Crea
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     name, description: description || undefined,
-                    grade: grade ? parseInt(grade) : null,
+                    grade: grade !== "none" ? parseInt(grade) : null,
                     year, term: term || null, baseAmount,
                     components: components.map((c) => ({ ...c, amount: Number(c.amount) })),
                 }),
@@ -66,7 +66,7 @@ export function CreateFeeStructureDialog({ open, onOpenChange, onSuccess }: Crea
                 throw new Error(data.error || "Failed to create fee structure");
             }
             onOpenChange(false);
-            setName(""); setDescription(""); setGrade(""); setTerm("Annual");
+            setName(""); setDescription(""); setGrade("none"); setTerm("Annual");
             setComponents([{ name: "Tuition", amount: 0, optional: false, description: "" }]);
             setError("");
             onSuccess();
@@ -104,7 +104,7 @@ export function CreateFeeStructureDialog({ open, onOpenChange, onSuccess }: Crea
                             <Select value={grade} onValueChange={setGrade}>
                                 <SelectTrigger><SelectValue placeholder="All grades" /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All Grades</SelectItem>
+                                    <SelectItem value="none">All Grades</SelectItem>
                                     {Array.from({ length: 13 }, (_, i) => (
                                         <SelectItem key={i} value={String(i)}>Grade {i === 0 ? "R" : i}</SelectItem>
                                     ))}

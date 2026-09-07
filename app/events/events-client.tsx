@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CreateEventDialog } from "@/components/events/create-event-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +50,7 @@ interface SchoolEvent {
 
 interface EventsPageClientProps {
   events: SchoolEvent[];
+  schoolId: string;
 }
 
 const eventTypeIcons: Record<string, React.ReactNode> = {
@@ -77,12 +79,13 @@ const heroHighlights = [
   { label: "Role-based views", color: "hsl(var(--accent-violet))" },
 ];
 
-export function EventsPageClient({ events }: EventsPageClientProps) {
+export function EventsPageClient({ events, schoolId }: EventsPageClientProps) {
   const [viewMode, setViewMode] = useState<"calendar" | "list">("list");
   const [typeFilter, setTypeFilter] = useState("all");
   const [audienceFilter, setAudienceFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const filteredEvents = events.filter((event) => {
     const matchesType = typeFilter === "all" || event.type === typeFilter;
@@ -220,10 +223,11 @@ END:VCALENDAR`;
                 Calendar
               </Button>
             </div>
-            <Button className="bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]">
+            <Button className="bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]" onClick={() => setCreateDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Add Event
             </Button>
+            <CreateEventDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} schoolId={schoolId} />
           </div>
         </CardContent>
       </Card>

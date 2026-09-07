@@ -10,7 +10,6 @@ import {
   Receipt,
   AlertCircle,
   Check,
-  Clock,
   Download,
   CreditCard,
   FileText,
@@ -18,6 +17,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { formatCurrency } from "@/lib/utils/currency";
 import { buildCSVRow } from "@/lib/utils/csv";
 
@@ -82,17 +82,6 @@ const formatDate = (dateStr: string) => {
     month: "short",
     year: "numeric",
   });
-};
-
-const getStatusBadge = (status: string) => {
-  const styles: Record<string, string> = {
-    Paid: "bg-emerald-100 text-emerald-700",
-    "Partially Paid": "bg-amber-100 text-amber-700",
-    Overdue: "bg-red-100 text-red-700",
-    Sent: "bg-blue-100 text-blue-700",
-    Draft: "bg-slate-100 text-slate-700",
-  };
-  return styles[status] || styles.Draft;
 };
 
 export function ParentFeesClient({ childrenData }: ParentFeesClientProps) {
@@ -296,7 +285,7 @@ export function ParentFeesClient({ childrenData }: ParentFeesClientProps) {
                           <p className="text-lg font-bold text-red-600">
                             {formatCurrency(invoice.balanceDue)}
                           </p>
-                          <Badge className={getStatusBadge(invoice.status)}>{invoice.status}</Badge>
+                          <StatusBadge status={invoice.status} />
                         </div>
                       </div>
                     ))}
@@ -394,7 +383,7 @@ export function ParentFeesClient({ childrenData }: ParentFeesClientProps) {
                           {formatCurrency(invoice.balanceDue)}
                         </TableCell>
                         <TableCell>
-                          <Badge className={getStatusBadge(invoice.status)}>{invoice.status}</Badge>
+                          <StatusBadge status={invoice.status} />
                         </TableCell>
                       </TableRow>
                     ))}
@@ -411,7 +400,7 @@ export function ParentFeesClient({ childrenData }: ParentFeesClientProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Account Statement</CardTitle>
-                  <CardDescription>Transaction history for {student.firstName}'s account</CardDescription>
+                  <CardDescription>Transaction history for {student.firstName}&apos;s account</CardDescription>
                 </div>
                 <Button
                   variant="outline"

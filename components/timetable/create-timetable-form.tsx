@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import type { ClassGroup, Subject, Teacher } from "@prisma/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -66,7 +67,7 @@ export function CreateTimetableForm({ schoolId, classes, teachers }: Props) {
             ? errorData.details.join(", ") 
             : errorData.details
           : errorData.error || "Unknown error";
-        alert(`Failed to create timetable: ${errorMessage}`);
+        toast.error("Could not create timetable", { description: errorMessage });
       }
     });
   };

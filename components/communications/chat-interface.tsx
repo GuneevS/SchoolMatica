@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -18,8 +18,6 @@ import {
   Check,
   CheckCheck,
   Smile,
-  Image as ImageIcon,
-  File,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -69,35 +67,74 @@ interface ChatInterfaceProps {
   onTyping?: (isTyping: boolean) => void;
 }
 
+// Format an absolute time (e.g. "14:32") — stable across server/client.
+function formatTime(date: Date) {
+  return new Intl.DateTimeFormat("en-ZA", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+// Format a date relative to "today/yesterday" — depends on the current
+// client clock. Only safe to call after mount, otherwise hydration mismatches.
+function formatRelativeDate(date: Date) {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (date.toDateString() === today.toDateString()) return "Today";
+  if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+  return new Intl.DateTimeFormat("en-ZA", {
+    day: "numeric",
+    month: "short",
+  }).format(date);
+}
+
+// SSR-safe absolute fallback used before the client mounts.
+function formatAbsoluteDate(date: Date) {
+  return new Intl.DateTimeFormat("en-ZA", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
 export function ChatInterface({
   conversations,
   messages,
   activeConversation,
   onSelectConversation,
   onSendMessage,
-  onSearch,
-  currentUserId,
-  isLoading = false,
-  isConnected = false,
+  onSearch: _onSearch,
+  currentUserId: _currentUserId,
+  isLoading: _isLoading = false,
+  isConnected: _isConnected = false,
   typingUsers = new Map(),
-  onTyping,
+  onTyping: _onTyping,
 }: ChatInterfaceProps) {
   const [messageInput, setMessageInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [mounted, setMounted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Mount flag — "Today/Yesterday" labels depend on the client clock.
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Scroll on count change only, not every messages-array reference.
+  const messageCount = messages.length;
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messageCount]);
 
-  const handleSend = () => {
-    if (messageInput.trim()) {
-      onSendMessage(messageInput.trim());
-      setMessageInput("");
-    }
-  };
+  const handleSend = useCallback(() => {
+    const trimmed = messageInput.trim();
+    if (!trimmed) return;
+    onSendMessage(trimmed);
+    setMessageInput("");
+  }, [messageInput, onSendMessage]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -106,116 +143,117 @@ export function ChatInterface({
     }
   };
 
-  const formatTime = (date: Date) => {
-    return new Intl.DateTimeFormat("en-ZA", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
-  };
-
-  const formatDate = (date: Date) => {
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    if (date.toDateString() === today.toDateString()) {
-      return "Today";
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return "Yesterday";
-    } else {
-      return new Intl.DateTimeFormat("en-ZA", {
-        day: "numeric",
-        month: "short",
-      }).format(date);
-    }
-  };
+  const safeDate = (d: Date) => (mounted ? formatRelativeDate(d) : formatAbsoluteDate(d));
 
   const filteredConversations = conversations.filter((conv) =>
-    conv.participantName.toLowerCase().includes(searchQuery.toLowerCase())
+    conv.participantName.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
-    <div className="flex h-[calc(100vh-200px)] min-h-[500px] rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900">
-      {/* Conversations List */}
-      <div className="w-80 border-r border-slate-200 dark:border-slate-800 flex flex-col">
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800">
+    <div className="flex h-[calc(100vh-200px)] min-h-[500px] overflow-hidden rounded-2xl border border-border bg-[hsl(var(--surface-strong))]">
+      {/* Conversations list */}
+      <aside
+        aria-label="Conversations"
+        className="hidden w-80 flex-col border-r border-border md:flex"
+      >
+        <div className="border-b border-border p-4">
+          <label htmlFor="chat-conversation-search" className="sr-only">
+            Search conversations
+          </label>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            />
             <Input
-              placeholder="Search conversations..."
-              className="pl-10 bg-slate-50 dark:bg-slate-700/50 border-0"
+              id="chat-conversation-search"
+              placeholder="Search conversations…"
+              className="border-0 bg-muted/50 pl-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
         <ScrollArea className="flex-1">
-          {filteredConversations.map((conversation) => (
-            <button
-              key={conversation.id}
-              onClick={() => onSelectConversation(conversation)}
-              className={cn(
-                "w-full flex items-start gap-3 p-4 text-left transition-colors",
-                "hover:bg-slate-50 dark:hover:bg-slate-700/50",
-                activeConversation?.id === conversation.id &&
-                  "bg-[hsl(var(--accent-violet))/0.06] dark:bg-[hsl(var(--accent-violet))/0.2] border-l-2 border-[hsl(var(--accent-violet))]"
-              )}
-            >
-              <UserAvatar
-                src={conversation.participantPictureUrl}
-                name={conversation.participantName}
-                role={conversation.participantRole}
-                size="md"
-                showRing={true}
-                showStatus={true}
-                status={conversation.isOnline ? "online" : "offline"}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium truncate">{conversation.participantName}</p>
-                  <span className="text-xs text-slate-500">
-                    {formatDate(conversation.lastMessageTime)}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 truncate">{conversation.participantRole}</p>
-                {conversation.childName && (
-                  <Badge variant="outline" className="mt-1 text-xs">
-                    Re: {conversation.childName}
-                  </Badge>
-                )}
-                <p className="text-sm text-slate-500 truncate mt-1">
-                  {conversation.lastMessage}
-                </p>
-              </div>
-              {conversation.unreadCount > 0 && (
-                <Badge className="bg-[hsl(var(--accent-violet))] text-white shrink-0">
-                  {conversation.unreadCount}
-                </Badge>
-              )}
-            </button>
-          ))}
+          <ul role="list">
+            {filteredConversations.map((conversation) => (
+              <li key={conversation.id}>
+                <button
+                  type="button"
+                  onClick={() => onSelectConversation(conversation)}
+                  aria-current={activeConversation?.id === conversation.id ? "true" : undefined}
+                  className={cn(
+                    "flex w-full items-start gap-3 p-4 text-left transition-colors",
+                    "hover:bg-muted/60 focus-visible:bg-muted/60 focus-visible:outline-none",
+                    activeConversation?.id === conversation.id &&
+                      "border-l-2 border-[hsl(var(--accent-violet))] bg-[hsl(var(--accent-violet))/0.06] dark:bg-[hsl(var(--accent-violet))/0.2]",
+                  )}
+                >
+                  <UserAvatar
+                    src={conversation.participantPictureUrl}
+                    name={conversation.participantName}
+                    role={conversation.participantRole}
+                    size="md"
+                    showRing
+                    showStatus
+                    status={conversation.isOnline ? "online" : "offline"}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="truncate font-medium">{conversation.participantName}</p>
+                      <time
+                        dateTime={new Date(conversation.lastMessageTime).toISOString()}
+                        className="text-xs text-muted-foreground"
+                      >
+                        {safeDate(new Date(conversation.lastMessageTime))}
+                      </time>
+                    </div>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {conversation.participantRole}
+                    </p>
+                    {conversation.childName && (
+                      <Badge variant="outline" className="mt-1 text-xs">
+                        Re: {conversation.childName}
+                      </Badge>
+                    )}
+                    <p className="mt-1 truncate text-sm text-muted-foreground">
+                      {conversation.lastMessage}
+                    </p>
+                  </div>
+                  {conversation.unreadCount > 0 && (
+                    <Badge
+                      aria-label={`${conversation.unreadCount} unread`}
+                      className="shrink-0 bg-[hsl(var(--accent-violet))] text-white"
+                    >
+                      {conversation.unreadCount}
+                    </Badge>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
         </ScrollArea>
-      </div>
+      </aside>
 
-      {/* Chat Area */}
-      <div className="flex-1 flex flex-col">
+      {/* Chat area */}
+      <div className="flex flex-1 flex-col">
         {activeConversation ? (
           <>
-            {/* Chat Header */}
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-border bg-[hsl(var(--surface-strong))] p-4">
               <div className="flex items-center gap-3">
                 <UserAvatar
                   src={activeConversation.participantPictureUrl}
                   name={activeConversation.participantName}
                   role={activeConversation.participantRole}
                   size="sm"
-                  showRing={true}
-                  showStatus={true}
+                  showRing
+                  showStatus
                   status={activeConversation.isOnline ? "online" : "offline"}
                 />
                 <div>
                   <p className="font-medium">{activeConversation.participantName}</p>
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-muted-foreground">
                     {activeConversation.isOnline ? (
                       <span className="text-emerald-500">Online</span>
                     ) : (
@@ -224,32 +262,38 @@ export function ChatInterface({
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon">
-                  <Phone className="h-5 w-5" />
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" aria-label="Start voice call">
+                  <Phone aria-hidden="true" className="h-5 w-5" />
                 </Button>
-                <Button variant="ghost" size="icon">
-                  <Video className="h-5 w-5" />
+                <Button variant="ghost" size="icon" aria-label="Start video call">
+                  <Video aria-hidden="true" className="h-5 w-5" />
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical className="h-5 w-5" />
+                    <Button variant="ghost" size="icon" aria-label="Conversation options">
+                      <MoreVertical aria-hidden="true" className="h-5 w-5" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem>View Profile</DropdownMenuItem>
-                    <DropdownMenuItem>Mute Notifications</DropdownMenuItem>
-                    <DropdownMenuItem>Archive Chat</DropdownMenuItem>
-                    <DropdownMenuItem className="text-red-600">Block User</DropdownMenuItem>
+                    <DropdownMenuItem>View profile</DropdownMenuItem>
+                    <DropdownMenuItem>Mute notifications</DropdownMenuItem>
+                    <DropdownMenuItem>Archive chat</DropdownMenuItem>
+                    <DropdownMenuItem variant="destructive">Block user</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
             </div>
 
-            {/* Messages */}
+            {/* Messages — announced to AT as a polite live log */}
             <ScrollArea className="flex-1 p-4">
-              <div className="space-y-4">
+              <div
+                role="log"
+                aria-live="polite"
+                aria-relevant="additions"
+                aria-label={`Conversation with ${activeConversation.participantName}`}
+                className="space-y-4"
+              >
                 {messages.map((message, index) => {
                   const showDate =
                     index === 0 ||
@@ -259,16 +303,16 @@ export function ChatInterface({
                   return (
                     <React.Fragment key={message.id}>
                       {showDate && (
-                        <div className="flex justify-center my-4">
-                          <span className="text-xs text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/50 px-3 py-1 rounded-full">
-                            {formatDate(message.timestamp)}
+                        <div className="my-4 flex justify-center">
+                          <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
+                            {safeDate(new Date(message.timestamp))}
                           </span>
                         </div>
                       )}
                       <div
                         className={cn(
                           "flex gap-3",
-                          message.isOwn ? "flex-row-reverse" : ""
+                          message.isOwn ? "flex-row-reverse" : "",
                         )}
                       >
                         {!message.isOwn && (
@@ -277,33 +321,43 @@ export function ChatInterface({
                             name={message.senderName}
                             role={message.senderRole}
                             size="xs"
-                            showRing={true}
+                            showRing
                           />
                         )}
                         <div
                           className={cn(
                             "max-w-[70%] rounded-2xl p-3",
                             message.isOwn
-                              ? "bg-[hsl(var(--accent-violet))] text-white rounded-br-md"
-                              : "bg-slate-100 dark:bg-slate-700/50 rounded-bl-md"
+                              ? "rounded-br-md bg-[hsl(var(--accent-violet))] text-white"
+                              : "rounded-bl-md bg-muted",
                           )}
                         >
-                          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                          <p className="whitespace-pre-wrap text-sm">{message.content}</p>
                           <div
                             className={cn(
-                              "flex items-center justify-end gap-1 mt-1",
-                              message.isOwn ? "text-white/70" : "text-slate-500"
+                              "mt-1 flex items-center justify-end gap-1",
+                              message.isOwn
+                                ? "text-white/70"
+                                : "text-muted-foreground",
                             )}
                           >
-                            <span className="text-xs">{formatTime(message.timestamp)}</span>
+                            <time
+                              dateTime={new Date(message.timestamp).toISOString()}
+                              className="text-xs"
+                            >
+                              {formatTime(new Date(message.timestamp))}
+                            </time>
                             {message.isOwn && (
-                              <>
+                              <span
+                                aria-label={message.status === "read" ? "Read" : "Sent"}
+                                title={message.status === "read" ? "Read" : "Sent"}
+                              >
                                 {message.status === "read" ? (
-                                  <CheckCheck className="h-4 w-4" />
+                                  <CheckCheck aria-hidden="true" className="h-4 w-4" />
                                 ) : (
-                                  <Check className="h-4 w-4" />
+                                  <Check aria-hidden="true" className="h-4 w-4" />
                                 )}
-                              </>
+                              </span>
                             )}
                           </div>
                         </div>
@@ -315,17 +369,27 @@ export function ChatInterface({
               </div>
             </ScrollArea>
 
-            {/* Typing Indicator */}
+            {/* Typing indicator */}
             {typingUsers.size > 0 && (
-              <div className="px-4 py-2 text-sm text-slate-500 dark:text-slate-400 italic">
+              <div
+                role="status"
+                aria-live="polite"
+                className="px-4 py-2 text-sm italic text-muted-foreground"
+              >
                 {Array.from(typingUsers.values()).join(", ")}{" "}
-                {typingUsers.size === 1 ? "is" : "are"} typing...
+                {typingUsers.size === 1 ? "is" : "are"} typing…
               </div>
             )}
 
-            {/* Message Input */}
-            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-              <div className="flex items-end gap-2">
+            {/* Composer */}
+            <div className="border-t border-border bg-[hsl(var(--surface-strong))] p-4">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSend();
+                }}
+                className="flex items-end gap-2"
+              >
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -335,48 +399,57 @@ export function ChatInterface({
                   aria-label="Upload attachments"
                 />
                 <Button
+                  type="button"
                   variant="ghost"
                   size="icon"
                   onClick={() => fileInputRef.current?.click()}
                   className="shrink-0"
+                  aria-label="Attach a file"
                 >
-                  <Paperclip className="h-5 w-5" />
+                  <Paperclip aria-hidden="true" className="h-5 w-5" />
                 </Button>
-                <div className="flex-1 relative">
+                <div className="relative flex-1">
+                  <label htmlFor="chat-message-input" className="sr-only">
+                    Type a message
+                  </label>
                   <Input
-                    placeholder="Type a message..."
+                    id="chat-message-input"
+                    placeholder="Type a message…"
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     onKeyDown={handleKeyPress}
                     className="pr-10"
                   />
                   <Button
+                    type="button"
                     variant="ghost"
                     size="icon"
                     className="absolute right-1 top-1/2 -translate-y-1/2"
+                    aria-label="Insert emoji"
                   >
-                    <Smile className="h-5 w-5" />
+                    <Smile aria-hidden="true" className="h-5 w-5" />
                   </Button>
                 </div>
                 <Button
-                  onClick={handleSend}
+                  type="submit"
                   disabled={!messageInput.trim()}
-                  className="shrink-0 bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]"
+                  className="shrink-0"
+                  aria-label="Send message"
                 >
-                  <Send className="h-5 w-5" />
+                  <Send aria-hidden="true" className="h-5 w-5" />
                 </Button>
-              </div>
+              </form>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-1 items-center justify-center">
             <div className="text-center">
-              <div className="h-16 w-16 rounded-full bg-slate-100 dark:bg-slate-700/50 flex items-center justify-center mx-auto mb-4">
-                <Send className="h-8 w-8 text-slate-400" />
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                <Send aria-hidden="true" className="h-8 w-8 text-muted-foreground" />
               </div>
               <h3 className="text-lg font-medium">Select a conversation</h3>
-              <p className="text-sm text-slate-500 mt-1">
-                Choose a conversation from the list to start messaging
+              <p className="mt-1 text-sm text-muted-foreground">
+                Choose a conversation from the list to start messaging.
               </p>
             </div>
           </div>

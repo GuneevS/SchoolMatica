@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -64,35 +65,53 @@ export function CommunicationsPageClient({
   stats,
 }: CommunicationsPageClientProps) {
   const [activeTab, setActiveTab] = useState("messages");
-  
-  // Transform conversations to the format expected by ChatInterface
-  const conversations: Conversation[] = initialConversations.map((c) => ({
-    ...c,
-    lastMessageTime: new Date(c.lastMessageTime),
-  }));
+
+  // Transform conversations once per server-prop change.
+  const conversations = useMemo<Conversation[]>(
+    () =>
+      initialConversations.map((c) => ({
+        ...c,
+        lastMessageTime: new Date(c.lastMessageTime),
+      })),
+    [initialConversations],
+  );
 
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(
-    conversations[0] || null
+    () => conversations[0] || null,
   );
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isNewConversationOpen, setIsNewConversationOpen] = useState(false);
   const [conversationsList, setConversationsList] = useState<Conversation[]>(conversations);
 
-  // Handle incoming real-time messages
+  // Keep local conversations list in sync when server data refreshes.
+  useEffect(() => {
+    setConversationsList((prev) => {
+      // Preserve any locally-added (optimistic) conversations not yet on the server.
+      const serverIds = new Set(conversations.map((c) => c.id));
+      const localOnly = prev.filter((c) => !serverIds.has(c.id));
+      return [...conversations, ...localOnly];
+    });
+  }, [conversations]);
+
+  // Handle incoming real-time messages.
   const handleRealtimeMessage = useCallback((realtimeMsg: RealtimeMessage) => {
-    const newMessage: Message = {
-      id: realtimeMsg.id,
-      content: realtimeMsg.content,
-      senderId: realtimeMsg.senderId,
-      senderName: realtimeMsg.senderName,
-      senderInitials: realtimeMsg.senderInitials,
-      timestamp: new Date(realtimeMsg.createdAt),
-      isOwn: false,
-      status: "delivered",
-    };
-    setMessages((prev) => [...prev, newMessage]);
-  }, []);
+    setMessages((prev) => {
+      // Don't add duplicates if Pusher echoes a message we already have.
+      if (prev.some((m) => m.id === realtimeMsg.id)) return prev;
+      const newMessage: Message = {
+        id: realtimeMsg.id,
+        content: realtimeMsg.content,
+        senderId: realtimeMsg.senderId,
+        senderName: realtimeMsg.senderName,
+        senderInitials: realtimeMsg.senderInitials,
+        timestamp: new Date(realtimeMsg.createdAt),
+        isOwn: realtimeMsg.senderId === currentUserId,
+        status: "delivered",
+      };
+      return [...prev, newMessage];
+    });
+  }, [currentUserId]);
 
   // Real-time chat hook
   const { isConnected, typingUsers } = useRealtimeChat({
@@ -101,85 +120,108 @@ export function CommunicationsPageClient({
     onNewMessage: handleRealtimeMessage,
   });
 
-  // Fetch messages when conversation changes
+  // Fetch messages when conversation changes, with cancellation on switch.
   useEffect(() => {
     if (!activeConversation) {
       setMessages([]);
       return;
     }
 
-    async function fetchMessages() {
-      if (!activeConversation) return;
-      setIsLoadingMessages(true);
-      try {
-        const response = await fetch(`/api/messages/threads/${activeConversation.id}/messages`);
-        if (response.ok) {
-          const data = await response.json();
-          const transformedMessages: Message[] = data.messages.map((m: {
-            id: string;
-            content: string;
-            senderId: string;
-            sender: { displayName?: string; name?: string };
-            createdAt: string;
-            readBy: string[];
-          }) => ({
-            id: m.id,
-            content: m.content,
-            senderId: m.senderId,
-            senderName: m.sender?.displayName || m.sender?.name || "Unknown",
-            senderInitials: (m.sender?.displayName || m.sender?.name || "??")
-              .split(" ")
-              .map((n: string) => n[0])
-              .join("")
-              .toUpperCase()
-              .slice(0, 2),
-            timestamp: new Date(m.createdAt),
-            isOwn: m.senderId === currentUserId,
-            status: m.readBy?.includes(currentUserId) ? "read" : "delivered",
-          }));
-          setMessages(transformedMessages);
-        }
-      } catch (error) {
-        console.error("Failed to fetch messages:", error);
-      } finally {
-        setIsLoadingMessages(false);
-      }
-    }
+    const controller = new AbortController();
+    const threadId = activeConversation.id;
+    setIsLoadingMessages(true);
 
-    fetchMessages();
+    (async () => {
+      try {
+        const response = await fetch(
+          `/api/messages/threads/${threadId}/messages`,
+          { signal: controller.signal },
+        );
+        if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
+        const data = await response.json();
+        const transformedMessages: Message[] = data.messages.map((m: {
+          id: string;
+          content: string;
+          senderId: string;
+          sender: { displayName?: string; name?: string };
+          createdAt: string;
+          readBy: string[];
+        }) => ({
+          id: m.id,
+          content: m.content,
+          senderId: m.senderId,
+          senderName: m.sender?.displayName || m.sender?.name || "Unknown",
+          senderInitials: (m.sender?.displayName || m.sender?.name || "??")
+            .split(" ")
+            .map((n: string) => n[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2),
+          timestamp: new Date(m.createdAt),
+          isOwn: m.senderId === currentUserId,
+          status: m.readBy?.includes(currentUserId) ? "read" : "delivered",
+        }));
+        if (!controller.signal.aborted) setMessages(transformedMessages);
+      } catch (error) {
+        if ((error as Error).name === "AbortError") return;
+        console.error("[Communications] failed to fetch messages:", error);
+        if (!controller.signal.aborted) {
+          toast.error("Could not load messages. Please try again.");
+        }
+      } finally {
+        if (!controller.signal.aborted) setIsLoadingMessages(false);
+      }
+    })();
+
+    return () => controller.abort();
   }, [activeConversation, currentUserId]);
 
-  const handleSendMessage = async (content: string) => {
-    if (!activeConversation) return;
+  const handleSendMessage = useCallback(
+    async (content: string) => {
+      if (!activeConversation) return;
 
-    // Optimistic update
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      content,
-      senderId: currentUserId,
-      senderName: "You",
-      senderInitials: "ME",
-      timestamp: new Date(),
-      isOwn: true,
-      status: "sent",
-    };
-    setMessages([...messages, newMessage]);
+      const tempId = `temp-${typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Date.now()}`;
+      const optimistic: Message = {
+        id: tempId,
+        content,
+        senderId: currentUserId,
+        senderName: "You",
+        senderInitials: "ME",
+        timestamp: new Date(),
+        isOwn: true,
+        status: "sent",
+      };
+      setMessages((prev) => [...prev, optimistic]);
 
-    // Send to API
-    try {
-      const response = await fetch(`/api/messages/threads/${activeConversation.id}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
-      });
-      
-      if (!response.ok) {
-        console.error("Failed to send message");
+      try {
+        const response = await fetch(
+          `/api/messages/threads/${activeConversation.id}/messages`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content }),
+          },
+        );
+        if (!response.ok) throw new Error(`Send failed: ${response.status}`);
+        const data = await response.json().catch(() => null);
+        const serverId: string | undefined = data?.message?.id ?? data?.id;
+        if (serverId) {
+          // Reconcile temp message with server-assigned id.
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === tempId ? { ...m, id: serverId, status: "delivered" } : m,
+            ),
+          );
+        }
+      } catch (error) {
+        console.error("[Communications] send failed:", error);
+        // Roll back the optimistic message.
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
+        toast.error("Message couldn't be sent. Please try again.");
       }
-    } catch (error) {
-      console.error("Failed to send message:", error);
-    }
-  };
+    },
+    [activeConversation, currentUserId],
+  );
 
   const handleCreateThread = async (data: {
     type: "Direct" | "Class" | "School";
@@ -242,15 +284,15 @@ export function CommunicationsPageClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      
-      if (response.ok) {
-        alert(`Message sent to ${data.recipients.length} recipients via ${data.channels.join(", ")}`);
-      } else {
-        alert("Failed to send bulk message");
-      }
+
+      if (!response.ok) throw new Error(`Bulk send failed: ${response.status}`);
+      toast.success(
+        `Sent to ${data.recipients.length} recipient${data.recipients.length === 1 ? "" : "s"}`,
+        { description: `Via ${data.channels.join(", ")}` },
+      );
     } catch (error) {
-      console.error("Failed to send bulk message:", error);
-      alert("Failed to send bulk message");
+      console.error("[Communications] bulk send failed:", error);
+      toast.error("Could not send the bulk message. Please try again.");
     }
   };
 
@@ -341,7 +383,7 @@ export function CommunicationsPageClient({
             </Card>
           ) : (
             <ChatInterface
-              conversations={conversations}
+              conversations={conversationsList}
               messages={messages}
               activeConversation={activeConversation}
               onSelectConversation={setActiveConversation}

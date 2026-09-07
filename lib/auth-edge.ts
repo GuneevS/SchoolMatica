@@ -49,14 +49,14 @@ export const { auth: authMiddleware } = NextAuth({
     cookies: {
         sessionToken: {
             // Must match cookie name from auth-config.ts
-            name: process.env.NODE_ENV === "production" && process.env.NEXTAUTH_URL?.startsWith("https")
+            name: (process.env.FORCE_SECURE_COOKIES === "true" || process.env.NEXTAUTH_URL?.startsWith("https"))
                 ? "__Secure-next-auth.session-token"
                 : "next-auth.session-token",
             options: {
                 httpOnly: true,
                 sameSite: "lax",
                 path: "/",
-                secure: process.env.NEXTAUTH_URL?.startsWith("https") ?? false,
+                secure: process.env.FORCE_SECURE_COOKIES === "true" || (process.env.NEXTAUTH_URL?.startsWith("https") ?? false),
             },
         },
     },

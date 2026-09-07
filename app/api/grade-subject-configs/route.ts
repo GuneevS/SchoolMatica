@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authorizeWithSchool, hasSchoolAccess } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-error-handler";
 
 const createSchema = z.object({
     schoolId: z.string(),
@@ -21,35 +22,39 @@ export async function GET(request: NextRequest) {
     if ("error" in authResult) {
         return authResult.error;
     }
+  try {
+      const { searchParams } = new URL(request.url);
+      const schoolId = searchParams.get("schoolId");
+      const gradeLevelId = searchParams.get("gradeLevelId");
 
-    const { searchParams } = new URL(request.url);
-    const schoolId = searchParams.get("schoolId");
-    const gradeLevelId = searchParams.get("gradeLevelId");
+      if (!schoolId) {
+          return NextResponse.json({ error: "schoolId is required" }, { status: 400 });
+      }
 
-    if (!schoolId) {
-        return NextResponse.json({ error: "schoolId is required" }, { status: 400 });
-    }
+      if (!hasSchoolAccess(authResult.auth, schoolId)) {
+          return NextResponse.json({ error: "Access denied" }, { status: 403 });
+      }
 
-    if (!hasSchoolAccess(authResult.auth, schoolId)) {
-        return NextResponse.json({ error: "Access denied" }, { status: 403 });
-    }
+      const configs = await prisma.gradeSubjectConfig.findMany({
+          where: {
+              schoolId,
+              ...(gradeLevelId ? { gradeLevelId } : {}),
+          },
+          include: {
+              subject: true,
+              gradeLevel: true,
+          },
+          orderBy: [
+              { gradeLevel: { order: "asc" } },
+              { subject: { name: "asc" } },
+          ],
+      });
 
-    const configs = await prisma.gradeSubjectConfig.findMany({
-        where: {
-            schoolId,
-            ...(gradeLevelId ? { gradeLevelId } : {}),
-        },
-        include: {
-            subject: true,
-            gradeLevel: true,
-        },
-        orderBy: [
-            { gradeLevel: { order: "asc" } },
-            { subject: { name: "asc" } },
-        ],
-    });
+      return NextResponse.json(configs);
 
-    return NextResponse.json(configs);
+  } catch (error) {
+    return handleApiError("GET grade-subject-configs", error);
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -57,52 +62,56 @@ export async function POST(request: NextRequest) {
     if ("error" in authResult) {
         return authResult.error;
     }
+  try {
+      const json = await request.json();
+      const parsed = createSchema.safeParse(json);
+      if (!parsed.success) {
+          return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
+      }
 
-    const json = await request.json();
-    const parsed = createSchema.safeParse(json);
-    if (!parsed.success) {
-        return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
-    }
+      const { schoolId, gradeLevelId, subjectId, isCompulsory } = parsed.data;
 
-    const { schoolId, gradeLevelId, subjectId, isCompulsory } = parsed.data;
+      if (!hasSchoolAccess(authResult.auth, schoolId)) {
+          return NextResponse.json({ error: "Access denied" }, { status: 403 });
+      }
 
-    if (!hasSchoolAccess(authResult.auth, schoolId)) {
-        return NextResponse.json({ error: "Access denied" }, { status: 403 });
-    }
+      // Verify grade level and subject belong to the school
+      const [gradeLevel, subject] = await Promise.all([
+          prisma.gradeLevel.findFirst({ where: { id: gradeLevelId, schoolId } }),
+          prisma.subject.findFirst({ where: { id: subjectId, schoolId } }),
+      ]);
 
-    // Verify grade level and subject belong to the school
-    const [gradeLevel, subject] = await Promise.all([
-        prisma.gradeLevel.findFirst({ where: { id: gradeLevelId, schoolId } }),
-        prisma.subject.findFirst({ where: { id: subjectId, schoolId } }),
-    ]);
+      if (!gradeLevel) {
+          return NextResponse.json({ error: "Grade level not found" }, { status: 404 });
+      }
+      if (!subject) {
+          return NextResponse.json({ error: "Subject not found" }, { status: 404 });
+      }
 
-    if (!gradeLevel) {
-        return NextResponse.json({ error: "Grade level not found" }, { status: 404 });
-    }
-    if (!subject) {
-        return NextResponse.json({ error: "Subject not found" }, { status: 404 });
-    }
+      // Check if config already exists
+      const existing = await prisma.gradeSubjectConfig.findUnique({
+          where: { gradeLevelId_subjectId: { gradeLevelId, subjectId } },
+      });
 
-    // Check if config already exists
-    const existing = await prisma.gradeSubjectConfig.findUnique({
-        where: { gradeLevelId_subjectId: { gradeLevelId, subjectId } },
-    });
+      if (existing) {
+          return NextResponse.json({ error: "Configuration already exists" }, { status: 409 });
+      }
 
-    if (existing) {
-        return NextResponse.json({ error: "Configuration already exists" }, { status: 409 });
-    }
+      const config = await prisma.gradeSubjectConfig.create({
+          data: {
+              schoolId,
+              gradeLevelId,
+              subjectId,
+              isCompulsory,
+          },
+          include: { subject: true, gradeLevel: true },
+      });
 
-    const config = await prisma.gradeSubjectConfig.create({
-        data: {
-            schoolId,
-            gradeLevelId,
-            subjectId,
-            isCompulsory,
-        },
-        include: { subject: true, gradeLevel: true },
-    });
+      return NextResponse.json(config, { status: 201 });
 
-    return NextResponse.json(config, { status: 201 });
+  } catch (error) {
+    return handleApiError("POST grade-subject-configs", error);
+  }
 }
 
 export async function PUT(request: NextRequest) {
@@ -110,35 +119,39 @@ export async function PUT(request: NextRequest) {
     if ("error" in authResult) {
         return authResult.error;
     }
+  try {
+      const json = await request.json();
+      const parsed = updateSchema.safeParse(json);
+      if (!parsed.success) {
+          return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
+      }
 
-    const json = await request.json();
-    const parsed = updateSchema.safeParse(json);
-    if (!parsed.success) {
-        return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
-    }
+      const { gradeLevelId, subjectId, isCompulsory } = parsed.data;
 
-    const { gradeLevelId, subjectId, isCompulsory } = parsed.data;
+      // Get the config to verify school access
+      const config = await prisma.gradeSubjectConfig.findUnique({
+          where: { gradeLevelId_subjectId: { gradeLevelId, subjectId } },
+      });
 
-    // Get the config to verify school access
-    const config = await prisma.gradeSubjectConfig.findUnique({
-        where: { gradeLevelId_subjectId: { gradeLevelId, subjectId } },
-    });
+      if (!config) {
+          return NextResponse.json({ error: "Configuration not found" }, { status: 404 });
+      }
 
-    if (!config) {
-        return NextResponse.json({ error: "Configuration not found" }, { status: 404 });
-    }
+      if (!hasSchoolAccess(authResult.auth, config.schoolId)) {
+          return NextResponse.json({ error: "Access denied" }, { status: 403 });
+      }
 
-    if (!hasSchoolAccess(authResult.auth, config.schoolId)) {
-        return NextResponse.json({ error: "Access denied" }, { status: 403 });
-    }
+      const updated = await prisma.gradeSubjectConfig.update({
+          where: { gradeLevelId_subjectId: { gradeLevelId, subjectId } },
+          data: { isCompulsory },
+          include: { subject: true, gradeLevel: true },
+      });
 
-    const updated = await prisma.gradeSubjectConfig.update({
-        where: { gradeLevelId_subjectId: { gradeLevelId, subjectId } },
-        data: { isCompulsory },
-        include: { subject: true, gradeLevel: true },
-    });
+      return NextResponse.json(updated);
 
-    return NextResponse.json(updated);
+  } catch (error) {
+    return handleApiError("PUT grade-subject-configs", error);
+  }
 }
 
 export async function DELETE(request: NextRequest) {
@@ -146,31 +159,35 @@ export async function DELETE(request: NextRequest) {
     if ("error" in authResult) {
         return authResult.error;
     }
+  try {
+      const { searchParams } = new URL(request.url);
+      const gradeLevelId = searchParams.get("gradeLevelId");
+      const subjectId = searchParams.get("subjectId");
 
-    const { searchParams } = new URL(request.url);
-    const gradeLevelId = searchParams.get("gradeLevelId");
-    const subjectId = searchParams.get("subjectId");
+      if (!gradeLevelId || !subjectId) {
+          return NextResponse.json({ error: "gradeLevelId and subjectId are required" }, { status: 400 });
+      }
 
-    if (!gradeLevelId || !subjectId) {
-        return NextResponse.json({ error: "gradeLevelId and subjectId are required" }, { status: 400 });
-    }
+      // Get the config to verify school access
+      const config = await prisma.gradeSubjectConfig.findUnique({
+          where: { gradeLevelId_subjectId: { gradeLevelId, subjectId } },
+      });
 
-    // Get the config to verify school access
-    const config = await prisma.gradeSubjectConfig.findUnique({
-        where: { gradeLevelId_subjectId: { gradeLevelId, subjectId } },
-    });
+      if (!config) {
+          return NextResponse.json({ error: "Configuration not found" }, { status: 404 });
+      }
 
-    if (!config) {
-        return NextResponse.json({ error: "Configuration not found" }, { status: 404 });
-    }
+      if (!hasSchoolAccess(authResult.auth, config.schoolId)) {
+          return NextResponse.json({ error: "Access denied" }, { status: 403 });
+      }
 
-    if (!hasSchoolAccess(authResult.auth, config.schoolId)) {
-        return NextResponse.json({ error: "Access denied" }, { status: 403 });
-    }
+      await prisma.gradeSubjectConfig.delete({
+          where: { gradeLevelId_subjectId: { gradeLevelId, subjectId } },
+      });
 
-    await prisma.gradeSubjectConfig.delete({
-        where: { gradeLevelId_subjectId: { gradeLevelId, subjectId } },
-    });
+      return NextResponse.json({ success: true });
 
-    return NextResponse.json({ success: true });
+  } catch (error) {
+    return handleApiError("DELETE grade-subject-configs", error);
+  }
 }

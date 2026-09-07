@@ -165,17 +165,8 @@ Best regards,
   },
 ];
 
-// Mock recipients for demo
-const mockRecipients: Recipient[] = [
-  { id: "1", name: "Mr. Mokoena", email: "mokoena@email.com", role: "parent", childName: "Thabo Mokoena", className: "10A" },
-  { id: "2", name: "Mrs. Nkosi", email: "nkosi@email.com", role: "parent", childName: "Sipho Nkosi", className: "10A" },
-  { id: "3", name: "Mr. Dlamini", email: "dlamini@email.com", role: "parent", childName: "Nomvula Dlamini", className: "10A" },
-  { id: "4", name: "Mrs. Zulu", email: "zulu@email.com", role: "parent", childName: "Ayanda Zulu", className: "10B" },
-  { id: "5", name: "Mr. Botha", email: "botha@email.com", role: "parent", childName: "Johan Botha", className: "10B" },
-];
-
 export function BulkMessageComposer({
-  recipients = mockRecipients,
+  recipients = [],
   templates = defaultTemplates,
   onSend,
   isLoading = false,
@@ -277,7 +268,7 @@ export function BulkMessageComposer({
           {/* Search and Filter */}
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search..."
                 className="pl-10"
@@ -338,7 +329,7 @@ export function BulkMessageComposer({
                       "w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors",
                       isSelected
                         ? "bg-[hsl(var(--accent-violet))/0.12] dark:bg-[hsl(var(--accent-violet))/0.28]"
-                        : "hover:bg-slate-100 dark:hover:bg-slate-700/50"
+                        : "hover:bg-muted"
                     )}
                   >
                     <Checkbox
@@ -347,7 +338,7 @@ export function BulkMessageComposer({
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{recipient.name}</p>
-                      <p className="text-xs text-slate-500 truncate">
+                      <p className="text-xs text-muted-foreground truncate">
                         {recipient.childName} • {recipient.className}
                       </p>
                     </div>
@@ -404,7 +395,7 @@ export function BulkMessageComposer({
             <div className="flex items-center justify-between">
               <Label htmlFor="body">Message</Label>
               <div className="flex items-center gap-1">
-                <span className="text-xs text-slate-500">Insert variable:</span>
+                <span className="text-xs text-muted-foreground">Insert variable:</span>
                 {["parentName", "childName", "className"].map(variable => (
                   <Button
                     key={variable}
@@ -425,7 +416,7 @@ export function BulkMessageComposer({
               value={body}
               onChange={(e) => setBody(e.target.value)}
             />
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               Use {"{{variableName}}"} to insert personalized content for each recipient.
             </p>
           </div>
@@ -446,7 +437,7 @@ export function BulkMessageComposer({
                     "flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors",
                     channels.includes(channel.id as "app" | "email" | "sms")
                       ? "border-[hsl(var(--accent-violet))] bg-[hsl(var(--accent-violet))/0.06] dark:bg-[hsl(var(--accent-violet))/0.2] text-[hsl(var(--accent-violet))] dark:text-[hsl(var(--accent-violet))]"
-                      : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                      : "border-border hover:bg-muted"
                   )}
                 >
                   <channel.icon className="h-4 w-4" />
@@ -508,18 +499,18 @@ export function BulkMessageComposer({
                       <div key={recipient.id} className="p-4 border rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
                           <Badge variant="outline">{recipient.name}</Badge>
-                          <span className="text-xs text-slate-500">
+                          <span className="text-xs text-muted-foreground">
                             {recipient.childName}
                           </span>
                         </div>
                         <p className="text-sm font-medium mb-2">{subject}</p>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 whitespace-pre-wrap">
+                        <p className="text-sm text-slate-600 dark:text-muted-foreground whitespace-pre-wrap">
                           {getPersonalizedPreview(recipient)}
                         </p>
                       </div>
                     ))}
                     {selectedRecipients.length > 3 && (
-                      <p className="text-sm text-center text-slate-500">
+                      <p className="text-sm text-center text-muted-foreground">
                         And {selectedRecipients.length - 3} more recipients...
                       </p>
                     )}

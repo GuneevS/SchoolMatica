@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Upload, Check, X, AlertCircle, Loader2, FileText } from "lucide-react";
+import { Upload, Check, AlertCircle, Loader2, FileText } from "lucide-react";
 import { parseCSVWithHeaders } from "@/lib/utils/csv";
 import { formatCurrency } from "@/lib/utils/currency";
 
@@ -48,7 +48,6 @@ function parseCSV(text: string): BankEntry[] {
     if (rows.length === 0) return [];
 
     // Find column headers by matching common bank statement patterns
-    const headers = Object.keys(rows[0]).map((h) => h.toLowerCase());
     const findCol = (patterns: string[]) => Object.keys(rows[0]).find((key) => patterns.some((p) => key.toLowerCase().includes(p)));
 
     const dateCol = findCol(["date"]);
@@ -113,7 +112,11 @@ export function BankReconciliationTab({ onRefresh }: BankReconciliationTabProps)
 
     const toggleMatch = (idx: number) => {
         const next = new Set(selectedMatches);
-        next.has(idx) ? next.delete(idx) : next.add(idx);
+        if (next.has(idx)) {
+            next.delete(idx);
+        } else {
+            next.add(idx);
+        }
         setSelectedMatches(next);
     };
 

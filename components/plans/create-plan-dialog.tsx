@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useRoleStore } from "@/lib/stores/role-store";
 
 const schema = z.object({
   name: z.string().min(3),
@@ -52,7 +51,6 @@ export function CreatePlanDialog({ classes, templates }: Props) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
-  const role = useRoleStore((state) => state.role);
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -69,7 +67,9 @@ export function CreatePlanDialog({ classes, templates }: Props) {
   );
   const [termWeights, setTermWeights] = useState<Record<string, number>>({});
   const [configureWeights, setConfigureWeights] = useState(false);
-  const canCreate = role !== "Teacher";
+  
+  // All authenticated staff (including teachers) can create plans
+  const canCreate = true;
 
   function onSubmit(values: FormValues) {
     startTransition(async () => {

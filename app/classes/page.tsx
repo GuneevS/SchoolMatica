@@ -41,7 +41,7 @@ export default async function ClassesPage() {
         subject: true,
         primaryTeacher: true,
         teacherAssignments: {
-          include: { teacher: true },
+          include: { teacher: true, subject: true },
         },
         _count: { select: { students: true, assessmentPlans: true } },
         assessmentPlans: { orderBy: { createdAt: "desc" }, take: 1 },
@@ -158,7 +158,7 @@ export default async function ClassesPage() {
                 <div className="mt-3 flex flex-wrap gap-2">
                   {classGroup.teacherAssignments.map((assignment) => (
                     <span key={assignment.id} className="rounded-full border border-[hsl(var(--border))/0.4] px-3 py-1 text-xs text-muted-foreground bg-white/10">
-                      {assignment.teacher.firstName} {assignment.teacher.lastName} · {assignment.role}
+                      {assignment.teacher.firstName} {assignment.teacher.lastName} · {assignment.role}{assignment.subject ? ` · ${assignment.subject.name}` : ""}
                     </span>
                   ))}
                   {classGroup.teacherAssignments.length === 0 && (

@@ -138,20 +138,20 @@ export async function POST(request: NextRequest) {
         },
       });
       
-      // Get or create the School Administrator role
-      const adminRoleKey = "school_admin";
+      // Use the seeded School Administrator role (`admin`) so registrations
+      // receive the same permission set as the rest of the application.
+      const adminRoleKey = "admin";
       let adminRole = await tx.roleDefinition.findUnique({
         where: { key: adminRoleKey },
       });
       
       if (!adminRole) {
-        // Create the School Administrator role with all school-level permissions
         adminRole = await tx.roleDefinition.create({
           data: {
             key: adminRoleKey,
             name: "School Administrator",
             description: "Full administrative access to a specific school",
-            priority: 100, // High priority for admin role
+            priority: 100,
           },
         });
         

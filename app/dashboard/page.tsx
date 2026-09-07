@@ -284,26 +284,26 @@ function SummaryStat({
 }) {
   const accentMap: Record<
     SummaryAccent,
-    { stripe: string; iconBg: string; iconColor: string }
+    { borderLeft: string; iconBg: string; iconColor: string }
   > = {
     cobalt: {
-      stripe: "linear-gradient(90deg, hsl(var(--accent-cobalt)), hsl(var(--accent-iris)))",
-      iconBg: "bg-[hsl(var(--accent-cobalt))/0.12]",
+      borderLeft: "border-l-[hsl(var(--accent-cobalt))]",
+      iconBg: "bg-[hsl(var(--accent-cobalt))/0.1]",
       iconColor: "text-[hsl(var(--accent-cobalt))]",
     },
     emerald: {
-      stripe: "linear-gradient(90deg, hsl(var(--accent-mint)), hsl(var(--accent-iris)))",
-      iconBg: "bg-[hsl(var(--accent-mint))/0.12]",
+      borderLeft: "border-l-[hsl(var(--accent-mint))]",
+      iconBg: "bg-[hsl(var(--accent-mint))/0.1]",
       iconColor: "text-[hsl(var(--accent-mint))]",
     },
     violet: {
-      stripe: "linear-gradient(90deg, hsl(var(--accent-violet)), hsl(var(--accent-flamingo)))",
-      iconBg: "bg-[hsl(var(--accent-violet))/0.12]",
+      borderLeft: "border-l-[hsl(var(--accent-violet))]",
+      iconBg: "bg-[hsl(var(--accent-violet))/0.1]",
       iconColor: "text-[hsl(var(--accent-violet))]",
     },
     amber: {
-      stripe: "linear-gradient(90deg, hsl(var(--accent-gold)), hsl(var(--accent-flamingo)))",
-      iconBg: "bg-[hsl(var(--accent-gold))/0.15]",
+      borderLeft: "border-l-[hsl(var(--accent-gold))]",
+      iconBg: "bg-[hsl(var(--accent-gold))/0.1]",
       iconColor: "text-[hsl(var(--accent-gold))]",
     },
   };
@@ -312,39 +312,44 @@ function SummaryStat({
   const accent = accentMap[color];
 
   return (
-    <div className="relative rounded-[28px] border border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))/0.95] p-5 shadow-ambient-sm transition-transform duration-200 hover:-translate-y-0.5">
+    <div className={cn(
+      "relative rounded-[28px] border border-[hsl(var(--border-strong))/0.6] bg-[hsl(var(--surface-strong))/0.95] p-6 shadow-ambient-sm backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:shadow-ambient overflow-hidden",
+      "hover:border-[hsl(var(--border-strong))]"
+    )}>
+      {/* Subtle top left glow matching the accent color for a truly premium feel without harsh lines */}
+      <div className={cn("absolute -left-10 -top-10 h-32 w-32 rounded-full opacity-0 mix-blend-plus-lighter blur-2xl transition-opacity duration-500 group-hover:opacity-40", accent.iconBg)} aria-hidden />
+      
       <div className="flex items-center justify-between text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-muted-foreground/70">
         {label}
         {tooltip && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <button className="text-muted-foreground transition-colors hover:text-foreground">
+              <button className="text-muted-foreground/50 transition-colors hover:text-foreground">
                 <Info className="h-4 w-4" />
                 <span className="sr-only">{`More info on ${label}`}</span>
               </button>
             </TooltipTrigger>
-            <TooltipContent>
-              <p className="max-w-xs text-sm">{tooltip}</p>
+            <TooltipContent align="end">
+              <p className="max-w-xs text-[13px]">{tooltip}</p>
             </TooltipContent>
           </Tooltip>
         )}
       </div>
-      <div className="mt-6 flex items-end justify-between gap-4">
+      <div className="mt-5 flex items-end justify-between gap-4">
         <div>
-          <p className="text-4xl font-semibold text-foreground">{value}</p>
-          <p className="mt-2 text-sm text-muted-foreground">{helper}</p>
+          <p className="text-[2rem] font-bold tracking-tight text-foreground leading-none">{value}</p>
+          <p className="mt-2 text-xs font-medium text-muted-foreground/90">{helper}</p>
         </div>
         <span
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-2xl text-foreground",
+            "flex h-9 w-9 items-center justify-center rounded-xl text-foreground ring-1 ring-inset ring-[hsl(var(--border-strong))/0.4] shadow-sm",
             accent.iconBg,
             accent.iconColor,
           )}
         >
-          {trend && <TrendIcon className="h-5 w-5" />}
+          {trend && <TrendIcon className="h-4 w-4" />}
         </span>
       </div>
-      <div className="mt-6 h-[3px] w-full rounded-full" style={{ backgroundImage: accent.stripe }} />
     </div>
   );
 }

@@ -17,12 +17,7 @@ if (!isBuildTime && !process.env.NEXTAUTH_SECRET) {
     );
 }
 
-// Strong password validation (same as registration)
-const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
-// In-memory login attempt tracking for rate limiting
-// In production, this is supplemented by Redis-based rate limiting
-const loginAttempts = new Map<string, { count: number; resetTime: number }>();
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     adapter: PrismaAdapter(prisma),
@@ -33,7 +28,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 email: { label: "Email", type: "email" },
                 password: { label: "Password", type: "password" },
             },
-            authorize: async (credentials, request) => {
+            authorize: async (credentials, _request) => {
                 const parsed = z
                     .object({
                         email: z.string().email().transform(e => e.toLowerCase().trim()),
@@ -92,7 +87,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     const lockoutThreshold = 5; // Lock after 5 failed attempts
                     const lockoutDurationMinutes = 15; // Lock for 15 minutes
 
-                    const updateData: any = {
+                    const updateData: Record<string, unknown> = {
                         failedLoginAttempts: newFailedAttempts,
                         lastFailedAttempt: now,
                     };
@@ -128,7 +123,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }),
     ],
     callbacks: {
-        async session({ session, user, token }) {
+        async session({ session, token }) {
             if (token?.sub && session.user) {
                 session.user.id = token.sub;
             }

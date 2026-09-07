@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { toast } from "sonner";
+import { apiFetch, ApiError } from "@/lib/api";
 import {
   Award,
   AlertTriangle,
@@ -16,7 +18,6 @@ import {
   Bell,
   Send,
   Mail,
-  CheckCircle,
   History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -87,13 +88,70 @@ export function BehaviorDashboard({ stats, schoolId }: BehaviorDashboardProps) {
   const [selectedStudents, setSelectedStudents] = React.useState<string[]>([]);
   const [notificationMessage, setNotificationMessage] = React.useState("");
   const [notificationType, setNotificationType] = React.useState("demerit_alert");
+  const [isNotifying, setIsNotifying] = React.useState(false);
 
-  const handleNotifyParents = () => {
-    // In production, this would call an API to send notifications
-    console.log("Notifying parents for students:", selectedStudents);
-    setNotifyDialogOpen(false);
-    setSelectedStudents([]);
-    setNotificationMessage("");
+  const handleNotifyParents = async () => {
+    if (selectedStudents.length === 0 || isNotifying) return;
+    if (!notificationMessage.trim()) {
+      toast.error("Please write a message before sending.");
+      return;
+    }
+    setIsNotifying(true);
+    try {
+      const data = await apiFetch<{
+        notifiedUserCount: number;
+        processedStudentCount: number;
+        unreachableStudentIds: string[];
+      }>("/api/behavior/notify-parents", {
+        method: "POST",
+        body: {
+          studentIds: selectedStudents,
+          type: notificationType,
+          message: notificationMessage,
+        },
+      });
+
+      const { notifiedUserCount, unreachableStudentIds } = data;
+      const unreachable = unreachableStudentIds.length;
+
+      if (notifiedUserCount === 0) {
+        toast.warning(
+          "No parents reached",
+          {
+            description:
+              unreachable > 0
+                ? `${unreachable} selected student${unreachable === 1 ? " has" : "s have"} no linked parent account yet.`
+                : "None of the selected parents have an app account.",
+          },
+        );
+      } else if (unreachable > 0) {
+        toast.success(
+          `Sent to ${notifiedUserCount} parent${notifiedUserCount === 1 ? "" : "s"}`,
+          {
+            description: `${unreachable} student${unreachable === 1 ? "" : "s"} skipped — no linked parent account.`,
+          },
+        );
+      } else {
+        toast.success(
+          `Sent to ${notifiedUserCount} parent${notifiedUserCount === 1 ? "" : "s"}.`,
+        );
+      }
+
+      setNotifyDialogOpen(false);
+      setSelectedStudents([]);
+      setNotificationMessage("");
+    } catch (err) {
+      console.error("[BehaviorDashboard] notify failed:", err);
+      const msg =
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error && err.message
+            ? err.message
+            : "Could not send notifications. Please try again.";
+      toast.error(msg);
+    } finally {
+      setIsNotifying(false);
+    }
   };
 
   const toggleStudentSelection = (studentId: string) => {
@@ -368,55 +426,45 @@ export function BehaviorDashboard({ stats, schoolId }: BehaviorDashboardProps) {
               </div>
             ) : (
               <div className="space-y-3">
-                {stats.studentsAtRisk.map((balance, index) => {
-                  // Mock notification status - in production this would come from DB
-                  const notified = index % 2 === 0;
-                  
-                  return (
-                    <div
-                      key={balance.id}
-                      className="flex items-center gap-3 p-3 rounded-lg bg-red-500/10 hover:bg-red-500/15 transition-colors"
-                    >
-                      <div className="h-10 w-10 rounded-full bg-red-500/20 flex items-center justify-center">
-                        <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
-                      </div>
-                      <Link href={`/students/${balance.student.id}`} className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">
-                          {balance.student.firstName} {balance.student.lastName}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {balance.student.classGroup.name}
-                        </p>
-                      </Link>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-red-600 dark:text-red-400">
-                          {balance.demeritTotal}
-                        </p>
-                        <p className="text-xs text-muted-foreground">demerits</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {notified ? (
-                          <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-xs">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Notified
-                          </Badge>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.12]"
-                            onClick={() => {
-                              setSelectedStudents([balance.student.id]);
-                              setNotifyDialogOpen(true);
-                            }}
-                          >
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
+                {stats.studentsAtRisk.map((balance) => (
+                  <div
+                    key={balance.id}
+                    className="flex items-center gap-3 rounded-lg bg-red-500/10 p-3 transition-colors hover:bg-red-500/15"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/20">
+                      <AlertTriangle aria-hidden="true" className="h-5 w-5 text-red-600 dark:text-red-400" />
                     </div>
-                  );
-                })}
+                    <Link
+                      href={`/students/${balance.student.id}`}
+                      className="min-w-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded"
+                    >
+                      <p className="text-sm font-medium">
+                        {balance.student.firstName} {balance.student.lastName}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {balance.student.classGroup.name}
+                      </p>
+                    </Link>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-red-600 dark:text-red-400">
+                        {balance.demeritTotal}
+                      </p>
+                      <p className="text-xs text-muted-foreground">demerits</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.12]"
+                      onClick={() => {
+                        setSelectedStudents([balance.student.id]);
+                        setNotifyDialogOpen(true);
+                      }}
+                      aria-label={`Notify parent of ${balance.student.firstName} ${balance.student.lastName}`}
+                    >
+                      <Mail aria-hidden="true" className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>
@@ -445,50 +493,22 @@ export function BehaviorDashboard({ stats, schoolId }: BehaviorDashboardProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {/* Mock notification history */}
-            {[
-              {
-                id: "1",
-                student: "Thabo Mokoena",
-                type: "Demerit Alert",
-                sentTo: "Mr. Mokoena",
-                method: "Email & In-App",
-                date: "2 hours ago",
-              },
-              {
-                id: "2",
-                student: "Sipho Nkosi",
-                type: "Threshold Warning",
-                sentTo: "Mrs. Nkosi",
-                method: "SMS",
-                date: "Yesterday",
-              },
-              {
-                id: "3",
-                student: "Nomvula Dlamini",
-                type: "Merit Celebration",
-                sentTo: "Mr. Dlamini",
-                method: "In-App",
-                date: "2 days ago",
-              },
-            ].map((notification) => (
-              <div
-                key={notification.id}
-                className="flex items-center gap-3 p-3 border rounded-lg"
-              >
-                <div className="h-10 w-10 rounded-full bg-[hsl(var(--accent-violet))/0.1] flex items-center justify-center">
-                  <Bell className="h-5 w-5 text-[hsl(var(--accent-violet))]" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{notification.student}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {notification.type} sent to {notification.sentTo} via {notification.method}
-                  </p>
-                </div>
-                <span className="text-xs text-muted-foreground">{notification.date}</span>
-              </div>
-            ))}
+          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-10 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(var(--accent-violet))/0.12]">
+              <Bell aria-hidden="true" className="h-5 w-5 text-[hsl(var(--accent-violet))]" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">No notifications sent yet</p>
+              <p className="text-xs text-muted-foreground">
+                Parent communications about behaviour incidents will appear here once they&apos;ve been delivered.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/behavior/notifications">
+                View notification history
+                <ChevronRight aria-hidden="true" className="ml-1 h-4 w-4" />
+              </Link>
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -553,7 +573,7 @@ export function BehaviorDashboard({ stats, schoolId }: BehaviorDashboardProps) {
                           "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors",
                           selectedStudents.includes(balance.student.id)
                             ? "bg-[hsl(var(--accent-violet))/0.1]"
-                            : "hover:bg-slate-100 dark:hover:bg-slate-700/50"
+                            : "hover:bg-muted"
                         )}
                         onClick={() => toggleStudentSelection(balance.student.id)}
                       >
@@ -613,7 +633,7 @@ export function BehaviorDashboard({ stats, schoolId }: BehaviorDashboardProps) {
             </div>
 
             {/* Preview */}
-            <div className="p-4 bg-slate-100 dark:bg-slate-700/50 rounded-lg">
+            <div className="p-4 bg-muted rounded-lg">
               <p className="text-xs font-medium text-muted-foreground mb-2">Message Preview</p>
               <p className="text-sm">
                 Dear Parent, your child has accumulated {"{demerits}"} demerits this term.{" "}
@@ -629,10 +649,12 @@ export function BehaviorDashboard({ stats, schoolId }: BehaviorDashboardProps) {
             <Button
               className="bg-[hsl(var(--accent-violet))] hover:bg-[hsl(var(--accent-violet))/0.9]"
               onClick={handleNotifyParents}
-              disabled={selectedStudents.length === 0}
+              disabled={selectedStudents.length === 0 || isNotifying}
             >
-              <Send className="h-4 w-4 mr-2" />
-              Send to {selectedStudents.length} Parent{selectedStudents.length !== 1 ? "s" : ""}
+              <Send aria-hidden="true" className="mr-2 h-4 w-4" />
+              {isNotifying
+                ? "Sending…"
+                : `Send to ${selectedStudents.length} parent${selectedStudents.length !== 1 ? "s" : ""}`}
             </Button>
           </div>
         </DialogContent>

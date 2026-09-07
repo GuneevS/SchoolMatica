@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { authorizeWithSchool, hasSchoolAccess } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-error-handler";
 
 interface Params {
   params: Promise<{ timetableId: string }>;
@@ -24,35 +25,28 @@ export async function GET(request: NextRequest, { params }: Params) {
     return authResult.error;
   }
   const { auth } = authResult;
-  
-  const timetable = await prisma.timetable.findUnique({
-    where: { id: timetableId },
-    include: {
-      school: true,
-      periods: {
-        orderBy: [{ dayOfWeek: "asc" }, { periodNumber: "asc" }],
+
+  try {
+    const timetable = await prisma.timetable.findUnique({
+      where: { id: timetableId },
+      include: {
+        school: true,
+        periods: { orderBy: [{ dayOfWeek: "asc" }, { periodNumber: "asc" }] },
+        slots: { include: { classGroup: { include: { subject: true } }, teacher: true, period: true, assessmentPlan: true } },
       },
-      slots: {
-        include: {
-          classGroup: { include: { subject: true } },
-          teacher: true,
-          period: true,
-          assessmentPlan: true,
-        },
-      },
-    },
-  });
+    });
 
-  if (!timetable) {
-    return NextResponse.json({ error: "Timetable not found" }, { status: 404 });
+    if (!timetable) {
+      return NextResponse.json({ error: "Timetable not found" }, { status: 404 });
+    }
+    if (!hasSchoolAccess(auth, timetable.schoolId)) {
+      return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+    }
+
+    return NextResponse.json(timetable);
+  } catch (error) {
+    return handleApiError("GET timetables/[timetableId]", error);
   }
-
-  // Validate school access
-  if (!hasSchoolAccess(auth, timetable.schoolId)) {
-    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
-  }
-
-  return NextResponse.json(timetable);
 }
 
 export async function PATCH(request: NextRequest, { params }: Params) {
@@ -63,46 +57,39 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   }
   const { auth } = authResult;
 
-  const existing = await prisma.timetable.findUnique({
-    where: { id: timetableId },
-    select: { schoolId: true },
-  });
-  if (!existing) {
-    return NextResponse.json({ error: "Timetable not found" }, { status: 404 });
-  }
-  if (!hasSchoolAccess(auth, existing.schoolId)) {
-    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
-  }
+  try {
+    const existing = await prisma.timetable.findUnique({ where: { id: timetableId }, select: { schoolId: true } });
+    if (!existing) {
+      return NextResponse.json({ error: "Timetable not found" }, { status: 404 });
+    }
+    if (!hasSchoolAccess(auth, existing.schoolId)) {
+      return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+    }
 
-  const json = await request.json();
-  const parsed = updateSchema.safeParse(json);
-  
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
-  }
+    const json = await request.json();
+    const parsed = updateSchema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues }, { status: 400 });
+    }
 
-  const { startDate, endDate, ...rest } = parsed.data;
-  const updateData: Prisma.TimetableUpdateInput = { ...rest };
-  if (startDate) updateData.startDate = new Date(startDate);
-  if (endDate) updateData.endDate = new Date(endDate);
+    const { startDate, endDate, ...rest } = parsed.data;
+    const updateData: Prisma.TimetableUpdateInput = { ...rest };
+    if (startDate) updateData.startDate = new Date(startDate);
+    if (endDate) updateData.endDate = new Date(endDate);
 
-  const timetable = await prisma.timetable.update({
-    where: { id: timetableId },
-    data: updateData,
-    include: {
-      school: true,
-      periods: true,
-      slots: {
-        include: {
-          classGroup: { include: { subject: true } },
-          teacher: true,
-          period: true,
-        },
+    const timetable = await prisma.timetable.update({
+      where: { id: timetableId },
+      data: updateData,
+      include: {
+        school: true, periods: true,
+        slots: { include: { classGroup: { include: { subject: true } }, teacher: true, period: true } },
       },
-    },
-  });
+    });
 
-  return NextResponse.json(timetable);
+    return NextResponse.json(timetable);
+  } catch (error) {
+    return handleApiError("PATCH timetables/[timetableId]", error);
+  }
 }
 
 export async function DELETE(request: NextRequest, { params }: Params) {
@@ -114,20 +101,19 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   }
   const { auth } = authResult;
 
-  const existing = await prisma.timetable.findUnique({
-    where: { id: timetableId },
-    select: { schoolId: true },
-  });
-  if (!existing) {
-    return NextResponse.json({ error: "Timetable not found" }, { status: 404 });
-  }
-  if (!hasSchoolAccess(auth, existing.schoolId)) {
-    return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
-  }
-  
-  await prisma.timetable.delete({
-    where: { id: timetableId },
-  });
+  try {
+    const existing = await prisma.timetable.findUnique({ where: { id: timetableId }, select: { schoolId: true } });
+    if (!existing) {
+      return NextResponse.json({ error: "Timetable not found" }, { status: 404 });
+    }
+    if (!hasSchoolAccess(auth, existing.schoolId)) {
+      return NextResponse.json({ error: "Access denied to this school" }, { status: 403 });
+    }
+    
+    await prisma.timetable.delete({ where: { id: timetableId } });
 
-  return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return handleApiError("DELETE timetables/[timetableId]", error);
+  }
 }

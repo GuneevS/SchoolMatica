@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { randomBytes } from "node:crypto";
 
 const prisma = new PrismaClient();
 
@@ -367,10 +368,55 @@ const rolePermissionMatrix: Record<string, string[]> = {
     "role:read",
     "role:assign",
     "role:remove",
-    // School management (within their assigned school)
+    // School management (create + operate their own school)
     "school:read",
+    "school:create",
     "school:update",
+    "school:delete",
     "school:manage",
+    // Core academic operations
+    "class:read",
+    "class:create",
+    "class:update",
+    "class:delete",
+    "class:manage",
+    "student:read",
+    "student:create",
+    "student:update",
+    "student:delete",
+    "teacher:read",
+    "teacher:create",
+    "teacher:update",
+    "teacher:delete",
+    "subject:read",
+    "subject:create",
+    "subject:update",
+    "subject:delete",
+    "timetable:read",
+    "timetable:create",
+    "timetable:update",
+    "timetable:delete",
+    "assessmentPlan:read",
+    "assessmentPlan:create",
+    "assessmentPlan:update",
+    "assessmentPlan:delete",
+    "assessmentPlan:advance",
+    "assessmentPlan:approve",
+    "assessment:read",
+    "assessment:create",
+    "assessment:update",
+    "assessment:delete",
+    "mark:read",
+    "mark:create",
+    "mark:update",
+    "mark:delete",
+    "report:read",
+    "report:generate",
+    "report:publish",
+    "registration:read",
+    "registration:create",
+    "registration:update",
+    "registration:decide",
     // Finance (full access for admin)
     "finance:read",
     "finance:write",
@@ -544,6 +590,21 @@ function normaliseWeights(seed = assessmentSeed) {
 const FORCE_SEED = process.env.FORCE_SEED === "true";
 const SEED_DEMO_ACCOUNTS = process.env.SEED_DEMO_ACCOUNTS === "true";
 
+const PLATFORM_ADMIN_EMAIL = process.env.PLATFORM_ADMIN_EMAIL ?? "admin@school.com";
+
+// Never hardcode the platform admin password in source. Provide it via the
+// PLATFORM_ADMIN_PASSWORD env var; if unset, a strong random password is
+// generated and printed once (see the summary logged at the end of seeding)
+// so the operator can capture it. This keeps credentials out of the repo.
+function resolveAdminPassword(): { value: string; generated: boolean } {
+  const fromEnv = process.env.PLATFORM_ADMIN_PASSWORD;
+  if (fromEnv && fromEnv.length > 0) return { value: fromEnv, generated: false };
+  const value = `${randomBytes(18).toString("base64url")}!Aa1`;
+  return { value, generated: true };
+}
+const { value: PLATFORM_ADMIN_PASSWORD, generated: PLATFORM_ADMIN_PASSWORD_GENERATED } =
+  resolveAdminPassword();
+
 const QUICK_LOGIN_PASSWORD = "Password123!";
 const QUICK_LOGIN_SCHOOL = {
   name: "Nimbus Academy",
@@ -678,6 +739,194 @@ async function ensureBaseRolesAndPermissions() {
   }
 
   return { roleByKey };
+}
+
+async function ensurePlatformAdmin() {
+  console.log("🔐 Ensuring platform admin account (admin@school.com)...");
+  const { roleByKey } = await ensureBaseRolesAndPermissions();
+  const passwordHash = await bcrypt.hash(PLATFORM_ADMIN_PASSWORD, 12);
+
+  const adminRole = roleByKey.get("admin");
+  const superAdminRole = roleByKey.get("super_admin");
+  if (!adminRole || !superAdminRole) {
+    throw new Error("Required admin roles were not created");
+  }
+
+  let school = await prisma.school.findFirst({
+    orderBy: { createdAt: "asc" },
+  });
+
+  if (!school) {
+    const gradingConfig = await prisma.gradingConfig.create({
+      data: {
+        name: "SchoolMatica Default",
+        phasesJson: { FET: gradingBands },
+      },
+    });
+    school = await prisma.school.create({
+      data: {
+        name: "SchoolMatica",
+        shortCode: "SM",
+        branding: {
+          logoUrl: null,
+          primary: "#1f8679",
+          secondary: "#f28c28",
+          accent: "#ff6b5b",
+        },
+        gradingConfig: { connect: { id: gradingConfig.id } },
+      },
+    });
+  }
+
+  const teacher =
+    (await prisma.teacher.findUnique({
+      where: { email: PLATFORM_ADMIN_EMAIL },
+    })) ??
+    (await prisma.teacher.create({
+      data: {
+        firstName: "School",
+        lastName: "Admin",
+        email: PLATFORM_ADMIN_EMAIL,
+        role: "Administrator",
+        schoolId: school.id,
+      },
+    }));
+
+  const user = await prisma.appUser.upsert({
+    where: { email: PLATFORM_ADMIN_EMAIL },
+    update: {
+      passwordHash,
+      displayName: "School Administrator",
+      name: "School Administrator",
+      schoolId: school.id,
+      teacherId: teacher.id,
+      failedLoginAttempts: 0,
+      lastFailedAttempt: null,
+      accountLockedUntil: null,
+    },
+    create: {
+      email: PLATFORM_ADMIN_EMAIL,
+      passwordHash,
+      displayName: "School Administrator",
+      name: "School Administrator",
+      schoolId: school.id,
+      teacherId: teacher.id,
+    },
+  });
+
+  await ensureRoleAssignment({
+    userId: user.id,
+    roleId: superAdminRole.id,
+    scopeSchoolId: null,
+  });
+  await ensureRoleAssignment({
+    userId: user.id,
+    roleId: adminRole.id,
+    scopeSchoolId: school.id,
+  });
+
+  const currentYear = new Date().getFullYear();
+  let feeStructure = await prisma.feeStructure.findFirst({
+    where: { schoolId: school.id, isActive: true },
+  });
+  if (!feeStructure) {
+    feeStructure = await prisma.feeStructure.create({
+      data: {
+        schoolId: school.id,
+        name: `Annual Tuition ${currentYear}`,
+        description: "Core tuition, levies, and activities",
+        grade: 10,
+        year: currentYear,
+        term: "Annual",
+        baseAmount: 18500,
+        isActive: true,
+        components: [
+          { name: "Tuition", amount: 16000, optional: false },
+          { name: "Activities", amount: 2500, optional: false },
+        ],
+      },
+    });
+  }
+
+  const student = await prisma.student.findFirst({
+    where: { classGroup: { schoolId: school.id } },
+    include: { parents: true },
+  });
+  if (student) {
+    const existingInvoice = await prisma.invoice.findFirst({
+      where: { schoolId: school.id, studentId: student.id },
+    });
+    if (!existingInvoice) {
+      const invoice = await prisma.invoice.create({
+        data: {
+          invoiceNumber: `INV-SMH-${currentYear}-00001`,
+          schoolId: school.id,
+          studentId: student.id,
+          feeStructureId: feeStructure.id,
+          parentContactId: student.parents[0]?.id ?? null,
+          term: "T1",
+          year: currentYear,
+          subtotal: 18500,
+          discountAmount: 0,
+          taxAmount: 0,
+          totalAmount: 18500,
+          paidAmount: 5000,
+          balanceDue: 13500,
+          status: "Partially Paid",
+          dueDate: new Date(currentYear, 2, 31),
+          lineItems: [
+            { description: "Tuition", amount: 16000, quantity: 1 },
+            { description: "Activities", amount: 2500, quantity: 1 },
+          ],
+        },
+      });
+      await prisma.payment.create({
+        data: {
+          paymentRef: `PAY-SMH-${currentYear}-00001`,
+          receiptNumber: `REC-SMH-${currentYear}-00001`,
+          invoiceId: invoice.id,
+          amount: 5000,
+          method: "EFT",
+          status: "Completed",
+          paidBy: student.parents[0]?.fullName ?? "Guardian",
+          processedAt: new Date(),
+        },
+      });
+      await prisma.accountLedger.create({
+        data: {
+          schoolId: school.id,
+          studentId: student.id,
+          type: "Invoice",
+          description: `Invoice ${invoice.invoiceNumber}`,
+          debit: 18500,
+          credit: 0,
+          balance: 18500,
+          reference: invoice.id,
+          createdBy: user.id,
+        },
+      });
+      await prisma.accountLedger.create({
+        data: {
+          schoolId: school.id,
+          studentId: student.id,
+          type: "Payment",
+          description: `Payment PAY-SMH-${currentYear}-00001`,
+          debit: 0,
+          credit: 5000,
+          balance: 13500,
+          reference: invoice.id,
+          createdBy: user.id,
+        },
+      });
+    }
+  }
+
+  console.log(`✅ Platform admin ready: ${PLATFORM_ADMIN_EMAIL} (school: ${school.name})`);
+  if (PLATFORM_ADMIN_PASSWORD_GENERATED) {
+    console.log(
+      `   🔑 Generated admin password (save this now — set PLATFORM_ADMIN_PASSWORD to choose your own): ${PLATFORM_ADMIN_PASSWORD}`,
+    );
+  }
 }
 
 async function ensureRoleAssignment(args: {
@@ -1321,10 +1570,34 @@ async function ensureQuickLoginSchool() {
         status: "Partially Paid",
         dueDate: addDays(20),
         lineItems: [
-          { name: "Annual Fees", amount: 18500 },
+          { description: "Tuition", amount: 16000, quantity: 1 },
+          { description: "Activities", amount: 2500, quantity: 1 },
         ],
       },
     });
+
+    const invoice = await prisma.invoice.findUnique({
+      where: { invoiceNumber },
+    });
+    if (invoice) {
+      const existingPayment = await prisma.payment.findFirst({
+        where: { invoiceId: invoice.id },
+      });
+      if (!existingPayment) {
+        await prisma.payment.create({
+          data: {
+            paymentRef: `PAY-${currentYear}-00001`,
+            receiptNumber: `REC-${currentYear}-00001`,
+            invoiceId: invoice.id,
+            amount: 5000,
+            method: "EFT",
+            status: "Completed",
+            paidBy: parentContact.fullName,
+            processedAt: new Date(),
+          },
+        });
+      }
+    }
   }
 
   const existingEvent = await prisma.schoolEvent.findFirst({
@@ -1453,12 +1726,10 @@ async function seed() {
       console.log("✨ Database already contains data. Seeding demo login accounts only.");
       await ensureQuickLoginSchool();
       console.log("✅ Demo login accounts ready.");
-      return;
+    } else {
+      console.log("📦 Database already contains data. Skipping demo seed to preserve existing data.");
     }
-    console.log("📦 Database already contains data. Skipping seed to preserve existing data.");
-    console.log("   To seed demo accounts only, run with SEED_DEMO_ACCOUNTS=true");
-    console.log("   To force re-seed (WILL DELETE ALL DATA), run with FORCE_SEED=true");
-    console.log("   Example: SEED_DEMO_ACCOUNTS=true npx prisma db seed");
+    await ensurePlatformAdmin();
     return;
   }
   
@@ -1904,6 +2175,7 @@ async function seed() {
 
   await ensureQuickLoginSchool();
   console.log("✅ Quick login school and demo accounts created (Nimbus Academy)");
+  await ensurePlatformAdmin();
 }
 
 seed()

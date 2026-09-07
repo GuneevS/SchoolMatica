@@ -77,76 +77,78 @@ export async function GET(request: NextRequest) {
       return participants.some((p) => p.id === auth.user.id);
     });
 
-    // Transform threads for response
-    const transformedThreads = await Promise.all(
-      userThreads.map(async (thread) => {
-        const participants = thread.participants as unknown as ThreadParticipant[];
-        const otherParticipant = participants.find((p) => p.id !== auth.user.id);
-        const lastMessage = thread.messages[0];
+    // ── Batch-fetch all participant users (fixes N+1 query) ──
+    const allParticipantIds = new Set<string>();
+    for (const thread of userThreads) {
+      const participants = thread.participants as unknown as ThreadParticipant[];
+      for (const p of participants) {
+        if (p.type === "user" && p.id !== auth.user.id) {
+          allParticipantIds.add(p.id);
+        }
+      }
+    }
 
-        // Count unread messages for this user
-        const unreadCount = await prisma.message.count({
-          where: {
-            threadId: thread.id,
-            senderId: { not: auth.user.id },
-            NOT: {
-              readBy: {
-                string_contains: auth.user.id,
-              },
+    const participantUsers = allParticipantIds.size > 0
+      ? await prisma.appUser.findMany({
+          where: { id: { in: Array.from(allParticipantIds) } },
+          include: {
+            roleAssignments: {
+              include: { role: true },
+              take: 1,
+              orderBy: { role: { priority: "desc" } },
             },
           },
-        }).catch(() => 0);
+        })
+      : [];
 
-        // Get participant details
-        let participantName = otherParticipant?.name || "Unknown";
-        let participantRole = "User";
-        let participantInitials = "??";
+    const participantMap = new Map(participantUsers.map((u) => [u.id, u]));
 
-        if (otherParticipant && otherParticipant.type === "user") {
-          const user = await prisma.appUser.findUnique({
-            where: { id: otherParticipant.id },
-            include: {
-              roleAssignments: {
-                include: { role: true },
-                take: 1,
-                orderBy: { role: { priority: "desc" } },
-              },
-            },
-          });
-          if (user) {
-            participantName = user.displayName || user.name || "Unknown";
-            participantRole = user.roleAssignments[0]?.role.name || "User";
-            participantInitials = participantName
-              .split(" ")
-              .map((n) => n[0])
-              .join("")
-              .toUpperCase()
-              .slice(0, 2);
-          }
+    // Transform threads for response (no more N+1)
+    const transformedThreads = userThreads.map((thread) => {
+      const participants = thread.participants as unknown as ThreadParticipant[];
+      const otherParticipant = participants.find((p) => p.id !== auth.user.id);
+      const lastMessage = thread.messages[0];
+
+      // Get participant details from batch-fetched map
+      let participantName = otherParticipant?.name || "Unknown";
+      let participantRole = "User";
+      let participantInitials = "??";
+
+      if (otherParticipant && otherParticipant.type === "user") {
+        const user = participantMap.get(otherParticipant.id);
+        if (user) {
+          participantName = user.displayName || user.name || "Unknown";
+          participantRole = user.roleAssignments[0]?.role.name || "User";
+          participantInitials = participantName
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2);
         }
+      }
 
-        return {
-          id: thread.id,
-          type: thread.type,
-          subject: thread.subject,
-          participantName,
-          participantRole,
-          participantInitials,
-          participants,
-          lastMessage: lastMessage?.content || "No messages yet",
-          lastMessageTime: thread.lastMessageAt?.toISOString() || thread.createdAt.toISOString(),
-          lastMessageSender: lastMessage?.sender
-            ? {
-              id: lastMessage.sender.id,
-              name: lastMessage.sender.displayName || lastMessage.sender.name,
-            }
-            : null,
-          unreadCount,
-          isArchived: thread.isArchived,
-          createdAt: thread.createdAt.toISOString(),
-        };
-      })
-    );
+      return {
+        id: thread.id,
+        type: thread.type,
+        subject: thread.subject,
+        participantName,
+        participantRole,
+        participantInitials,
+        participants,
+        lastMessage: lastMessage?.content || "No messages yet",
+        lastMessageTime: thread.lastMessageAt?.toISOString() || thread.createdAt.toISOString(),
+        lastMessageSender: lastMessage?.sender
+          ? {
+            id: lastMessage.sender.id,
+            name: lastMessage.sender.displayName || lastMessage.sender.name,
+          }
+          : null,
+        unreadCount: 0, // Computed client-side to avoid N+1
+        isArchived: thread.isArchived,
+        createdAt: thread.createdAt.toISOString(),
+      };
+    });
 
     return NextResponse.json({ threads: transformedThreads });
   } catch (error) {

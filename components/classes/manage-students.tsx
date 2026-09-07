@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Student } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,16 +18,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Loader2, Pencil, Search, Trash2 } from "lucide-react";
 
 interface Props {
+  /**
+   * Identifier of the class these students belong to. Currently used by
+   * callers for routing context — the component itself relies on each
+   * student's record for the API call.
+   */
   classId: string;
   students: Student[];
 }
 
-export function ManageStudents({ classId, students }: Props) {
+export function ManageStudents({ students }: Props) {
   const [search, setSearch] = useState("");
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<Student | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -62,33 +70,22 @@ export function ManageStudents({ classId, students }: Props) {
         router.refresh();
       } catch (error) {
         console.error(error);
-        alert("Failed to update student");
+        toast.error("Could not update student. Please try again.");
       }
     });
   };
 
-  const handleRemove = async (studentId: string) => {
-    if (
-      !confirm(
-        `Remove this student from class ${classId}? This will delete all marks and records for this class.`,
-      )
-    )
-      return;
-    
-    startTransition(async () => {
-      try {
-        const res = await fetch(`/api/students/${studentId}`, {
-          method: "DELETE",
-        });
-
-        if (!res.ok) throw new Error("Failed to remove student");
-
-        router.refresh();
-      } catch (error) {
-        console.error(error);
-        alert("Failed to remove student");
-      }
-    });
+  // Returns a promise so ConfirmDialog can keep its loader spinning until done.
+  const performRemove = async (studentId: string) => {
+    try {
+      const res = await fetch(`/api/students/${studentId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to remove student");
+      toast.success("Student removed from class");
+      router.refresh();
+    } catch (error) {
+      console.error("[ManageStudents] remove failed:", error);
+      toast.error("Could not remove student. Please try again.");
+    }
   };
 
   return (
@@ -200,10 +197,10 @@ export function ManageStudents({ classId, students }: Props) {
                       variant="ghost"
                       size="icon"
                       className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                      onClick={() => handleRemove(student.id)}
-                      disabled={isPending}
+                      onClick={() => setRemoveTarget(student)}
+                      aria-label={`Remove ${student.firstName} ${student.lastName} from class`}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 aria-hidden="true" className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -212,6 +209,36 @@ export function ManageStudents({ classId, students }: Props) {
           )}
         </div>
       </CardContent>
+
+      <ConfirmDialog
+        open={!!removeTarget}
+        onOpenChange={(o) => !o && setRemoveTarget(null)}
+        title="Remove student from class?"
+        description={
+          removeTarget ? (
+            <span>
+              <span className="font-medium text-foreground">
+                {removeTarget.firstName} {removeTarget.lastName}
+              </span>{" "}
+              will be removed from this class. Any marks captured for this class
+              are also deleted. This action cannot be undone.
+            </span>
+          ) : undefined
+        }
+        confirmLabel="Remove student"
+        confirmVariant="destructive"
+        typedConfirmation={
+          removeTarget
+            ? {
+                expected: `${removeTarget.firstName} ${removeTarget.lastName}`,
+                label: "Type the student's full name to confirm",
+              }
+            : undefined
+        }
+        onConfirm={async () => {
+          if (removeTarget) await performRemove(removeTarget.id);
+        }}
+      />
     </Card>
   );
 }

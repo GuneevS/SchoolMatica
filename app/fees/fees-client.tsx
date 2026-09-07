@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,8 +12,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Progress } from "@/components/ui/progress";
 import { AuroraHero, HeroMetricPanel } from "@/components/layout/aurora-hero";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CreditCard, Receipt, TrendingUp, FileText, Plus, Download, Eye, Send, Check, AlertCircle, Clock, Wallet, PiggyBank, Activity, Landmark, Loader2 } from "lucide-react";
+import { CreditCard, Receipt, TrendingUp, FileText, Plus, Download, Eye, Send, Check, AlertCircle, Clock, Wallet, PiggyBank, Activity, Landmark, Loader2, Archive } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CreateInvoiceDialog } from "@/components/finance/create-invoice-dialog";
 import { RecordPaymentDialog } from "@/components/finance/record-payment-dialog";
 import { CreateFeeStructureDialog } from "@/components/finance/create-fee-structure-dialog";
@@ -51,23 +55,7 @@ const heroHighlights = [
   { label: "SA payment support", color: "hsl(var(--accent-gold))" },
 ];
 
-const getStatusBadge = (status: string) => {
-  const styles: Record<string, string> = {
-    Paid: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-    "Partially Paid": "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    Overdue: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-    Sent: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    Draft: "bg-slate-100 text-slate-700 dark:bg-slate-700/50 dark:text-slate-200",
-    Completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-    Processing: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    Pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    Failed: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-    Cancelled: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
-  };
-  return styles[status] || styles.Draft;
-};
-
-export function FeesPageClient({ invoices, payments, feeStructures, discounts, students, classGroups, schoolId }: FeesPageClientProps) {
+export function FeesPageClient({ invoices, payments, feeStructures, discounts, students }: FeesPageClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
   const [searchQuery, setSearchQuery] = useState("");
@@ -79,8 +67,24 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts, s
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null);
   const [bulkInvoiceStructure, setBulkInvoiceStructure] = useState<FeeStructure | null>(null);
+  const [deactivateTarget, setDeactivateTarget] = useState<FeeStructure | null>(null);
 
   const refresh = useCallback(() => router.refresh(), [router]);
+
+  const handleDeactivateStructure = useCallback(
+    async (structureId: string) => {
+      try {
+        const res = await fetch(`/api/fees/structures/${structureId}`, { method: "DELETE" });
+        if (!res.ok) throw new Error("Failed to deactivate");
+        toast.success("Fee structure deactivated");
+        refresh();
+      } catch (err) {
+        console.error("[Fees] deactivate failed:", err);
+        toast.error("Could not deactivate the fee structure. Please try again.");
+      }
+    },
+    [refresh],
+  );
 
   const totalCollected = invoices.reduce((sum, inv) => sum + inv.paid, 0);
   const totalOutstanding = invoices.reduce((sum, inv) => sum + inv.balance, 0);
@@ -290,7 +294,7 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts, s
                         <TableCell>{formatCurrency(invoice.paid)}</TableCell>
                         <TableCell className={cn(invoice.balance > 0 && "text-amber-600 font-medium")}>{formatCurrency(invoice.balance)}</TableCell>
                         <TableCell>{invoice.dueDate}</TableCell>
-                        <TableCell><Badge className={getStatusBadge(invoice.status)}>{invoice.status}</Badge></TableCell>
+                        <TableCell><StatusBadge status={invoice.status} /></TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
                             <Button variant="ghost" size="icon" title="View" onClick={() => setViewInvoice(invoice)}><Eye className="h-4 w-4" /></Button>
@@ -336,7 +340,7 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts, s
                         <TableCell className="text-emerald-600 font-medium">{formatCurrency(payment.amount)}</TableCell>
                         <TableCell><Badge variant="outline">{payment.method}</Badge></TableCell>
                         <TableCell>{payment.date}</TableCell>
-                        <TableCell><Badge className={getStatusBadge(payment.status)}>{payment.status}</Badge></TableCell>
+                        <TableCell><StatusBadge status={payment.status} /></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -392,7 +396,7 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts, s
                           <div>
                             <p className="font-medium">{structure.name}</p>
                             <p className="text-sm text-muted-foreground">
-                              {structure.grade > 0 ? `Grade ${structure.grade}` : "All Grades"} • {structure.year} • {structure.term || "Annual"} • {structure.students} students
+                              {structure.grade != null ? `Grade ${structure.grade === 0 ? "R" : structure.grade}` : "All Grades"} • {structure.year} • {structure.term || "Annual"} • {structure.students} students
                             </p>
                           </div>
                         </div>
@@ -406,6 +410,16 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts, s
                           >
                             <Receipt className="h-3.5 w-3.5 mr-1.5" />
                             Generate Invoices
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-muted-foreground hover:text-destructive"
+                            onClick={() => setDeactivateTarget(structure)}
+                            aria-label={`Deactivate fee structure ${structure.name}`}
+                            title="Deactivate fee structure"
+                          >
+                            <Archive className="h-3.5 w-3.5" />
                           </Button>
                         </div>
                       </div>
@@ -464,46 +478,121 @@ export function FeesPageClient({ invoices, payments, feeStructures, discounts, s
       </Tabs>
 
       {/* ===== VIEW INVOICE DIALOG ===== */}
-      {viewInvoice && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setViewInvoice(null)}>
-          <div className="bg-background rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <div><h2 className="text-lg font-bold">Invoice {viewInvoice.invoiceNumber}</h2><p className="text-sm text-muted-foreground">{viewInvoice.student} • {viewInvoice.class} • {viewInvoice.term} {viewInvoice.year}</p></div>
-              <Badge className={getStatusBadge(viewInvoice.status)}>{viewInvoice.status}</Badge>
-            </div>
-            <Table>
-              <TableHeader><TableRow><TableHead>Item</TableHead><TableHead className="text-right">Amount</TableHead><TableHead className="text-right">Qty</TableHead><TableHead className="text-right">Total</TableHead></TableRow></TableHeader>
-              <TableBody>
-                {viewInvoice.lineItems.map((item, i) => (
-                  <TableRow key={i}><TableCell>{item.description}</TableCell><TableCell className="text-right">{formatCurrency(item.amount)}</TableCell><TableCell className="text-right">{item.quantity}</TableCell><TableCell className="text-right">{formatCurrency(item.amount * item.quantity)}</TableCell></TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <div className="mt-4 p-4 bg-muted/50 rounded-lg space-y-1">
-              <div className="flex justify-between text-sm"><span>Total</span><span className="font-bold">{formatCurrency(viewInvoice.amount)}</span></div>
-              <div className="flex justify-between text-sm text-emerald-600"><span>Paid</span><span>{formatCurrency(viewInvoice.paid)}</span></div>
-              <div className="flex justify-between font-bold text-lg border-t pt-2"><span>Balance Due</span><span className={viewInvoice.balance > 0 ? "text-red-600" : "text-emerald-600"}>{formatCurrency(viewInvoice.balance)}</span></div>
-            </div>
-            {viewInvoice.payments.length > 0 && (
-              <div className="mt-4">
-                <h3 className="font-semibold mb-2">Payment History</h3>
-                {viewInvoice.payments.map((p) => (
-                  <div key={p.id} className="flex justify-between p-2 border-b text-sm">
-                    <span>{p.paymentRef} • {p.method}</span><span>{p.date}</span><span className="font-medium text-emerald-600">{formatCurrency(p.amount)}</span>
+      <Dialog open={!!viewInvoice} onOpenChange={(open) => !open && setViewInvoice(null)}>
+        <DialogContent className="sm:max-w-2xl">
+          {viewInvoice && (
+            <>
+              <DialogHeader>
+                <div className="flex flex-wrap items-start justify-between gap-3 pr-8">
+                  <div className="space-y-1">
+                    <DialogTitle>Invoice {viewInvoice.invoiceNumber}</DialogTitle>
+                    <DialogDescription>
+                      {viewInvoice.student} · {viewInvoice.class} · {viewInvoice.term} {viewInvoice.year}
+                    </DialogDescription>
                   </div>
-                ))}
+                  <StatusBadge status={viewInvoice.status} />
+                </div>
+              </DialogHeader>
+
+              <div className="overflow-hidden rounded-2xl border border-border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead className="text-right">Qty</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {viewInvoice.lineItems.map((item, i) => (
+                      <TableRow key={i}>
+                        <TableCell>{item.description}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
+                        <TableCell className="text-right">{item.quantity}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(item.amount * item.quantity)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-            )}
-            <div className="mt-4 flex justify-end"><Button variant="outline" onClick={() => setViewInvoice(null)}>Close</Button></div>
-          </div>
-        </div>
-      )}
+
+              <div className="space-y-1.5 rounded-2xl border border-border bg-muted/40 p-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Total</span>
+                  <span className="font-semibold">{formatCurrency(viewInvoice.amount)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Paid</span>
+                  <span className="text-emerald-600 dark:text-emerald-400">{formatCurrency(viewInvoice.paid)}</span>
+                </div>
+                <div className="flex items-baseline justify-between border-t border-border/60 pt-2 text-base font-semibold">
+                  <span>Balance due</span>
+                  <span
+                    className={
+                      viewInvoice.balance > 0
+                        ? "text-rose-600 dark:text-rose-400"
+                        : "text-emerald-600 dark:text-emerald-400"
+                    }
+                  >
+                    {formatCurrency(viewInvoice.balance)}
+                  </span>
+                </div>
+              </div>
+
+              {viewInvoice.payments.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold">Payment history</h3>
+                  <ul className="space-y-1.5">
+                    {viewInvoice.payments.map((p) => (
+                      <li
+                        key={p.id}
+                        className="grid grid-cols-[1fr_auto_auto] items-center gap-3 rounded-xl border border-border bg-background/40 px-3 py-2 text-sm"
+                      >
+                        <span className="truncate">
+                          {p.paymentRef} <span className="text-muted-foreground">· {p.method}</span>
+                        </span>
+                        <span className="text-xs text-muted-foreground">{p.date}</span>
+                        <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                          {formatCurrency(p.amount)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setViewInvoice(null)}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* ===== DIALOG MODALS ===== */}
       <CreateInvoiceDialog open={showCreateInvoice} onOpenChange={setShowCreateInvoice} students={students} feeStructures={feeStructures} onSuccess={refresh} />
       <RecordPaymentDialog open={showRecordPayment} onOpenChange={setShowRecordPayment} invoices={invoices} onSuccess={refresh} />
       <CreateFeeStructureDialog open={showCreateStructure} onOpenChange={setShowCreateStructure} onSuccess={refresh} />
       <CreateDiscountDialog open={showCreateDiscount} onOpenChange={setShowCreateDiscount} feeStructures={feeStructures} onSuccess={refresh} />
+
+      <ConfirmDialog
+        open={!!deactivateTarget}
+        onOpenChange={(o) => !o && setDeactivateTarget(null)}
+        title="Deactivate fee structure?"
+        description={
+          deactivateTarget
+            ? `"${deactivateTarget.name}" will be hidden from the active list. Existing invoices already linked to this structure are kept intact.`
+            : undefined
+        }
+        confirmLabel="Deactivate"
+        confirmVariant="destructive"
+        onConfirm={async () => {
+          if (deactivateTarget) await handleDeactivateStructure(deactivateTarget.id);
+        }}
+      />
       {bulkInvoiceStructure && (
         <BulkInvoiceDialog
           open={!!bulkInvoiceStructure}

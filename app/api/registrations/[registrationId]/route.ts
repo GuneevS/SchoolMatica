@@ -4,6 +4,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createStudentRecord, generateAdmissionNumber } from "@/lib/domain/student-onboarding";
 import { authorizeWithSchool, hasSchoolAccess } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-error-handler";
 
 interface Params {
   params: Promise<{ registrationId: string }>;
@@ -17,8 +18,9 @@ const updateSchema = z.object({
 });
 
 export async function PATCH(request: NextRequest, { params }: Params) {
-  // Determine permission needed based on status change
-  const { registrationId } = await params;
+  try {
+    // Determine permission needed based on status change
+    const { registrationId } = await params;
   
   // First check if we're updating status to Approved/Rejected (requires decide permission)
   const json = await request.json();
@@ -113,5 +115,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   });
 
   return NextResponse.json({ ...updated, studentId });
+  } catch (error) {
+    return handleApiError("PATCH registrations/[registrationId]", error);
+  }
 }
 

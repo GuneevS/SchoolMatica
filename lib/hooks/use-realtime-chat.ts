@@ -30,6 +30,13 @@ interface UseRealtimeChatReturn {
   sendTypingIndicator: (isTyping: boolean) => void;
 }
 
+/**
+ * Subscribes to a Pusher channel for a chat thread. Callbacks are stored in a
+ * ref so that passing a fresh handler each render does NOT cause the
+ * subscription to tear down and recreate — only `threadId`/`currentUserId`
+ * trigger resubscription. This avoids the "subscribe→unsubscribe storm" that
+ * drops realtime messages between cycles.
+ */
 export function useRealtimeChat({
   threadId,
   currentUserId,
@@ -41,18 +48,34 @@ export function useRealtimeChat({
   const [isConnected, setIsConnected] = useState(false);
   const [typingUsers, setTypingUsers] = useState<Map<string, string>>(new Map());
   const channelRef = useRef<Channel | null>(null);
-  const typingTimeoutRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const typingTimeoutRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
-  // Subscribe to thread channel
+  // Stable handler refs — updated each render without retriggering the
+  // subscription effect.
+  const handlersRef = useRef({
+    onNewMessage,
+    onMessageRead,
+    onTypingStart,
+    onTypingStop,
+  });
   useEffect(() => {
-    if (!threadId) {
-      setIsConnected(false);
-      return;
-    }
+    handlersRef.current = {
+      onNewMessage,
+      onMessageRead,
+      onTypingStart,
+      onTypingStop,
+    };
+  }, [onNewMessage, onMessageRead, onTypingStart, onTypingStop]);
+
+  // Subscribe to thread channel — depends only on the *identity* of the
+  // resource, not on the callbacks. The previous effect's cleanup resets
+  // isConnected to false; we don't set it here to avoid a cascading render.
+  useEffect(() => {
+    if (!threadId) return;
 
     const pusher = getPusherClient();
     if (!pusher) {
-      console.warn("Pusher client not available");
+      console.warn("[useRealtimeChat] Pusher client not available");
       return;
     }
 
@@ -65,15 +88,13 @@ export function useRealtimeChat({
     });
 
     channel.bind("pusher:subscription_error", (error: unknown) => {
-      console.error("Pusher subscription error:", error);
+      console.error("[useRealtimeChat] subscription error:", error);
       setIsConnected(false);
     });
 
-    // Handle new messages
     channel.bind(EVENT_NAMES.NEW_MESSAGE, (data: NewMessagePayload) => {
-      // Don't process our own messages (we already have them via optimistic update)
-      if (data.senderId === currentUserId) return;
-
+      // Echo own messages too — the consumer decides whether to dedupe;
+      // optimistic-update flows pass their own id check.
       const message: RealtimeMessage = {
         id: data.id,
         threadId: data.threadId,
@@ -84,42 +105,43 @@ export function useRealtimeChat({
         createdAt: data.createdAt,
         attachments: data.attachments,
       };
-
-      onNewMessage?.(message);
+      handlersRef.current.onNewMessage?.(message);
     });
 
-    // Handle message read events
-    channel.bind(EVENT_NAMES.MESSAGE_READ, (data: { messageIds: string[]; readBy: string }) => {
-      onMessageRead?.(data);
-    });
+    channel.bind(
+      EVENT_NAMES.MESSAGE_READ,
+      (data: { messageIds: string[]; readBy: string }) => {
+        handlersRef.current.onMessageRead?.(data);
+      },
+    );
 
-    // Handle typing indicators
-    channel.bind(EVENT_NAMES.TYPING_START, (data: { userId: string; userName: string }) => {
-      if (data.userId === currentUserId) return;
+    channel.bind(
+      EVENT_NAMES.TYPING_START,
+      (data: { userId: string; userName: string }) => {
+        if (data.userId === currentUserId) return;
 
-      setTypingUsers((prev) => {
-        const next = new Map(prev);
-        next.set(data.userId, data.userName);
-        return next;
-      });
-
-      // Clear existing timeout for this user
-      const existingTimeout = typingTimeoutRef.current.get(data.userId);
-      if (existingTimeout) clearTimeout(existingTimeout);
-
-      // Auto-clear typing indicator after 3 seconds
-      const timeout = setTimeout(() => {
         setTypingUsers((prev) => {
           const next = new Map(prev);
-          next.delete(data.userId);
+          next.set(data.userId, data.userName);
           return next;
         });
-        typingTimeoutRef.current.delete(data.userId);
-      }, 3000);
 
-      typingTimeoutRef.current.set(data.userId, timeout);
-      onTypingStart?.(data);
-    });
+        const existingTimeout = typingTimeoutRef.current.get(data.userId);
+        if (existingTimeout) clearTimeout(existingTimeout);
+
+        const timeout = setTimeout(() => {
+          setTypingUsers((prev) => {
+            const next = new Map(prev);
+            next.delete(data.userId);
+            return next;
+          });
+          typingTimeoutRef.current.delete(data.userId);
+        }, 3000);
+
+        typingTimeoutRef.current.set(data.userId, timeout);
+        handlersRef.current.onTypingStart?.(data);
+      },
+    );
 
     channel.bind(EVENT_NAMES.TYPING_STOP, (data: { userId: string }) => {
       if (data.userId === currentUserId) return;
@@ -136,8 +158,11 @@ export function useRealtimeChat({
         typingTimeoutRef.current.delete(data.userId);
       }
 
-      onTypingStop?.(data);
+      handlersRef.current.onTypingStop?.(data);
     });
+
+    // Capture the ref value so cleanup uses what was current when the effect ran.
+    const timeoutsAtMount = typingTimeoutRef.current;
 
     return () => {
       channel.unbind_all();
@@ -145,12 +170,11 @@ export function useRealtimeChat({
       channelRef.current = null;
       setIsConnected(false);
 
-      // Clear all typing timeouts
-      typingTimeoutRef.current.forEach((timeout) => clearTimeout(timeout));
-      typingTimeoutRef.current.clear();
+      timeoutsAtMount.forEach((timeout) => clearTimeout(timeout));
+      timeoutsAtMount.clear();
       setTypingUsers(new Map());
     };
-  }, [threadId, currentUserId, onNewMessage, onMessageRead, onTypingStart, onTypingStop]);
+  }, [threadId, currentUserId]);
 
   // Send typing indicator
   const sendTypingIndicator = useCallback(
@@ -164,10 +188,10 @@ export function useRealtimeChat({
           body: JSON.stringify({ threadId, isTyping }),
         });
       } catch (error) {
-        console.error("Failed to send typing indicator:", error);
+        console.error("[useRealtimeChat] typing indicator failed:", error);
       }
     },
-    [threadId]
+    [threadId],
   );
 
   return {
@@ -178,13 +202,19 @@ export function useRealtimeChat({
 }
 
 /**
- * Hook for subscribing to user-level notifications (new threads, etc.)
+ * Hook for subscribing to user-level notifications (new threads, etc.).
+ * Same ref pattern as the chat hook — handler doesn't trigger resubscribe.
  */
 export function useUserNotifications(
   userId: string,
-  onNewThread?: (data: { id: string; type: string; subject?: string; participantName: string }) => void
+  onNewThread?: (data: { id: string; type: string; subject?: string; participantName: string }) => void,
 ) {
   const [isConnected, setIsConnected] = useState(false);
+  const handlerRef = useRef(onNewThread);
+
+  useEffect(() => {
+    handlerRef.current = onNewThread;
+  }, [onNewThread]);
 
   useEffect(() => {
     if (!userId) return;
@@ -199,16 +229,19 @@ export function useUserNotifications(
       setIsConnected(true);
     });
 
-    channel.bind(EVENT_NAMES.NEW_THREAD, (data: { id: string; type: string; subject?: string; participantName: string }) => {
-      onNewThread?.(data);
-    });
+    channel.bind(
+      EVENT_NAMES.NEW_THREAD,
+      (data: { id: string; type: string; subject?: string; participantName: string }) => {
+        handlerRef.current?.(data);
+      },
+    );
 
     return () => {
       channel.unbind_all();
       pusher.unsubscribe(channelName);
       setIsConnected(false);
     };
-  }, [userId, onNewThread]);
+  }, [userId]);
 
   return { isConnected };
 }

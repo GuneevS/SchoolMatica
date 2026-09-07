@@ -16,7 +16,6 @@ import {
   Archive,
   Trash2,
   Pin,
-  Bell,
   BellOff,
   CheckCheck,
   Clock,
@@ -33,6 +32,7 @@ import { MessageComposer } from "./message-composer";
 import { NewConversationDialog } from "./new-conversation-dialog";
 import type { Conversation, Message, Participant } from "./messaging-types";
 import { toast } from "sonner";
+import { useRealtimeChat, type RealtimeMessage } from "@/lib/hooks/use-realtime-chat";
 
 interface MessagingClientProps {
   initialConversations: Conversation[];
@@ -82,6 +82,47 @@ export function MessagingClient({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const selectedConversation = conversations.find((c) => c.id === selectedId);
+
+  // Receive realtime messages for the currently-open thread. The hook itself
+  // is stable across renders (handlers are stored in a ref internally) so
+  // passing an inline callback is safe.
+  useRealtimeChat({
+    threadId: selectedId ?? null,
+    currentUserId,
+    onNewMessage: useCallback(
+      (incoming: RealtimeMessage) => {
+        setMessages((prev) => {
+          // Dedupe: if the message id is already in the list (either via
+          // optimistic-update reconcile or a previous Pusher delivery) skip.
+          if (prev.some((m) => m.id === incoming.id)) return prev;
+          const createdAt = new Date(incoming.createdAt);
+          const next: Message = {
+            id: incoming.id,
+            content: incoming.content,
+            senderId: incoming.senderId,
+            senderName: incoming.senderName,
+            senderInitials: incoming.senderInitials,
+            createdAt,
+            time: formatMessageTime(createdAt),
+            isOwn: incoming.senderId === currentUserId,
+            isRead: false,
+          };
+          return [...prev, next];
+        });
+
+        // Refresh the conversation list preview if this is for the active
+        // thread.
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === incoming.threadId
+              ? { ...c, lastMessage: incoming.content, time: "Just now" }
+              : c,
+          ),
+        );
+      },
+      [currentUserId],
+    ),
+  });
 
   // Filter conversations by search
   const filteredConversations = conversations.filter(

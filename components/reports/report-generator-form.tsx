@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -55,31 +56,40 @@ export function ReportGeneratorForm({ classGroups, currentYear, terms }: Props) 
 
   const handleGenerate = async () => {
     if (!selectedClass || !selectedTerm || selectedStudents.length === 0) {
-      alert("Please select class, term, and at least one student");
+      toast.error("Please select a class, term, and at least one student");
       return;
     }
 
     startTransition(async () => {
-      const response = await fetch("/api/reports/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          classGroupId: selectedClass,
-          term: selectedTerm,
-          year: currentYear,
-          studentIds: selectedStudents,
-          teacherComment: includeComments ? teacherComment : null,
-          conductGrade: includeConduct ? conductGrade : null,
-          effortGrade: includeConduct ? effortGrade : null,
-        }),
-      });
+      try {
+        const response = await fetch("/api/reports/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            classGroupId: selectedClass,
+            term: selectedTerm,
+            year: currentYear,
+            studentIds: selectedStudents,
+            teacherComment: includeComments ? teacherComment : null,
+            conductGrade: includeConduct ? conductGrade : null,
+            effortGrade: includeConduct ? effortGrade : null,
+          }),
+        });
 
-      if (response.ok) {
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body?.error?.message ?? body?.error ?? "Failed to generate reports");
+        }
         const data = await response.json();
-        alert(`Successfully generated ${data.count} report cards!`);
+        toast.success(`Generated ${data.count} report card${data.count === 1 ? "" : "s"}`);
         router.refresh();
-      } else {
-        alert("Failed to generate reports");
+      } catch (err) {
+        console.error("[ReportGenerator] generate failed:", err);
+        toast.error(
+          err instanceof Error && err.message
+            ? err.message
+            : "Could not generate reports. Please try again.",
+        );
       }
     });
   };
